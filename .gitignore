@@ -1,0 +1,12 @@
+# Build artifacts -- rendered from draft-hillier-scitt-arp.md
+draft-hillier-scitt-arp.txt
+draft-hillier-scitt-arp.html
+draft-hillier-scitt-arp.pdf
+
+# Keep the .xml: it is the structured source uploaded to the datatracker and
+# the only durable proof of which bytes were filed.
+# (do not ignore draft-hillier-scitt-arp.xml)
+
+.DS_Store
+*.swp
+__pycache__/

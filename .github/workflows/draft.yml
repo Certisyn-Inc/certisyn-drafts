@@ -1,0 +1,63 @@
+name: draft
+
+# The source in this repo must always build. draft-hillier-scitt-arp-01 was
+# filed from an uncommitted working copy and lost; this job at least guarantees
+# that whatever IS here compiles, and publishes the rendered text as an
+# artifact so a filed revision can always be diffed against the source.
+
+on:
+  push:
+    branches: [main, "**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install toolchain
+        run: |
+          gem install kramdown-rfc2629 --no-document
+          pip install xml2rfc
+
+      - name: Show docname
+        run: grep -E '^docname:|^date:' draft-hillier-scitt-arp.md
+
+      - name: Build
+        run: make
+
+      - name: Upload rendered draft
+        uses: actions/upload-artifact@v4
+        with:
+          name: draft-hillier-scitt-arp
+          path: |
+            draft-hillier-scitt-arp.xml
+            draft-hillier-scitt-arp.txt
+
+  # Fails when the repo's docname is behind the datatracker -- the exact
+  # condition that hid the -01 gap for four days.
+  revision-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare repo docname against the datatracker
+        run: |
+          REPO_REV=$(grep -E '^docname:' draft-hillier-scitt-arp.md | sed 's/.*-\([0-9][0-9]\)$/\1/')
+          LIVE_REV=$(curl -sS "https://datatracker.ietf.org/api/v1/doc/document/?name=draft-hillier-scitt-arp&format=json" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin)['objects'][0]['rev'])")
+          echo "repo docname revision : $REPO_REV"
+          echo "datatracker revision  : $LIVE_REV"
+          if [ "$REPO_REV" != "$LIVE_REV" ]; then
+            echo "::error::Repo source is at -$REPO_REV but -$LIVE_REV is filed. See RECOVERY.md."
+            exit 1
+          fi

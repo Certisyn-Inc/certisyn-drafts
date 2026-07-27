@@ -1,7 +1,7 @@
 ---
 title: Attestation Reconciliation Protocol
 abbrev: ARP
-docname: draft-hillier-scitt-arp-01
+docname: draft-hillier-scitt-arp-02
 date: 2026-07-23
 category: std
 ipr: trust200902
@@ -34,15 +34,21 @@ normative:
   RFC9053:
   RFC9334:        # RATS Architecture
   RFC9421:        # HTTP Message Signatures
+  RFC8785:        # JSON Canonicalization Scheme (JCS)
+  I-D.mih-scitt-agent-action-capsule:
   I-D.ietf-scitt-architecture:
   I-D.ietf-cose-merkle-tree-proofs:
+  UAX15:
+    title: "Unicode Standard Annex #15: Unicode Normalization Forms"
+    target: https://www.unicode.org/reports/tr15/
+    author:
+      - org: The Unicode Consortium
 
 informative:
   RFC8259:        # JSON
   I-D.ietf-scitt-scrapi:
   I-D.meunier-web-bot-auth-architecture:
   I-D.meunier-webbotauth-registry:
-  I-D.mih-scitt-agent-action-capsule:
   FIPS203:
     title: Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)
     seriesinfo:
@@ -163,7 +169,7 @@ an audit finding available after. This document treats real-time reconciliation
 of claimed-versus-actual conduct as a first-class property of accountable
 autonomous action.
 
-# Conventions and Definitions
+# Conventions and Definitions {#terminology}
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
@@ -223,10 +229,23 @@ Canonical Claim:
 : A deterministic structured representation of a verification claim,
   comprising at least a subject identifier, a predicate, an attested value,
   an applicable-regimes set, and an evidentiary provenance manifest.
-  Canonicalisation comprises lexicographic sorting of object keys,
-  preservation of declared array order, Unicode Normalization Form C of
-  string fields, canonical JSON {{RFC8259}} number rendering, and stripping
-  of undefined values.
+  Canonicalisation comprises sorting of object member names by UTF-16 code
+  unit as specified in Section 3.2.3 of {{RFC8785}}, preservation of declared
+  array order, Unicode Normalization Form C {{UAX15}} applied to string values
+  and to member names, and number rendering as specified in Section 3.2.2.3 of
+  {{RFC8785}}. A member whose value is absent MUST be omitted rather than
+  serialised with a null placeholder.
+
+  The member-sort code unit is normative. An implementation that sorts by
+  Unicode code point rather than by UTF-16 code unit produces a different Claim
+  Hash for any object carrying a member name outside the Basic Multilingual
+  Plane. Implementation experience against a published conformance corpus
+  measured this as a divergence on one vector in twenty-two. The two orderings
+  are not interchangeable, and this specification pins the UTF-16 reading.
+
+  This construction is NOT the construction defined in {{composition}} for
+  `subject_digest`. The two MUST NOT be substituted for one another; see
+  {{construction-distinctness}}.
 
 Predicate Taxonomy:
 : A controlled hierarchical classification of predicates that may be the
@@ -840,7 +859,7 @@ for compute-substrate trust. ARP composes with RATS in two ways:
    providers is the natural specialisation of ARP to the RATS evidence
    class. A separate document specifies that specialisation.
 
-# Composition with Agent-Action Accountability Capsules
+# Composition with Agent-Action Accountability Capsules {#composition}
 
 Emerging work in the SCITT community models accountable autonomous action as a
 set of heterogeneous, independently produced attestation capsules -- for
@@ -854,9 +873,27 @@ sovereign registers, arising in the agent-action domain.
 
 ARP composes such capsules without requiring them to share a producer, a
 schema, or a signing chain. The capsules are bound to a common action through a
-shared subject digest, computed as the SHA-256 of the canonical JSON
-serialisation of the action being attested (subject_digest =
-SHA-256(JCS(action))). Two further profile-tagged digests position each capsule
+shared subject digest, computed as the SHA-256 of the JSON
+Canonicalization Scheme serialisation of the action being attested:
+
+~~~
+subject_digest = SHA-256(JCS(action))
+~~~
+
+where JCS is the JSON Canonicalization Scheme specified in {{RFC8785}}.
+Implementations MUST use {{RFC8785}} and MUST NOT substitute another
+canonicalisation. In particular, {{RFC8785}} does not apply Unicode
+normalisation, and an implementation that normalises before serialising will
+compute a different subject digest for inputs that differ only by normalisation
+form -- silently, since both parties obtain a well-formed digest.
+
+Implementation experience against a published agent-action conformance corpus
+confirmed exact agreement between this construction and a deployed
+{{RFC8785}} profile on twenty-two of twenty-two pinned vectors. That result
+depends on both parties having selected {{RFC8785}}; the normative reference
+above is what makes it an obligation rather than a coincidence.
+
+Two further profile-tagged digests position each capsule
 for reconciliation: an authority-reference digest committing to the authorising
 instrument (tagged transparency where it is the SHA-256 of a COSE_Sign1
 transparency receipt, or offline where it is the SHA-256 of the canonical JSON
@@ -884,9 +921,89 @@ divergence, and seal against a Policy-Version Hash. It allows a relying party
 to reconcile what an agent was permitted to do against what it did, at the
 moment of action, across attestations no single party produced.
 
+## The two digest constructions are distinct {#construction-distinctness}
+
+This document defines two digest constructions over JSON, for two different
+purposes, and they are NOT interchangeable:
+
+Claim Hash:
+: SHA-256 over the Canonical Claim serialisation of {{terminology}}. Its
+  purpose is to index a claim in the Settlement-Layer Ledger. It applies
+  Unicode Normalization Form C.
+
+subject_digest:
+: SHA-256 over the {{RFC8785}} serialisation of an action, per
+  {{composition}}. Its purpose is to correlate independently produced capsules
+  describing the same action. {{RFC8785}} does not normalise.
+
+An implementation that substitutes one for the other MUST be assumed to
+produce incorrect correlations. The failure is silent: both constructions
+return a well-formed 32-octet digest for any input, so a substitution surfaces
+as a correlation that does not occur, or as two distinct actions correlating to
+one subject, rather than as an error.
+
+Two cases are worse than a mere difference of bytes, because the substitution
+produces a COLLISION rather than a mismatch. Under the Claim Hash construction,
+which normalises, an input in Normalization Form D and the same input in
+Normalization Form C yield the SAME digest; so do U+212B ANGSTROM SIGN and
+U+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE. Under the `subject_digest`
+construction, which does not normalise, all four are distinct. An implementer
+who reuses the Claim Hash where a subject digest is required will therefore
+correlate two actions that a conforming implementation keeps apart. Both cases
+were observed against a published conformance corpus.
+
+Accordingly:
+
+* An implementation MUST NOT use the Claim Hash construction where
+  `subject_digest` is specified, or the reverse.
+* Where a digest is carried on the wire for correlation, the producer MUST
+  identify the construction used. An identifier that commits to the declared
+  canonicalisation parameters -- member-sort code unit, normalisation, number
+  rendering, absent-member handling and hash algorithm -- allows a consumer to
+  determine compatibility rather than assume it. Such an identifier MUST NOT
+  commit to facts about a specification that do not affect the serialised
+  bytes, so that two implementations producing identical bytes share an
+  identifier.
+
 # Document History
 
 RFC Editor: please remove this section before publication.
+
+## Since draft-hillier-scitt-arp-01
+
+This revision closes canonicalisation ambiguities identified by running an
+implementation of -01 against two published conformance corpora: the EMILIA
+clean-room `frozen-v1` agent-action corpus and the Noa AI-agent-receipt corpus.
+The harness, its console output and its machine-readable results were posted to
+the SCITT mailing list, so every measurement cited below is independently
+reproducible.
+
+- {{RFC8785}} is now a NORMATIVE reference. -01 named JCS in {{composition}}
+  without identifying which JCS; the string "8785" did not occur in -01 at all.
+  Measured agreement with a deployed profile on 22 of 22 pinned vectors
+  depended on both parties having independently selected {{RFC8785}}. It is now
+  an obligation rather than a coincidence.
+- The Canonical Claim in {{terminology}} now pins its member-sort code unit to
+  UTF-16, per Section 3.2.3 of {{RFC8785}}. -01 said "lexicographic sorting of
+  object keys", which does not determine the ordering of member names outside
+  the Basic Multilingual Plane. Measured as a divergence on 1 of 22 pinned
+  vectors.
+- Number rendering now cites Section 3.2.2.3 of {{RFC8785}}. -01 cited
+  "canonical JSON {{RFC8259}} number rendering"; {{RFC8259}} defines no
+  canonical number rendering, and was an informative reference in -01.
+- "Stripping of undefined values" is replaced by a statement about absent
+  members, JSON having no undefined value to strip.
+- New {{construction-distinctness}} states that the Claim Hash and
+  `subject_digest` are distinct constructions that MUST NOT be substituted for
+  one another, and records the two observed COLLISION cases (Normalization Form
+  D against Form C, and U+212B against U+00C5) in which a substitution fails
+  silently rather than visibly.
+- {{I-D.mih-scitt-agent-action-capsule}} is promoted to a normative reference,
+  {{composition}} composing over the capsule slots it defines.
+- {{construction-distinctness}} requires that a correlation digest carried on
+  the wire identify its construction, and requires that such an identifier not
+  commit to facts which do not affect the serialised bytes, so that two
+  implementations producing identical bytes share an identifier.
 
 ## Since draft-hillier-scitt-arp-00
 

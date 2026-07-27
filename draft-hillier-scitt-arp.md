@@ -35,7 +35,6 @@ normative:
   RFC9334:        # RATS Architecture
   RFC9421:        # HTTP Message Signatures
   RFC8785:        # JSON Canonicalization Scheme (JCS)
-  I-D.mih-scitt-agent-action-capsule:
   I-D.ietf-scitt-architecture:
   I-D.ietf-cose-merkle-tree-proofs:
   UAX15:
@@ -43,9 +42,11 @@ normative:
     target: https://www.unicode.org/reports/tr15/
     author:
       - org: The Unicode Consortium
+    date: 2023
 
 informative:
   RFC8259:        # JSON
+  I-D.mih-scitt-agent-action-capsule:
   I-D.ietf-scitt-scrapi:
   I-D.meunier-web-bot-auth-architecture:
   I-D.meunier-webbotauth-registry:
@@ -229,12 +230,23 @@ Canonical Claim:
 : A deterministic structured representation of a verification claim,
   comprising at least a subject identifier, a predicate, an attested value,
   an applicable-regimes set, and an evidentiary provenance manifest.
-  Canonicalisation comprises sorting of object member names by UTF-16 code
-  unit as specified in Section 3.2.3 of {{RFC8785}}, preservation of declared
-  array order, Unicode Normalization Form C {{UAX15}} applied to string values
-  and to member names, and number rendering as specified in Section 3.2.2.3 of
-  {{RFC8785}}. A member whose value is absent MUST be omitted rather than
-  serialised with a null placeholder.
+  Canonicalisation is performed in the following order, which is normative
+  because the operations do not commute:
+
+  1. Unicode Normalization Form C {{UAX15}} is applied to every string value
+     and to every object member name.
+  2. Object member names are sorted by UTF-16 code unit, as specified in
+     Section 3.2.3 of {{RFC8785}}.
+  3. Declared array order is preserved.
+  4. Numbers are rendered as specified in Section 3.2.2.3 of {{RFC8785}}.
+  5. A member whose value is absent is omitted, rather than serialised with a
+     null placeholder.
+
+  Steps 1 and 2 are order-dependent and observably so: for an object carrying
+  the member names "A" followed by COMBINING RING ABOVE (U+0041 U+030A) and
+  "B", normalising before sorting and sorting before normalising yield
+  different serialisations and therefore different Claim Hashes. This
+  specification requires normalisation first.
 
   The member-sort code unit is normative. An implementation that sorts by
   Unicode code point rather than by UTF-16 code unit produces a different Claim
@@ -998,8 +1010,17 @@ reproducible.
   one another, and records the two observed COLLISION cases (Normalization Form
   D against Form C, and U+212B against U+00C5) in which a substitution fails
   silently rather than visibly.
-- {{I-D.mih-scitt-agent-action-capsule}} is promoted to a normative reference,
-  {{composition}} composing over the capsule slots it defines.
+- The order of canonicalisation operations in {{terminology}} is now normative.
+  Normalization Form C is applied BEFORE the member sort. The two do not
+  commute: for an object whose member names are U+0041 U+030A and "B",
+  normalising first and sorting first produce different Claim Hashes. -01 gave
+  the operations as an unordered list.
+- {{I-D.mih-scitt-agent-action-capsule}} remains an informative reference.
+  {{composition}} composes over the capsule slots it defines and would cite it
+  normatively, but it is an individual draft; making it normative now would
+  create a publication dependency on a document that is not a working-group
+  item. This document will make the reference normative if and when that draft
+  is adopted.
 - {{construction-distinctness}} requires that a correlation digest carried on
   the wire identify its construction, and requires that such an identifier not
   commit to facts which do not affect the serialised bytes, so that two

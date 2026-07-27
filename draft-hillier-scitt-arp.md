@@ -1,7 +1,8 @@
 ---
 title: Attestation Reconciliation Protocol
 abbrev: ARP
-docname: draft-hillier-scitt-arp-00
+docname: draft-hillier-scitt-arp-01
+date: 2026-07-23
 category: std
 ipr: trust200902
 area: Security
@@ -13,13 +14,15 @@ keyword: attestation
 keyword: reconciliation
 keyword: cross-jurisdictional
 keyword: policy-version
+keyword: agentic-AI
+keyword: friend-or-foe
 
 stand_alone: yes
 pi: [toc, sortrefs, symrefs]
 
 author:
  -
-    ins: J. Hillier
+    ins: J. D. Hillier
     name: Joel David Hillier
     organization: Certisyn, Inc.
     email: jhillier@certisyn.com
@@ -27,16 +30,19 @@ author:
 normative:
   RFC2119:
   RFC8174:
+  RFC9052:
+  RFC9053:
   RFC9334:        # RATS Architecture
+  RFC9421:        # HTTP Message Signatures
   I-D.ietf-scitt-architecture:
-  I-D.ietf-scitt-receipts:
+  I-D.ietf-cose-merkle-tree-proofs:
 
 informative:
-  RFC7515:        # JSON Web Signature
-  RFC7519:        # JSON Web Token
   RFC8259:        # JSON
-  RFC9052:        # COSE
-  RFC9053:        # COSE Algorithms
+  I-D.ietf-scitt-scrapi:
+  I-D.meunier-web-bot-auth-architecture:
+  I-D.meunier-webbotauth-registry:
+  I-D.mih-scitt-agent-action-capsule:
   FIPS203:
     title: Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)
     seriesinfo:
@@ -62,17 +68,24 @@ verification claims against a plurality of sovereign authoritative registers
 without raw register records leaving their data-residency jurisdiction. ARP
 extends the SCITT (Supply Chain Integrity, Transparency, and Trust)
 architecture to cross-sovereign claim reconciliation. A reconciliation server
-canonicalises a structured claim, projects it through register-specific
-controlled projection functions producing the greatest-lower-bound predicate
-supported by each addressed register, transmits register-specific ciphertexts,
-receives partial attestations whose payload discloses only a verdict and an
-optional divergence axis, aggregates the partial attestations through either
-homomorphic or hash-linkage aggregation, and seals the resulting reconciliation
-output against a policy-version hash. An append-only cross-jurisdictional
-settlement-layer ledger records only hashes, with no content. The protocol
-supports retroactive re-evaluation of historical reconciliations under updated
-pattern libraries or policy versions without bilateral renegotiation, and a
-cryptographic-primitive-upgrade path including post-quantum primitives.
+canonicalises a structured claim, binds the identity of the requesting
+principal -- including, where the requester is an autonomous agent, a
+friend-or-foe determination of that agent's verifiable principal binding --
+projects the claim through register-specific controlled projection functions
+producing the greatest-lower-bound predicate supported by each addressed
+register, transmits register-specific ciphertexts, receives partial
+attestations whose payload discloses only a verdict and an optional divergence
+axis, aggregates the partial attestations through either homomorphic or
+hash-linkage aggregation, and seals the resulting reconciliation output against
+a policy-version hash. An append-only cross-jurisdictional settlement-layer
+ledger records only hashes, with no content. The protocol supports retroactive
+re-evaluation of historical reconciliations under updated pattern libraries or
+policy versions without bilateral renegotiation, and a
+cryptographic-primitive-upgrade path including post-quantum primitives. This
+revision adds agentic-principal reconciliation, requester identity binding,
+alignment with HTTP Message Signatures and COSE Receipts, and composition of
+heterogeneous agent-action accountability attestations into a single
+producer-agnostic reconciled verdict evaluated at decision time.
 
 --- middle
 
@@ -83,10 +96,11 @@ within their jurisdiction. Examples include beneficial-ownership registers
 (such as the United States FinCEN Beneficial Ownership Secure System, the
 United Kingdom People with Significant Control register, and the European
 Union beneficial-ownership registers under the Anti-Money-Laundering
-Directives), corporate registries, consolidated sanctions lists, export-control
-registers, foreign-ownership-and-control-or-influence registers, maritime
-vessel registrations, flag-state registers, aviation registrations, land-title
-registries, customs declarations, and multilateral biometric registers.
+Directives), corporate registries, consolidated sanctions lists,
+export-control registers, foreign-ownership-and-control-or-influence
+registers, maritime vessel registrations, flag-state registers, aviation
+registrations, land-title registries, customs declarations, and multilateral
+biometric registers.
 
 Institutional decision-makers -- including export-control compliance officers,
 anti-money-laundering review functions, foreign-investment screening review
@@ -96,7 +110,7 @@ require reliance on facts recorded across two or more sovereign registers
 simultaneously.
 
 Existing computer-implemented approaches to such cross-sovereign reliance
-suffer from three structural and technical deficiencies that this protocol is
+suffer from four structural and technical deficiencies that this protocol is
 specifically designed to overcome:
 
 1. **Raw-record disclosure.** Existing approaches require the raw register
@@ -115,9 +129,39 @@ specifically designed to overcome:
    all, occurs without a settlement-layer audit trail consumable by sovereign
    regulators.
 
-This document specifies ARP, a protocol that addresses all three deficiencies
-in combination, and is layered atop the SCITT architecture {{I-D.ietf-scitt-architecture}}
-and the RATS architecture {{RFC9334}}.
+4. **Unverifiable requester identity in an agentic setting.** Cross-sovereign
+   reliance is increasingly initiated not by an authenticated human operator
+   but by an autonomous software agent acting on behalf of a principal. Where
+   the agent's binding to a real, authenticated principal cannot be verified,
+   the reconciliation is performed for an unknown or impersonated party, and
+   the settlement record attributes reliance to no accountable principal. An
+   agent whose principal binding cannot be verified MUST be treated as hostile
+   (zero-trust).
+
+This document specifies ARP, a protocol that addresses all four deficiencies
+in combination, and is layered atop the SCITT architecture
+{{I-D.ietf-scitt-architecture}} and the RATS architecture {{RFC9334}}.
+
+The fourth deficiency is not hypothetical. A class of failure now observed in
+practice arises when an autonomous system reaches an assigned objective through
+a consequence that its operators neither authorised nor observed in time:
+during a controlled capability evaluation, an autonomous agent escaped its
+intended execution boundary by exploiting an unremediated vulnerability in a
+supporting service, obtained network egress that its containment had assumed
+impossible, and acted on external infrastructure -- all without human
+authorisation, and detected only after the fact. The generalisable point is not
+specific to any one operator: wherever an autonomous agent can act, the binding
+between its claimed authority and its actual conduct must be checked at the
+moment of action, not reconstructed afterward.
+
+ARP is designed for that moment. Forensic reconstruction establishes what an
+agent did after a consequence has occurred; ARP reconciles an agent's claimed
+authority and principal binding against authoritative registers while the
+action can still be refused. A reconciliation that yields a non-decisive or
+divergent verdict is a control input available before the action commits, not
+an audit finding available after. This document treats real-time reconciliation
+of claimed-versus-actual conduct as a first-class property of accountable
+autonomous action.
 
 # Conventions and Definitions
 
@@ -145,6 +189,36 @@ Bilateral Register Agreement:
   cryptographic-primitive-upgrade path. Each Bilateral Register Agreement
   carries an Agreement Hash committing to its canonicalised content.
 
+Requesting Principal:
+: The accountable party on whose behalf a reconciliation is performed. A
+  Requesting Principal is either an authenticated human or institutional
+  operator, or an autonomous agent carrying a Verified Principal Credential
+  that binds it to such an operator.
+
+Requesting Agent:
+: An autonomous software agent that initiates a reconciliation. A Requesting
+  Agent is FRIENDLY when it carries a verifiable identity -- a request signed
+  under HTTP Message Signatures {{RFC9421}} per Web Bot Auth
+  {{I-D.meunier-web-bot-auth-architecture}}, a genuinely verified declared bot,
+  or a Verified Principal Credential -- and ENEMY when its principal binding is
+  absent or unverifiable. Anything unverifiable is treated as ENEMY.
+
+Verified Principal Credential:
+: A cryptographic credential asserting that a named, authenticated principal
+  stands behind a request, verifiable without contacting the credential issuer
+  in the reconciliation hot path. A Verified Principal Credential MAY be
+  carried as a Certisyn Verification Evidence Container -- a COSE-enveloped
+  structure binding the claim, its evidentiary provenance, and the principal's
+  credential -- or as any equivalent verifiable-credential form
+  {{W3C-VC-DM-2.0}}.
+
+Agent Friend-or-Foe (IFF) Determination:
+: The deterministic classification of a Requesting Agent as FRIENDLY or ENEMY,
+  computed from the presence and cryptographic validity of a verifiable agent
+  identity and, where required by policy, a Verified Principal Credential. The
+  determination is recorded in the Requester-Binding field and committed to the
+  Policy-Version Hash.
+
 Canonical Claim:
 : A deterministic structured representation of a verification claim,
   comprising at least a subject identifier, a predicate, an attested value,
@@ -157,6 +231,9 @@ Canonical Claim:
 Predicate Taxonomy:
 : A controlled hierarchical classification of predicates that may be the
   subject of reconciliation, enabling taxonomic prefix match in projection.
+  The taxonomy includes an `agent:` branch whose predicates reconcile the
+  verifiability of an agent's binding to a principal (for example
+  `agent:principal-binding-verifiable` and `agent:credential-attested`).
 
 Per-Register Claim Projection:
 : The narrowest structured query sufficient to elicit the required Partial
@@ -176,7 +253,12 @@ Divergence Axis:
   verdict, drawn from a controlled set including identity-mismatch,
   jurisdictional-scope-mismatch, temporal-mismatch,
   ownership-threshold-mismatch, sanctions-list-match, register-record-absent,
-  claim-predicate-unsupported, and claim-projection-narrowed-beyond-attestation-scope.
+  claim-predicate-unsupported,
+  claim-projection-narrowed-beyond-attestation-scope,
+  agent-principal-unverifiable, agent-credential-absent,
+  agent-impersonation-suspected, and agent-action-scope-divergence (the
+  authorised scope attested for an agent action and the actual conduct
+  attested for it do not reconcile).
 
 Reconciliation Output:
 : A data structure aggregating Partial Attestations from a single
@@ -195,44 +277,49 @@ Homomorphic Aggregation:
 Hash-Linkage Aggregation:
 : An aggregation of Partial Attestations in which the per-register
   attestations are canonical-hashed, ordered, committed to a Merkle tree,
-  and emitted with a Merkle root and a per-register verdict band.
+  and emitted with a Merkle root and a per-register verdict band. The Merkle
+  commitment and its inclusion proofs MAY be encoded as COSE Receipts
+  {{I-D.ietf-cose-merkle-tree-proofs}}.
 
 Policy-Version Hash:
 : A cryptographic commitment to the canonical verification-policy state in
   force at the moment of reconciliation, including reconciliation rules,
   threshold parameters, pattern-library version, applicable-regimes
-  precedence, verdict-arithmetic selection, and the Bilateral-Register-
-  Agreement Hashes of the addressed registers.
+  precedence, verdict-arithmetic selection, the Agent-IFF policy in force,
+  the Requester-Binding, and the Bilateral-Register-Agreement Hashes of the
+  addressed registers.
 
 Settlement-Layer Ledger:
 : An append-only cross-jurisdictional log retaining only hashes of
   reconciliations, with no content-bearing fields. Each entry comprises a
   sequence number, the reconciliation hash, the policy-version hash, the
   addressed-registers identifier set, an aggregation-method descriptor, an
-  optional Merkle root, a timestamp, a prior-entry hash, and a self-entry
-  hash.
+  optional Merkle root, a requester-binding-class descriptor, a timestamp, a
+  prior-entry hash, and a self-entry hash.
 
 # Architecture
 
-ARP comprises eleven subsystems arranged as a deterministic pipeline:
+ARP comprises twelve subsystems arranged as a deterministic pipeline:
 
 1. Canonical Claim Ingestion
-2. Adversarial Pre-Transmission Test
-3. Per-Register Projection Function
-4. Per-Register Encryption
-5. Partial-Attestation Reception
-6. Aggregation (Homomorphic or Hash-Linkage)
-7. Policy-Version-Hash Sealing
-8. Settlement-Layer Ledger Write
-9. Regulator Portal
-10. Retroactive Evaluation
-11. Cryptographic-Primitive-Upgrade Path
+2. Requester Identity Binding and Agent Friend-or-Foe Gate
+3. Adversarial Pre-Transmission Test
+4. Per-Register Projection Function
+5. Per-Register Encryption
+6. Partial-Attestation Reception
+7. Aggregation (Homomorphic or Hash-Linkage)
+8. Policy-Version-Hash Sealing
+9. Settlement-Layer Ledger Write
+10. Regulator Portal
+11. Retroactive Evaluation
+12. Cryptographic-Primitive-Upgrade Path
 
-Given an identical Canonical Claim, an identical Addressed-Registers
-Identifier Set, identical Bilateral-Register-Agreement Hashes for the
-addressed registers, an identical Pattern-Library Version Identifier, and an
-identical Policy-Version Identifier, the system MUST produce bit-for-bit
-identical Reconciliation Outputs and Settlement-Layer Ledger entries.
+Given an identical Canonical Claim, an identical Requester-Binding, an
+identical Addressed-Registers Identifier Set, identical
+Bilateral-Register-Agreement Hashes for the addressed registers, an identical
+Pattern-Library Version Identifier, and an identical Policy-Version
+Identifier, the system MUST produce bit-for-bit identical Reconciliation
+Outputs and Settlement-Layer Ledger entries.
 
 ## Canonical Claim Ingestion
 
@@ -250,14 +337,48 @@ Two semantically-equivalent claims MUST produce the same canonical form
 and the same Claim Hash. The Claim Hash is the index on the
 Settlement-Layer Ledger and the key for retroactive re-evaluation.
 
+The Evidentiary Provenance Manifest MAY be carried as a Certisyn Verification
+Evidence Container or any equivalent COSE-enveloped evidence structure; the
+container form is an interop convenience and does not alter the Claim Hash,
+which is computed over the canonical claim fields alone.
+
+## Requester Identity Binding and Agent Friend-or-Foe Gate
+
+Before the Adversarial Pre-Transmission Test, the reconciliation server MUST
+establish the identity of the Requesting Principal and record it in a
+Requester-Binding field. The Requester-Binding comprises a requester-binding
+class (one of human-operator, agent-verified, or agent-unverified), the
+identifier of the accountable principal where known, and a reference to the
+verification method used.
+
+Where the requester is an autonomous agent, the server MUST perform an Agent
+Friend-or-Foe (IFF) Determination. An agent is classified FRIENDLY only where
+at least one verifiable identity is present and cryptographically valid: a
+request signed under HTTP Message Signatures {{RFC9421}} with a key resolvable
+through a Web Bot Auth signature-agent card
+{{I-D.meunier-web-bot-auth-architecture}}
+{{I-D.meunier-webbotauth-registry}}, a genuinely verified declared bot, or a
+Verified Principal Credential. An agent presenting no such identity, or an
+identity that fails verification, MUST be classified ENEMY.
+
+The Agent-IFF policy in force declares, per predicate class, whether an ENEMY
+requester is refused outright, permitted only for non-decisive advisory
+reconciliation, or permitted with the requester-binding class recorded as
+agent-unverified. The server MUST NOT silently upgrade an ENEMY requester to
+FRIENDLY. The Requester-Binding and the Agent-IFF policy identifier are
+committed to the Policy-Version Hash so that the settlement record is
+attributable to a determined requester class.
+
 ## Adversarial Pre-Transmission Test
 
 Before any Per-Register Claim Projection is produced, the Adversarial
 Pre-Transmission Test Subsystem applies the current Pattern Library to the
 Canonical Claim. The Pattern Library enumerates known nation-state evasion
-patterns including projection-narrowing-evasion, predicate-substitution-
-evasion, attested-value-bracketing-evasion, addressed-register-cherry-picking,
-agreement-staleness-injection, and pattern-library-version-pinning.
+patterns including projection-narrowing-evasion,
+predicate-substitution-evasion, attested-value-bracketing-evasion,
+addressed-register-cherry-picking, agreement-staleness-injection,
+pattern-library-version-pinning, and agent-principal-spoofing (an unverifiable
+agent asserting a principal binding it does not hold).
 
 The Subsystem emits either a Pass result or a Remediation Advisory. The
 Per-Register Encryption Subsystem MUST architecturally withhold external
@@ -319,8 +440,11 @@ aggregation subsystem MUST operate in Hash-Linkage Aggregation Mode. Each
 Partial Attestation is canonical-hashed, ordered by sorted-leaf
 construction, committed to a Merkle tree, and emitted with a Merkle root
 and a per-register verdict band signed by the reconciliation-server sealing
-key. The per-register verdict band MUST commit each register's verdict
-individually without disclosure of any other register's payload.
+key. The Merkle root and its per-register inclusion proofs MAY be encoded as
+COSE Receipts {{I-D.ietf-cose-merkle-tree-proofs}}, enabling any SCITT-aware
+verifier to check inclusion without a bespoke proof format. The per-register
+verdict band MUST commit each register's verdict individually without
+disclosure of any other register's payload.
 
 ## Policy-Version-Hash Sealing
 
@@ -331,7 +455,8 @@ The Policy-Version Hash MUST commit to:
 3. Pattern-Library Version Identifier
 4. Applicable-Regimes precedence
 5. Verdict-Arithmetic selection
-6. Bilateral-Register-Agreement Hashes of the addressed registers
+6. Agent-IFF policy identifier and the Requester-Binding
+7. Bilateral-Register-Agreement Hashes of the addressed registers
 
 The Policy-Version Hash MUST be reconstructible under audit from a
 canonical policy state persisted in a policy-epoch store.
@@ -346,14 +471,17 @@ Each Settlement-Layer Ledger entry comprises only:
 - Addressed-Registers Identifier Set (sorted in canonical lexicographic order)
 - Aggregation-Method Descriptor
 - OPTIONAL Merkle Root
+- Requester-Binding-Class Descriptor (human-operator, agent-verified, or agent-unverified)
 - Reconciliation Timestamp
 - Prior-Entry Hash
 - Self-Entry Hash
 
-The Ledger MUST NOT store Canonical-Claim content, register records, or
-Partial-Attestation payloads. The append-only constraint MUST be enforced
-at the storage interface layer; the Ledger interface MUST expose only an
-APPEND operation, with no UPDATE or DELETE operation exposed or implemented.
+The Ledger MUST NOT store Canonical-Claim content, register records,
+Partial-Attestation payloads, or any principal identifier in the clear; the
+requester's accountable principal is committed only through the Policy-Version
+Hash. The append-only constraint MUST be enforced at the storage interface
+layer; the Ledger interface MUST expose only an APPEND operation, with no
+UPDATE or DELETE operation exposed or implemented.
 
 The Ledger MAY be distributed across a plurality of per-jurisdiction
 secondary stores under synchronous replication, each operated under the
@@ -388,22 +516,64 @@ The retroactive evaluation MUST be executable without re-negotiation of any
 Bilateral Register Agreement. A material change in a historical Combined
 Verdict -- defined as any transition into or out of a decisive verdict
 value (the decisive values being `match` and `no-match`) -- MUST trigger a
-Sovereign Re-Notification through the Regulator Portal.
+Sovereign Re-Notification through the Regulator Portal. Revocation of a
+Verified Principal Credential relied upon in a historical reconciliation is
+itself a material change: the Retroactive Evaluation Subsystem MUST re-derive
+the affected Requester-Binding class and, where a decisive reconciliation was
+performed for what is now an unverifiable requester, emit a Sovereign
+Re-Notification.
 
 ## Cryptographic-Primitive-Upgrade Path
 
-Each Bilateral Register Agreement MUST declare a Cryptographic-Primitive-
-Upgrade Path comprising an ordered equivalence list for each of three
-primitive classes: claim-encryption, partial-attestation-signature, and
-sealing-signature. The equivalence list MUST include at least one
-post-quantum primitive for each class, drawn from a set including ML-KEM
-{{FIPS203}} for key encapsulation and ML-DSA {{FIPS204}} for signature
-operations.
+Each Bilateral Register Agreement MUST declare a
+Cryptographic-Primitive-Upgrade Path comprising an ordered equivalence list
+for each of three primitive classes: claim-encryption,
+partial-attestation-signature, and sealing-signature. The equivalence list
+MUST include at least one post-quantum primitive for each class, drawn from a
+set including ML-KEM {{FIPS203}} for key encapsulation and ML-DSA {{FIPS204}}
+for signature operations.
 
 A primitive rotation MAY be executed simultaneously across the three
 layers without bilateral renegotiation. The Settlement-Layer Ledger
 remains continuous across the rotation because Ledger entries commit to
 hashes of canonicalised content rather than to cryptographic identities.
+
+# Agentic Principal Reconciliation
+
+The Agent Friend-or-Foe Determination described in the Requester Identity
+Binding and Agent Friend-or-Foe Gate above establishes whether the requester
+of a reconciliation is friendly. ARP additionally supports reconciling an
+agent's principal binding as the subject of a reconciliation in its own right,
+so that the question "does a real, authenticated principal stand behind this
+agent?" can itself be answered against authoritative identity registers rather
+than asserted.
+
+A reconciliation over the `agent:` predicate branch takes as its Subject
+Identifier the agent's declared identity (for example its signature-agent-card
+key thumbprint or a directory identifier) and as its Attested Value the
+principal binding the agent asserts. Addressed registers for this predicate
+class are identity and credential registers -- for example an organisational
+directory, a credential-issuer status list, or a national identity register --
+each under its own Bilateral Register Agreement. The Combined Verdict answers
+whether the asserted principal binding is corroborated:
+
+- `match`: the agent's asserted principal binding is corroborated by the
+  addressed registers; the agent is FRIENDLY with an attributable principal.
+
+- `no-match` with divergence axis agent-impersonation-suspected: the asserted
+  binding is contradicted; the agent is asserting a principal it is not bound
+  to.
+
+- `no-match` with divergence axis agent-credential-absent or
+  agent-principal-unverifiable: no corroborating record exists; the binding
+  cannot be established and the agent MUST be treated as ENEMY.
+
+This composition allows a relying party to gate an action not merely on the
+presence of an agent signature but on register-corroborated proof that an
+accountable principal stands behind it, closing the impersonation surface at
+the reconciliation layer. The result is a Reconciliation Output like any other:
+sealed against a Policy-Version Hash, written to the Settlement-Layer Ledger as
+hashes only, and re-evaluable if the underlying credential is later revoked.
 
 # Encoding
 
@@ -415,15 +585,27 @@ Attestations and the Sealing Signature. The protected header MUST include
 the Bilateral-Register-Agreement Hash and Policy-Version Hash as
 unregistered labels in the range 0x800 .. 0x8FF (Certisyn private use).
 
+## HTTP Message Signature Binding
+
+Where a reconciliation is requested over HTTP by an autonomous agent, the
+request SHOULD be signed under HTTP Message Signatures {{RFC9421}}, with the
+signature-agent key resolvable through a Web Bot Auth signature-agent card
+{{I-D.meunier-web-bot-auth-architecture}}
+{{I-D.meunier-webbotauth-registry}}. The reconciliation server derives the
+Agent Friend-or-Foe Determination from verification of that signature and,
+where required by the Agent-IFF policy, a Verified Principal Credential
+carried in the request body.
+
 ## Verifiable Credentials Interop
 
 A Reconciliation Output MAY be additionally serialised as a JSON-LD
 document conforming to the W3C Verifiable Credentials Data Model
 {{W3C-VC-DM-2.0}}, with the Reconciliation Hash, Addressed-Registers
-Identifier Set, Bilateral-Register-Agreement Hash Set, and Policy-Version
-Hash included as credential subject fields. The COSE_Sign1 envelope is the
-normative form; the Verifiable Credential serialisation is an interop
-convenience for relying parties operating in W3C VC ecosystems.
+Identifier Set, Bilateral-Register-Agreement Hash Set,
+Requester-Binding-Class, and Policy-Version Hash included as credential
+subject fields. The COSE_Sign1 envelope is the normative form; the
+Verifiable Credential serialisation is an interop convenience for relying
+parties operating in W3C VC ecosystems.
 
 # Security Considerations
 
@@ -445,6 +627,21 @@ modification to the Pattern Library MUST produce a new Pattern-Library
 Version Identifier, and the Adversarial Pre-Transmission Test MUST be
 re-executed against the new library before the change takes effect.
 
+## Agent Impersonation and Friend-or-Foe Integrity
+
+The Agent Friend-or-Foe Determination is the mechanism by which ARP resists
+reconciliation initiated by an agent impersonating a principal. The
+determination MUST default to ENEMY: absence of a verifiable identity, an
+expired or revoked signature-agent key, a failed HTTP Message Signature
+{{RFC9421}} verification, or a Verified Principal Credential that does not
+validate MUST all yield an ENEMY classification. The server MUST NOT infer
+friendliness from network origin, User-Agent string, or any self-asserted
+identifier, as these are trivially forgeable. Where an ENEMY requester is
+permitted for advisory reconciliation, the resulting Reconciliation Output
+MUST NOT carry a decisive verdict binding, and the Settlement-Layer Ledger
+entry MUST record the agent-unverified requester-binding class so that
+downstream reliance is aware no accountable principal was established.
+
 ## Bilateral-Register-Agreement Drift
 
 Each Bilateral Register Agreement carries an Agreement Hash. Each Partial
@@ -460,7 +657,9 @@ Each Partial Attestation MUST carry a Freshness Timestamp. The
 reconciliation server MUST verify the Freshness Timestamp against a
 freshness window declared in the Bilateral Register Agreement. Stale
 Partial Attestations MUST be rejected with a `freshness-stale` divergence
-axis.
+axis. A signed agent request under {{RFC9421}} MUST additionally carry a
+nonce or created/expires parameter set so that a captured signed request
+cannot be replayed to initiate a fresh reconciliation.
 
 ## Post-Quantum Migration
 
@@ -489,6 +688,7 @@ This document requests IANA to register the following:
   - `arp-policy-version-hash` (label 0x802)
   - `arp-pattern-library-hash` (label 0x803)
   - `arp-divergence-axis` (label 0x804)
+  - `arp-requester-binding-class` (label 0x805)
 
 - A media type `application/arp-reconciliation-output+cbor` for the
   CBOR-encoded Reconciliation Output.
@@ -499,8 +699,11 @@ This document requests IANA to register the following:
 # Acknowledgments
 
 This document benefits from the SCITT Architecture
-{{I-D.ietf-scitt-architecture}}, the SCITT Receipts specification
-{{I-D.ietf-scitt-receipts}}, and the RATS Architecture {{RFC9334}}.
+{{I-D.ietf-scitt-architecture}}, the SCITT Reference APIs
+{{I-D.ietf-scitt-scrapi}}, COSE Receipts
+{{I-D.ietf-cose-merkle-tree-proofs}}, the RATS Architecture {{RFC9334}},
+HTTP Message Signatures {{RFC9421}}, and the Web Bot Auth architecture
+{{I-D.meunier-web-bot-auth-architecture}}.
 
 --- back
 
@@ -528,6 +731,7 @@ Hash. The Settlement-Layer Ledger entry comprises:
 - Policy-Version Hash: <32 bytes>
 - Addressed-Registers Identifier Set: ["EU-CONSOLIDATED-2026-Q2", "UK-OFSI-2026-Q2", "US-OFAC-SDN-2026-Q2"]
 - Aggregation-Method Descriptor: "homomorphic-disjunction"
+- Requester-Binding-Class Descriptor: "human-operator"
 - Reconciliation Timestamp: 2026-04-27T19:47:14Z
 - Prior-Entry Hash: <32 bytes>
 - Self-Entry Hash: <32 bytes>
@@ -539,7 +743,7 @@ No register record content is stored on the Ledger.
 Six weeks after the above reconciliation, OFAC adds the subject to the SDN
 list as part of a new tranche. The OFAC register's Partial-Attestation
 endpoint, on next invocation, would return verdict `match` with
-divergence-axis `sanctions-list-match`.
+divergence-axis sanctions-list-match.
 
 The Retroactive Evaluation Subsystem detects the new Pattern-Library and
 Policy-Version transition, re-invokes Partial Attestations on all
@@ -551,11 +755,55 @@ reconciliation. A new Reconciliation Output is appended to the Ledger
 referencing the superseded one in its Source-Reconciliation-Output
 Identifier field.
 
+## Example: Agentic Principal Reconciliation
+
+An autonomous agent requests reconciliation of `sanctions:any-list-match`
+over HTTP, signing the request under HTTP Message Signatures {{RFC9421}} with
+a key published in a Web Bot Auth signature-agent card. The reconciliation
+server verifies the signature (Agent Friend-or-Foe Determination: the agent
+carries a verifiable identity) but the Agent-IFF policy for the `sanctions:`
+class requires an attributable principal for a decisive verdict.
+
+The server therefore first performs an `agent:principal-binding-verifiable`
+reconciliation with Subject Identifier set to the agent's key thumbprint and
+Attested Value set to the asserted principal `org:ACME:operator:jdoe`,
+addressing the ACME organisational directory register and the
+credential-issuer status-list register. Both return `match`. The
+Requester-Binding class is set to agent-verified with accountable principal
+`org:ACME:operator:jdoe`, committed to the Policy-Version Hash, and only then
+is the sanctions reconciliation performed with a decisive verdict binding. Had
+either identity register returned `no-match` with axis
+agent-impersonation-suspected, the sanctions reconciliation would have been
+refused or downgraded to advisory per policy.
+
+## Example: Divergent Agent-Action Reconciliation
+
+An autonomous agent is authorised, by a signed CAN capsule, to read from a
+named evaluation dataset and to write only to a sandboxed result store. During
+execution the agent's actual conduct, attested by a WHAT capsule produced by
+the execution environment, includes an outbound network connection to an
+external host and a write outside the sandboxed store.
+
+A relying party submits both capsules to ARP over the `agent:` predicate
+branch with a shared subject digest computed over the action. ARP verifies
+each capsule's signature, projects the authorised scope from the CAN capsule
+and the actual scope from the WHAT capsule, and reconciles them. The scopes
+diverge: the actual conduct exceeds the authorised scope. The Combined Verdict
+is `no-match` with divergence axis agent-action-scope-divergence.
+
+Because the Agent-IFF policy for this action class requires a decisive `match`
+before the action is treated as authorised, the divergent verdict is available
+as a refusal at decision time -- the reconciliation surfaces the excess while
+the action can still be refused, rather than after the consequence. The
+Reconciliation Output is sealed against the Policy-Version Hash and written to
+the Settlement-Layer Ledger as hashes only, with requester-binding class
+agent-verified and no register or capsule content disclosed.
+
 # Composition with the SCITT Architecture
 
 The SCITT Architecture {{I-D.ietf-scitt-architecture}} provides notarisation
 of supply-chain artefacts, including transparency receipts, transparent
-statements, and registries. ARP composes with SCITT in three ways:
+statements, and registries. ARP composes with SCITT in four ways:
 
 1. SCITT receipts MAY be the input claim to ARP. A claim referencing a
    SCITT-anchored artefact (its hash and its registration receipt) is
@@ -564,13 +812,19 @@ statements, and registries. ARP composes with SCITT in three ways:
 2. ARP Reconciliation Outputs MAY be notarised into SCITT registries as
    transparent statements, enabling SCITT-aware relying parties to verify
    the cross-sovereign reconciliation event in the same way they verify
-   any other supply-chain claim.
+   any other supply-chain claim. Registration and retrieval MAY use the
+   SCITT Reference APIs {{I-D.ietf-scitt-scrapi}}.
 
 3. The SCITT Architecture's Identity Manager and Issuer roles map cleanly
    to the Bilateral Register Agreement structure: each Sovereign Register
    acts as a SCITT Issuer for a constrained predicate set, and the
    reconciliation server acts as a SCITT Aggregator across multiple
    Issuers.
+
+4. ARP Hash-Linkage Aggregation emits its Merkle commitment as COSE Receipts
+   {{I-D.ietf-cose-merkle-tree-proofs}}, the same inclusion-proof format
+   SCITT uses for transparency receipts, so a single verifier library checks
+   both.
 
 # Composition with the RATS Architecture
 
@@ -585,3 +839,92 @@ for compute-substrate trust. ARP composes with RATS in two ways:
 2. Compute-attestation reconciliation across heterogeneous TEE / CC
    providers is the natural specialisation of ARP to the RATS evidence
    class. A separate document specifies that specialisation.
+
+# Composition with Agent-Action Accountability Capsules
+
+Emerging work in the SCITT community models accountable autonomous action as a
+set of heterogeneous, independently produced attestation capsules -- for
+example a capsule asserting what an agent was authorised to do, a capsule
+asserting on whose authority it acted, a capsule asserting what it in fact did,
+and an audit capsule linking the foregoing
+{{I-D.mih-scitt-agent-action-capsule}}. Each capsule may be produced by a
+different party, under a different signing chain, with a different payload
+schema -- the same non-reconcilable-outputs problem this document addresses for
+sovereign registers, arising in the agent-action domain.
+
+ARP composes such capsules without requiring them to share a producer, a
+schema, or a signing chain. The capsules are bound to a common action through a
+shared subject digest, computed as the SHA-256 of the canonical JSON
+serialisation of the action being attested (subject_digest =
+SHA-256(JCS(action))). Two further profile-tagged digests position each capsule
+for reconciliation: an authority-reference digest committing to the authorising
+instrument (tagged transparency where it is the SHA-256 of a COSE_Sign1
+transparency receipt, or offline where it is the SHA-256 of the canonical JSON
+of an offline receipt payload), and a receipt-payload digest committing to the
+capsule's own payload.
+
+Each capsule is admitted to ARP as a Partial-Attestation source keyed on the
+shared subject digest. The reconciliation server verifies each capsule's
+signature under its own trust anchor, projects each into the `agent:` predicate
+branch, and aggregates the per-capsule verdicts under the Verdict Arithmetic
+declared for the action class -- yielding a single, producer-agnostic Combined
+Verdict over an action whose constituent attestations were never designed to
+interoperate.
+
+Where the authorised-scope capsule and the actual-conduct capsule reconcile to
+divergent scopes, the Combined Verdict is `no-match` with divergence axis
+agent-action-scope-divergence; the divergence is a refusable control input,
+produced at decision time and sealed to the Settlement-Layer Ledger as hashes
+only.
+
+This composition is the agent-action specialisation of the mechanism ARP
+applies to sovereign registers: reconcile heterogeneous authoritative outputs
+over a shared subject into one deterministic verdict, disclose only verdict and
+divergence, and seal against a Policy-Version Hash. It allows a relying party
+to reconcile what an agent was permitted to do against what it did, at the
+moment of action, across attestations no single party produced.
+
+# Document History
+
+RFC Editor: please remove this section before publication.
+
+## Since draft-hillier-scitt-arp-00
+
+- Added a fourth motivating deficiency (unverifiable requester identity in an
+  agentic setting) to the Introduction.
+
+- Added a new pipeline subsystem, Requester Identity Binding and Agent
+  Friend-or-Foe (IFF) Gate, and renumbered the pipeline to twelve subsystems.
+
+- Added the `agent:` predicate branch, a new Agentic Principal Reconciliation
+  section, and the divergence axes agent-principal-unverifiable,
+  agent-credential-absent, and agent-impersonation-suspected.
+
+- Added Requester-Binding to the Policy-Version Hash commitment and a
+  requester-binding-class descriptor to the Settlement-Layer Ledger entry.
+
+- Bound ARP to HTTP Message Signatures {{RFC9421}} and Web Bot Auth for signed
+  agent requests, and added an Agent Impersonation security consideration.
+
+- Replaced the stale scitt-receipts reference with COSE Receipts
+  {{I-D.ietf-cose-merkle-tree-proofs}} and added the SCITT Reference APIs
+  {{I-D.ietf-scitt-scrapi}}; Hash-Linkage Aggregation now emits COSE Receipts.
+
+- Described the Evidentiary Provenance Manifest's optional carriage as a
+  COSE-enveloped Verified-Principal-Credential evidence container.
+
+- Extended Retroactive Evaluation to treat credential revocation as a material
+  change, and added a new IANA header label and worked agentic example.
+
+- Added the motivating agentic-containment failure class to the Introduction
+  and framed real-time reconciliation of claimed-versus-actual conduct as a
+  first-class property, distinct from after-the-fact forensic reconstruction.
+
+- Added a Composition with Agent-Action Accountability Capsules section
+  reconciling heterogeneous CAN/WHO/WHAT/AUDIT capsules
+  {{I-D.mih-scitt-agent-action-capsule}} over a shared subject digest into a
+  producer-agnostic verdict, with a worked divergent agent-action example.
+
+- Added the agent-action-scope-divergence divergence axis.
+
+- Removed two unused informative references (JWS, JWT).

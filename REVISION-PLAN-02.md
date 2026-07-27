@@ -8,50 +8,59 @@ Each item records where the commitment was made, so nothing is quietly dropped.
 
 ---
 
-## A. Pin the canonicalization — the commitment that matters most
+## A. Separate the two canonicalizations — the commitment that matters most
 
 **Origin:** measured against the EMILIA `EP-CANONICALIZATION-v1` vectors
 (commit `125e4f4311f1319fef3f6d55c935c9ea4da5fc1b`) and reported to the SCITT
 list. Raised independently by Iman Schrock (EMILIA, 25 Jul) and Anton Sokolov
 (Tyche Institute, 25 Jul).
 
-### A1. Appendix D — name the profile
+### A1. State that the two constructions are distinct
 
-Appendix D currently says the subject digest is
-`SHA-256(canonical JSON of the action)` without naming a canonicalization
-profile. §2 separately defines a Canonical Claim canonicalization that applies
-Unicode NFC. The two readings produce different bytes on real input:
+Appendix D pins its profile correctly — `subject_digest = SHA-256(JCS(action))`
+— and it agrees with EMILIA's deployed canonicalization profile on **22 / 22**
+pinned vectors. Nothing to fix there; it interoperates.
 
-| reading | agrees with the EP pinned digests |
+The defect is that `-01` never says the Appendix D subject digest and the §2
+Claim Hash are *different constructions that must not be substituted for one
+another*. §2 applies Unicode NFC; JCS does not. Measured:
+
+| construction | agrees with the EP pinned digests |
 |---|---|
-| RFC 8785 JCS | 22 / 22 |
-| §2 Canonical Claim, member sort = code point | 19 / 22 |
+| Appendix D — `SHA-256(JCS(action))` | 22 / 22 |
 | §2 Canonical Claim, member sort = UTF-16 code unit | 20 / 22 |
+| §2 Canonical Claim, member sort = code point | 19 / 22 |
 
-Two of the divergences are **collisions**, not merely different bytes:
+Two of the §2 divergences are **collisions**, not merely different bytes:
 
-- NFD "café" collapses onto the NFC digest
+- NFD "café" folds onto the NFC digest
   `a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1`;
-- U+212B ANGSTROM SIGN collapses onto U+00C5.
+- U+212B ANGSTROM SIGN folds onto U+00C5, landing on the pinned digest for
+  `accept_latin_a_ring_distinct`.
 
-Appendix D's premise is that producers with no shared schemas correlate on a
-common subject digest. Unpinned, two conformant producers can compute different
-digests for one action, or one digest for two actions.
+NFC folding is defensible for a ledger index — the same claim spelled two ways
+should fold. It is not defensible as a silent adjacency: an implementer who
+reads §2, finds a canonicalization defined for this document, and applies it
+where Appendix D says "canonical JSON" loses injectivity without any error.
 
-**Edit:** state the profile by normative reference (RFC 8785 JCS is the reading
-that matches the deployed corpus and the one Anton adopted for CPB), and state
-explicitly that it is *not* §2's Canonical Claim construction.
+**Edit:** add a normative statement that the Claim Hash and the subject digest
+are distinct constructions serving distinct purposes, and that an
+implementation MUST NOT substitute one for the other.
 
-### A2. §2 — pin the member sort and the NFC scope
+### A2. Fix the three §2 under-specifications
 
-- "lexicographic sorting of object keys" does not pin the code unit. Say
-  UTF-16 code unit (RFC 8785) or Unicode code point, normatively.
-- "Unicode Normalization Form C of string fields" does not say whether member
-  *names* are included. Say so.
-- "stripping of undefined values" has no meaning in a JSON transport that has
-  `null` but no `undefined`. Define it or remove it.
-- §2 says RFC 8259 number rendering; RFC 8785 / ES6 rendering is what
-  interoperating implementations use. Resolve which is normative.
+- **Member sort is unpinned.** "Lexicographic sorting of object keys" does not
+  say by what unit. Code point and UTF-16 code unit diverge on
+  `accept_astral_key_utf16_sort_order` — that is the 19 vs 20 difference. Pin
+  it normatively.
+- **"Canonical JSON {{RFC8259}} number rendering" has no referent.** RFC 8259
+  defines no canonical number rendering; RFC 8785 does. RFC 8259 is also only
+  an *informative* reference in `-01` while doing normative work here. Fix the
+  citation and promote or replace it.
+- **"Stripping of undefined values" has no meaning** in a JSON transport, which
+  has `null` but no `undefined`. Define it or delete it.
+- **NFC scope.** Say whether NFC applies to member names as well as string
+  values.
 
 ### A3. Carry an explicit construction identifier
 

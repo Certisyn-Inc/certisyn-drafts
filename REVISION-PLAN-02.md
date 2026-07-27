@@ -1,8 +1,9 @@
 # `-02` revision plan
 
-**Blocked on `RECOVERY.md`.** Do not start drafting until the `-01` source is
-in this repository. Every item below is an edit *to `-01` text*, and `-01` text
-is not here yet.
+**Unblocked 2026-07-27.** The `-01` source has been reconstructed from the
+filed text and committed. Build and diff the render against
+`https://www.ietf.org/archive/id/draft-hillier-scitt-arp-01.txt` before editing
+— a clean diff is what makes the source authoritative (see `RECOVERY.md`).
 
 Each item records where the commitment was made, so nothing is quietly dropped.
 
@@ -70,7 +71,7 @@ warned against assuming it. Reference implementation emits:
 
 ```
 arp-canonical-claim/1   id=7d90aa1cbee90ef9
-arp-subject-digest/1    id=7630fc125d8b77a0
+arp-subject-digest/1    id=f23ecefd99c54182
 ```
 
 where the identifier's digest commits to the declared parameters.

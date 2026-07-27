@@ -1,6 +1,6 @@
 # Recovery note — the `-01` source gap
 
-**Status: open.** Recorded 2026-07-27.
+**Status: source restored 2026-07-27; diff verification outstanding.**
 
 ## What happened
 
@@ -43,7 +43,24 @@ Path** — the composition material landed in Appendix D, not in §3.12. Working
 notes that describe "§3.12 composition" or "Appendix A.3 divergent agent-action"
 predate the filing and are wrong.
 
-## How to close it
+## What was done
+
+The `-01` source was reconstructed from the filed text and committed
+(`draft-hillier-scitt-arp-01 — reconstruct kramdown source from the filed
+text`). All sections in the filed table of contents are present, all four
+`agent-*` divergence axes are present, `docname` is `-01`, `date` is
+2026-07-23, and every `{{reference}}` resolves against the declared reference
+sets.
+
+**Outstanding:** the source was reconstructed, not recovered from the original
+working copy. It is not authoritative until someone runs `make` and diffs the
+rendered text against
+`https://www.ietf.org/archive/id/draft-hillier-scitt-arp-01.txt`. Do that
+before `-02` drafting begins, and record the result here. Expect cosmetic
+differences in line wrapping and pagination; any *semantic* difference is a
+reconstruction error and must be corrected in favour of the archive.
+
+## How it was closed
 
 The authoritative source is whatever was uploaded to the datatracker on 23 July.
 In order of preference:

@@ -46,7 +46,8 @@ normative:
 
 informative:
   RFC8259:        # JSON
-  I-D.mih-scitt-agent-action-capsule:
+  I-D.mih-sato-agent-accountability-composition:
+  I-D.mih-sokolov-scitt-payload-binding:
   I-D.ietf-scitt-scrapi:
   I-D.meunier-web-bot-auth-architecture:
   I-D.meunier-webbotauth-registry:
@@ -878,7 +879,7 @@ set of heterogeneous, independently produced attestation capsules -- for
 example a capsule asserting what an agent was authorised to do, a capsule
 asserting on whose authority it acted, a capsule asserting what it in fact did,
 and an audit capsule linking the foregoing
-{{I-D.mih-scitt-agent-action-capsule}}. Each capsule may be produced by a
+{{I-D.mih-sato-agent-accountability-composition}}. Each capsule may be produced by a
 different party, under a different signing chain, with a different payload
 schema -- the same non-reconcilable-outputs problem this document addresses for
 sovereign registers, arising in the agent-action domain.
@@ -969,7 +970,11 @@ Accordingly:
 * An implementation MUST NOT use the Claim Hash construction where
   `subject_digest` is specified, or the reverse.
 * Where a digest is carried on the wire for correlation, the producer MUST
-  identify the construction used. An identifier that commits to the declared
+  identify the construction used. This requirement is intended to be satisfied
+  by the typed-reference and declared-context rules of
+  {{I-D.mih-sokolov-scitt-payload-binding}}, whose statement that digest values
+  are comparable only under compatible declared contexts is the same rule
+  expressed statement-side; ARP does not define a competing mechanism. An identifier that commits to the declared
   canonicalisation parameters -- member-sort code unit, normalisation, number
   rendering, absent-member handling and hash algorithm -- allows a consumer to
   determine compatibility rather than assume it. Such an identifier MUST NOT
@@ -1015,7 +1020,7 @@ reproducible.
   commute: for an object whose member names are U+0041 U+030A and "B",
   normalising first and sorting first produce different Claim Hashes. -01 gave
   the operations as an unordered list.
-- {{I-D.mih-scitt-agent-action-capsule}} remains an informative reference.
+- {{I-D.mih-sato-agent-accountability-composition}} remains an informative reference.
   {{composition}} composes over the capsule slots it defines and would cite it
   normatively, but it is an individual draft; making it normative now would
   create a publication dependency on a document that is not a working-group
@@ -1060,7 +1065,7 @@ reproducible.
 
 - Added a Composition with Agent-Action Accountability Capsules section
   reconciling heterogeneous CAN/WHO/WHAT/AUDIT capsules
-  {{I-D.mih-scitt-agent-action-capsule}} over a shared subject digest into a
+  {{I-D.mih-sato-agent-accountability-composition}} over a shared subject digest into a
   producer-agnostic verdict, with a worked divergent agent-action example.
 
 - Added the agent-action-scope-divergence divergence axis.

@@ -874,15 +874,19 @@ for compute-substrate trust. ARP composes with RATS in two ways:
 
 # Composition with Agent-Action Accountability Capsules {#composition}
 
-Emerging work in the SCITT community models accountable autonomous action as a
-set of heterogeneous, independently produced attestation capsules -- for
-example a capsule asserting what an agent was authorised to do, a capsule
-asserting on whose authority it acted, a capsule asserting what it in fact did,
-and an audit capsule linking the foregoing
-{{I-D.mih-sato-agent-accountability-composition}}. Each capsule may be produced by a
-different party, under a different signing chain, with a different payload
-schema -- the same non-reconcilable-outputs problem this document addresses for
-sovereign registers, arising in the agent-action domain.
+{{I-D.mih-sato-agent-accountability-composition}} models accountable
+autonomous action as a set of heterogeneous, independently produced attestation
+capsules, and defines the capsule slots and their composition. This document
+does not restate that model; the slot definitions, their semantics and their
+composition rules are those of
+{{I-D.mih-sato-agent-accountability-composition}}, and this appendix uses them
+as defined there.
+
+What this appendix adds is reconciliation across those capsules. Each capsule
+may be produced by a different party, under a different signing chain, with a
+different payload schema -- the same non-reconcilable-outputs problem this
+document addresses for sovereign registers, arising in the agent-action
+domain.
 
 ARP composes such capsules without requiring them to share a producer, a
 schema, or a signing chain. The capsules are bound to a common action through a
@@ -914,7 +918,8 @@ of an offline receipt payload), and a receipt-payload digest committing to the
 capsule's own payload.
 
 Each capsule is admitted to ARP as a Partial-Attestation source keyed on the
-shared subject digest. The reconciliation server verifies each capsule's
+shared subject digest, in the slot
+{{I-D.mih-sato-agent-accountability-composition}} assigns it. The reconciliation server verifies each capsule's
 signature under its own trust anchor, projects each into the `agent:` predicate
 branch, and aggregates the per-capsule verdicts under the Verdict Arithmetic
 declared for the action class -- yielding a single, producer-agnostic Combined
@@ -1024,8 +1029,9 @@ reproducible.
   {{composition}} composes over the capsule slots it defines and would cite it
   normatively, but it is an individual draft; making it normative now would
   create a publication dependency on a document that is not a working-group
-  item. This document will make the reference normative if and when that draft
-  is adopted.
+  item. The same applies to {{I-D.mih-sokolov-scitt-payload-binding}}. This
+  document will make BOTH references normative if and when those drafts are
+  adopted.
 - {{construction-distinctness}} requires that a correlation digest carried on
   the wire identify its construction, and requires that such an identifier not
   commit to facts which do not affect the serialised bytes, so that two

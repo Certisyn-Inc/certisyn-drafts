@@ -910,16 +910,18 @@ confirmed exact agreement between this construction and a deployed
 depends on both parties having selected {{RFC8785}}; the normative reference
 above is what makes it an obligation rather than a coincidence.
 
-Two further profile-tagged digests position each capsule
-for reconciliation: an authority-reference digest committing to the authorising
-instrument (tagged transparency where it is the SHA-256 of a COSE_Sign1
+Two further profile-tagged digests, defined by this
+document rather than by {{I-D.mih-sato-agent-accountability-composition}},
+position each capsule for reconciliation: an authority-reference digest
+committing to the authorising instrument (tagged transparency where it is the SHA-256 of a COSE_Sign1
 transparency receipt, or offline where it is the SHA-256 of the canonical JSON
 of an offline receipt payload), and a receipt-payload digest committing to the
 capsule's own payload.
 
 Each capsule is admitted to ARP as a Partial-Attestation source keyed on the
 shared subject digest, in the slot
-{{I-D.mih-sato-agent-accountability-composition}} assigns it. The reconciliation server verifies each capsule's
+{{I-D.mih-sato-agent-accountability-composition}} assigns it. The
+reconciliation server verifies each capsule's
 signature under its own trust anchor, projects each into the `agent:` predicate
 branch, and aggregates the per-capsule verdicts under the Verdict Arithmetic
 declared for the action class -- yielding a single, producer-agnostic Combined

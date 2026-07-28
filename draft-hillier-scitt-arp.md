@@ -1009,6 +1009,20 @@ Accordingly:
   commit to facts about a specification that do not affect the serialised
   bytes, so that two implementations producing identical bytes share an
   identifier.
+* Where the correlation digest is computed over a TYPED action object whose
+  type declares required material fields, the producer MUST validate the
+  object against a pinned definition of that type before emitting a
+  correlation identifier for it, and MUST NOT emit one where validation
+  fails. A digest is well-formed over any object, including one that omits
+  fields the type requires; emitting an identifier in that case mints a join
+  key for an action the identifier does not fully describe, which is the
+  condition a relying party has no way to detect downstream. This was
+  observed in practice: an interop fixture exchanged during the preparation
+  of this revision, and the vector set this author published alongside it,
+  both carried an action object that a conforming issuer refuses with
+  `missing_material_field` on two of the four fields its declared type
+  requires. Neither party detected it until the two artefacts were run
+  against each other.
 
 # Document History
 
@@ -1059,6 +1073,11 @@ reproducible.
   the wire identify its construction, and requires that such an identifier not
   commit to facts which do not affect the serialised bytes, so that two
   implementations producing identical bytes share an identifier.
+- {{construction-distinctness}} additionally requires that a correlation
+  identifier over a typed action object be emitted only after the object
+  validates against a pinned definition of its type. Found by running two
+  independently published artefacts against a third party's reference issuer;
+  both failed, including this author's own.
 
 Reference and source corrections in this revision:
 

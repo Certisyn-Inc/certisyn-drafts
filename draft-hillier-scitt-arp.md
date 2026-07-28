@@ -2,20 +2,24 @@
 title: Attestation Reconciliation Protocol
 abbrev: ARP
 docname: draft-hillier-scitt-arp-02
-date: 2026-07-23
+date: 2026-07-28
 category: std
+submissiontype: IETF
+consensus: true
+v: 3
 ipr: trust200902
 area: Security
 workgroup: SCITT
-keyword: Internet-Draft
-keyword: SCITT
-keyword: RATS
-keyword: attestation
-keyword: reconciliation
-keyword: cross-jurisdictional
-keyword: policy-version
-keyword: agentic-AI
-keyword: friend-or-foe
+keyword:
+  - Internet-Draft
+  - SCITT
+  - RATS
+  - attestation
+  - reconciliation
+  - cross-jurisdictional
+  - policy-version
+  - agentic-AI
+  - friend-or-foe
 
 stand_alone: yes
 pi: [toc, sortrefs, symrefs]
@@ -35,8 +39,8 @@ normative:
   RFC9334:        # RATS Architecture
   RFC9421:        # HTTP Message Signatures
   RFC8785:        # JSON Canonicalization Scheme (JCS)
-  I-D.ietf-scitt-architecture:
-  I-D.ietf-cose-merkle-tree-proofs:
+  RFC9943:        # SCITT Architecture (was I-D.ietf-scitt-architecture)
+  RFC9942:        # COSE Merkle Tree Proofs (was I-D.ietf-cose-merkle-tree-proofs)
   UAX15:
     title: "Unicode Standard Annex #15: Unicode Normalization Forms"
     target: https://www.unicode.org/reports/tr15/
@@ -46,11 +50,12 @@ normative:
 
 informative:
   RFC8259:        # JSON
+  RFC8067:        # Updating When Standards Track Documents May Refer Normatively to Documents at a Lower Level
   I-D.mih-sato-agent-accountability-composition:
   I-D.mih-sokolov-scitt-payload-binding:
   I-D.ietf-scitt-scrapi:
-  I-D.meunier-web-bot-auth-architecture:
-  I-D.meunier-webbotauth-registry:
+  I-D.meunier-webbotauth-httpsig-protocol:
+  I-D.meunier-webbotauth-httpsig-directory:
   FIPS203:
     title: Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)
     seriesinfo:
@@ -96,6 +101,20 @@ heterogeneous agent-action accountability attestations into a single
 producer-agnostic reconciled verdict evaluated at decision time.
 
 --- middle
+
+# Note to the RFC Editor
+
+RFC EDITOR: please remove this section before publication.
+
+This document is Standards Track and makes a normative reference to RFC 8785,
+which is Informational and is not currently listed in the downref registry
+maintained under {{?RFC8067}}. The reference is deliberately normative: ARP's
+Canonical Claim and its Appendix D subject digest are both defined as a digest
+over an RFC 8785 serialisation, and an implementation that substituted any
+other canonicalisation would compute a different value for the same claim. The
+reference is therefore load-bearing for interoperability and cannot be
+demoted to informative. This is called out here so that the downref can be
+noted in the IETF Last Call announcement per Section 1 of {{?RFC8067}}.
 
 # Introduction
 
@@ -147,8 +166,8 @@ specifically designed to overcome:
    (zero-trust).
 
 This document specifies ARP, a protocol that addresses all four deficiencies
-in combination, and is layered atop the SCITT architecture
-{{I-D.ietf-scitt-architecture}} and the RATS architecture {{RFC9334}}.
+in combination, and is layered atop the SCITT architecture {{RFC9943}} and the
+RATS architecture {{RFC9334}}.
 
 The fourth deficiency is not hypothetical. A class of failure now observed in
 practice arises when an autonomous system reaches an assigned objective through
@@ -207,7 +226,7 @@ Requesting Agent:
 : An autonomous software agent that initiates a reconciliation. A Requesting
   Agent is FRIENDLY when it carries a verifiable identity -- a request signed
   under HTTP Message Signatures {{RFC9421}} per Web Bot Auth
-  {{I-D.meunier-web-bot-auth-architecture}}, a genuinely verified declared bot,
+  {{I-D.meunier-webbotauth-httpsig-protocol}}, a genuinely verified declared bot,
   or a Verified Principal Credential -- and ENEMY when its principal binding is
   absent or unverifiable. Anything unverifiable is treated as ENEMY.
 
@@ -311,7 +330,7 @@ Hash-Linkage Aggregation:
   attestations are canonical-hashed, ordered, committed to a Merkle tree,
   and emitted with a Merkle root and a per-register verdict band. The Merkle
   commitment and its inclusion proofs MAY be encoded as COSE Receipts
-  {{I-D.ietf-cose-merkle-tree-proofs}}.
+  {{RFC9942}}.
 
 Policy-Version Hash:
 : A cryptographic commitment to the canonical verification-policy state in
@@ -387,11 +406,11 @@ Where the requester is an autonomous agent, the server MUST perform an Agent
 Friend-or-Foe (IFF) Determination. An agent is classified FRIENDLY only where
 at least one verifiable identity is present and cryptographically valid: a
 request signed under HTTP Message Signatures {{RFC9421}} with a key resolvable
-through a Web Bot Auth signature-agent card
-{{I-D.meunier-web-bot-auth-architecture}}
-{{I-D.meunier-webbotauth-registry}}, a genuinely verified declared bot, or a
-Verified Principal Credential. An agent presenting no such identity, or an
-identity that fails verification, MUST be classified ENEMY.
+through a Signature-Agent header {{I-D.meunier-webbotauth-httpsig-protocol}}
+resolving to an HTTP Message Signatures directory
+{{I-D.meunier-webbotauth-httpsig-directory}}, a genuinely verified declared
+bot, or a Verified Principal Credential. An agent presenting no such identity,
+or an identity that fails verification, MUST be classified ENEMY.
 
 The Agent-IFF policy in force declares, per predicate class, whether an ENEMY
 requester is refused outright, permitted only for non-decisive advisory
@@ -473,8 +492,8 @@ Partial Attestation is canonical-hashed, ordered by sorted-leaf
 construction, committed to a Merkle tree, and emitted with a Merkle root
 and a per-register verdict band signed by the reconciliation-server sealing
 key. The Merkle root and its per-register inclusion proofs MAY be encoded as
-COSE Receipts {{I-D.ietf-cose-merkle-tree-proofs}}, enabling any SCITT-aware
-verifier to check inclusion without a bespoke proof format. The per-register
+COSE Receipts {{RFC9942}}, enabling any SCITT-aware verifier to check
+inclusion without a bespoke proof format. The per-register
 verdict band MUST commit each register's verdict individually without
 disclosure of any other register's payload.
 
@@ -621,10 +640,11 @@ unregistered labels in the range 0x800 .. 0x8FF (Certisyn private use).
 
 Where a reconciliation is requested over HTTP by an autonomous agent, the
 request SHOULD be signed under HTTP Message Signatures {{RFC9421}}, with the
-signature-agent key resolvable through a Web Bot Auth signature-agent card
-{{I-D.meunier-web-bot-auth-architecture}}
-{{I-D.meunier-webbotauth-registry}}. The reconciliation server derives the
-Agent Friend-or-Foe Determination from verification of that signature and,
+signing key resolvable through a Signature-Agent header
+{{I-D.meunier-webbotauth-httpsig-protocol}} and the HTTP Message Signatures
+directory it names {{I-D.meunier-webbotauth-httpsig-directory}}. The
+reconciliation server derives the Agent Friend-or-Foe Determination from
+verification of that signature and,
 where required by the Agent-IFF policy, a Verified Principal Credential
 carried in the request body.
 
@@ -730,12 +750,11 @@ This document requests IANA to register the following:
 
 # Acknowledgments
 
-This document benefits from the SCITT Architecture
-{{I-D.ietf-scitt-architecture}}, the SCITT Reference APIs
-{{I-D.ietf-scitt-scrapi}}, COSE Receipts
-{{I-D.ietf-cose-merkle-tree-proofs}}, the RATS Architecture {{RFC9334}},
-HTTP Message Signatures {{RFC9421}}, and the Web Bot Auth architecture
-{{I-D.meunier-web-bot-auth-architecture}}.
+This document benefits from the SCITT Architecture {{RFC9943}}, the SCITT
+Reference APIs {{I-D.ietf-scitt-scrapi}}, COSE Receipts
+{{RFC9942}}, the RATS Architecture {{RFC9334}},
+HTTP Message Signatures {{RFC9421}}, and the Web Bot Auth HTTP message
+signature protocol {{I-D.meunier-webbotauth-httpsig-protocol}}.
 
 --- back
 
@@ -761,7 +780,8 @@ Hash. The Settlement-Layer Ledger entry comprises:
 - Entry Sequence Number: 4,217,981
 - Reconciliation Hash: <32 bytes>
 - Policy-Version Hash: <32 bytes>
-- Addressed-Registers Identifier Set: ["EU-CONSOLIDATED-2026-Q2", "UK-OFSI-2026-Q2", "US-OFAC-SDN-2026-Q2"]
+- Addressed-Registers Identifier Set:
+  `["EU-CONSOLIDATED-2026-Q2", "UK-OFSI-2026-Q2", "US-OFAC-SDN-2026-Q2"]`
 - Aggregation-Method Descriptor: "homomorphic-disjunction"
 - Requester-Binding-Class Descriptor: "human-operator"
 - Reconciliation Timestamp: 2026-04-27T19:47:14Z
@@ -791,7 +811,8 @@ Identifier field.
 
 An autonomous agent requests reconciliation of `sanctions:any-list-match`
 over HTTP, signing the request under HTTP Message Signatures {{RFC9421}} with
-a key published in a Web Bot Auth signature-agent card. The reconciliation
+a key published in a Web Bot Auth HTTP Message Signatures directory. The
+reconciliation
 server verifies the signature (Agent Friend-or-Foe Determination: the agent
 carries a verifiable identity) but the Agent-IFF policy for the `sanctions:`
 class requires an attributable principal for a decisive verdict.
@@ -833,7 +854,7 @@ agent-verified and no register or capsule content disclosed.
 
 # Composition with the SCITT Architecture
 
-The SCITT Architecture {{I-D.ietf-scitt-architecture}} provides notarisation
+The SCITT Architecture {{RFC9943}} provides notarisation
 of supply-chain artefacts, including transparency receipts, transparent
 statements, and registries. ARP composes with SCITT in four ways:
 
@@ -854,7 +875,7 @@ statements, and registries. ARP composes with SCITT in four ways:
    Issuers.
 
 4. ARP Hash-Linkage Aggregation emits its Merkle commitment as COSE Receipts
-   {{I-D.ietf-cose-merkle-tree-proofs}}, the same inclusion-proof format
+   {{RFC9942}}, the same inclusion-proof format
    SCITT uses for transparency receipts, so a single verifier library checks
    both.
 
@@ -1039,6 +1060,28 @@ reproducible.
   commit to facts which do not affect the serialised bytes, so that two
   implementations producing identical bytes share an identifier.
 
+Reference and source corrections in this revision:
+
+- The SCITT Architecture reference is now {{RFC9943}} and the COSE Merkle tree
+  proofs reference is now {{RFC9942}}. -01 cited both as Internet-Drafts; both
+  have since been published as RFCs.
+- The Web Bot Auth references are now
+  {{I-D.meunier-webbotauth-httpsig-protocol}} and
+  {{I-D.meunier-webbotauth-httpsig-directory}}. -01 cited
+  draft-meunier-web-bot-auth-architecture, which has been replaced by the
+  former, and a registry draft which does not exist; the directory draft is the
+  document that actually defines the key-advertisement resource. The prose no
+  longer uses the term "signature-agent card", which the replacement drafts do
+  not define: an agent sends a Signature-Agent header naming an HTTP Message
+  Signatures directory.
+- The document date, RFCXML version, submission type and consensus declaration
+  are now present in the source, and the repeated `keyword` keys are a single
+  YAML sequence. -01 emitted an invalid stream declaration and dropped all but
+  the last keyword.
+- A note to the RFC Editor records the {{RFC8785}} downref explicitly, so that
+  it can be called out at IETF Last Call per {{RFC8067}} rather than found
+  there.
+
 ## Since draft-hillier-scitt-arp-00
 
 - Added a fourth motivating deficiency (unverifiable requester identity in an
@@ -1058,7 +1101,7 @@ reproducible.
   agent requests, and added an Agent Impersonation security consideration.
 
 - Replaced the stale scitt-receipts reference with COSE Receipts
-  {{I-D.ietf-cose-merkle-tree-proofs}} and added the SCITT Reference APIs
+  {{RFC9942}} and added the SCITT Reference APIs
   {{I-D.ietf-scitt-scrapi}}; Hash-Linkage Aggregation now emits COSE Receipts.
 
 - Described the Evidentiary Provenance Manifest's optional carriage as a

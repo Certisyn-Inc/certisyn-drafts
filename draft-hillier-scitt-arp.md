@@ -56,6 +56,7 @@ informative:
   I-D.ietf-scitt-scrapi:
   I-D.meunier-webbotauth-httpsig-protocol:
   I-D.meunier-webbotauth-httpsig-directory:
+  I-D.meunier-webbotauth-registry:
   FIPS203:
     title: Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)
     seriesinfo:
@@ -406,8 +407,10 @@ Where the requester is an autonomous agent, the server MUST perform an Agent
 Friend-or-Foe (IFF) Determination. An agent is classified FRIENDLY only where
 at least one verifiable identity is present and cryptographically valid: a
 request signed under HTTP Message Signatures {{RFC9421}} with a key resolvable
-through a Signature-Agent header {{I-D.meunier-webbotauth-httpsig-protocol}}
-resolving to an HTTP Message Signatures directory
+through a Web Bot Auth signature-agent card
+{{I-D.meunier-webbotauth-registry}}, advertised via the Signature-Agent header
+{{I-D.meunier-webbotauth-httpsig-protocol}} and resolved through the HTTP
+Message Signatures directory it names
 {{I-D.meunier-webbotauth-httpsig-directory}}, a genuinely verified declared
 bot, or a Verified Principal Credential. An agent presenting no such identity,
 or an identity that fails verification, MUST be classified ENEMY.
@@ -640,10 +643,12 @@ unregistered labels in the range 0x800 .. 0x8FF (Certisyn private use).
 
 Where a reconciliation is requested over HTTP by an autonomous agent, the
 request SHOULD be signed under HTTP Message Signatures {{RFC9421}}, with the
-signing key resolvable through a Signature-Agent header
-{{I-D.meunier-webbotauth-httpsig-protocol}} and the HTTP Message Signatures
-directory it names {{I-D.meunier-webbotauth-httpsig-directory}}. The
-reconciliation server derives the Agent Friend-or-Foe Determination from
+signature-agent key resolvable through a Web Bot Auth signature-agent card
+{{I-D.meunier-webbotauth-registry}}, advertised via the Signature-Agent header
+{{I-D.meunier-webbotauth-httpsig-protocol}} and resolved through the HTTP
+Message Signatures directory it names
+{{I-D.meunier-webbotauth-httpsig-directory}}. The reconciliation server
+derives the Agent Friend-or-Foe Determination from
 verification of that signature and,
 where required by the Agent-IFF policy, a Verified Principal Credential
 carried in the request body.
@@ -811,8 +816,7 @@ Identifier field.
 
 An autonomous agent requests reconciliation of `sanctions:any-list-match`
 over HTTP, signing the request under HTTP Message Signatures {{RFC9421}} with
-a key published in a Web Bot Auth HTTP Message Signatures directory. The
-reconciliation
+a key published in a Web Bot Auth signature-agent card. The reconciliation
 server verifies the signature (Agent Friend-or-Foe Determination: the agent
 carries a verifiable identity) but the Agent-IFF policy for the `sanctions:`
 class requires an attributable principal for a decisive verdict.
@@ -1084,15 +1088,13 @@ Reference and source corrections in this revision:
 - The SCITT Architecture reference is now {{RFC9943}} and the COSE Merkle tree
   proofs reference is now {{RFC9942}}. -01 cited both as Internet-Drafts; both
   have since been published as RFCs.
-- The Web Bot Auth references are now
-  {{I-D.meunier-webbotauth-httpsig-protocol}} and
-  {{I-D.meunier-webbotauth-httpsig-directory}}. -01 cited
-  draft-meunier-web-bot-auth-architecture, which has been replaced by the
-  former, and a registry draft which does not exist; the directory draft is the
-  document that actually defines the key-advertisement resource. The prose no
-  longer uses the term "signature-agent card", which the replacement drafts do
-  not define: an agent sends a Signature-Agent header naming an HTTP Message
-  Signatures directory.
+- The Web Bot Auth architecture reference is replaced. -01 cited
+  draft-meunier-web-bot-auth-architecture, which the datatracker records as
+  Replaced by {{I-D.meunier-webbotauth-httpsig-protocol}}.
+  {{I-D.meunier-webbotauth-registry}}, which defines the signature-agent card,
+  is retained and is current. {{I-D.meunier-webbotauth-httpsig-directory}} is
+  added, because the card is resolved through the directory the
+  Signature-Agent header names and -01 cited no document for that step.
 - The document date, RFCXML version, submission type and consensus declaration
   are now present in the source, and the repeated `keyword` keys are a single
   YAML sequence. -01 emitted an invalid stream declaration and dropped all but

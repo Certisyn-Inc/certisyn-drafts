@@ -9,8 +9,9 @@ ARP against draft-mih-sokolov-scitt-payload-binding conformance vectors
     arp-subject-digest/1     id=f23ecefd99c54182
     arp-canonical-claim/1    id=7d90aa1cbee90ef9
 
-  jcs-n = absent-field normalization + exclusion set + JCS + SHA-256.
-  ARP implements the JCS and SHA-256 halves and NEITHER of the first two.
+  jcs-n = exclusion set, THEN absent-field normalization, then JCS,
+  then SHA-256, and it refuses digest-bearing floats and unsafe integers.
+  ARP implements the JCS and SHA-256 steps and none of the other three.
   Divergence on a vector that exercises them is the CORRECT result.
 
 ----------------------------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ ARP against draft-mih-sokolov-scitt-payload-binding conformance vectors
   jcs-n-kat-07     repro      diverge          diverge          absent-field-normalization-applied
   jcs-n-kat-08     repro      diverge          diverge          exclusion-set-applied
   jcs-n-kat-09     repro      diverge          diverge          exclusion-set-applied
-  jcs-n-kat-10     REFUSED    gate refuses                      non-integer-real
+  jcs-n-kat-10     REFUSED    gate refuses                      digest-bearing-value-refused-by-jcs-n
   jcs-n-kat-11     repro      agree            agree            -
 
 ----------------------------------------------------------------------------------------------------
@@ -56,7 +57,17 @@ SELF-CHECK
   arp-subject-digest/1 agrees with jcs-n on 3/10 positive vectors.
   Every one of the 7 divergences is attributed to a declared jcs-n step ARP does not implement.
   10 vectors are out of ARP's scope and are listed above with the reason, not omitted.
+
+  The boundary, stated so it survives this suite:
+    jcs-n and arp-subject-digest/1 coincide exactly when the payload
+    (a) carries no null or empty member,
+    (b) has no exclusion set applied, AND
+    (c) is accepted by jcs-n's digest-bearing-value guards -- no float,
+        no integer outside the ECMAScript safe range.
+    (c) is not implied by (a) and (b): 1 vector(s) in this
+    suite satisfy (a) and (b) and are still refused outright by jcs-n,
+    which emits no digest while ARP emits one.
   No unattributed agreement or divergence.
   SELF-CHECK: PASS
 
-  machine-readable result written to /tmp/scitt-arp-f39/conformance/runs/cpb_run.json
+  machine-readable result written to runs/cpb_run.json

@@ -123,7 +123,10 @@
       "arp_gate_refused": true,
       "arp_gate_causes": [
         "non-integer-real"
-      ]
+      ],
+      "structural_precondition_satisfied": true,
+      "divergence_cause": "digest-bearing-value-refused-by-jcs-n",
+      "arp_subject_digest": "b08a3124c71655a97813fed0e25d47583e250b045d1433a7de63ec207303cd21"
     },
     {
       "vector": "jcs-n-kat-11",

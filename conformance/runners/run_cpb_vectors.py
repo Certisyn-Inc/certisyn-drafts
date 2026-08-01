@@ -5,9 +5,13 @@ draft-mih-sokolov-scitt-payload-binding defines algorithm `jcs-n`:
 
     CANONICAL-DIGEST(jcs-n, P) = hex(SHA-256(JCS(normalize(P minus exclusion_set))))
 
-where `normalize` is ABSENT-FIELD normalization -- remove, bottom-up, every
+Read the order off the parentheses: the exclusion set is removed FIRST, then
+absent-field normalization runs over what is left, then JCS, then SHA-256.
+`normalize` here is ABSENT-FIELD normalization -- remove, bottom-up, every
 object member whose value is null, an empty array, or an empty object. It is
-NOT Unicode normalization. ARP's two constructions are:
+NOT Unicode normalization. jcs-n additionally REFUSES a digest-bearing float
+or an integer outside the ECMAScript safe range; that refusal is a third way
+it can differ from ARP and is checked below alongside the other two. ARP's two constructions are:
 
     arp-subject-digest/1    SHA-256(JCS(action))              no normalisation
     arp-canonical-claim/1   SHA-256(JCS(NFC(claim)))          NFC applied
@@ -110,8 +114,9 @@ def main():
     for name in ("arp-subject-digest/1", "arp-canonical-claim/1"):
         print(f"    {name:<24} id={arp.construction_id_digest(name)}")
     print()
-    print("  jcs-n = absent-field normalization + exclusion set + JCS + SHA-256.")
-    print("  ARP implements the JCS and SHA-256 halves and NEITHER of the first two.")
+    print("  jcs-n = exclusion set, THEN absent-field normalization, then JCS,")
+    print("  then SHA-256, and it refuses digest-bearing floats and unsafe integers.")
+    print("  ARP implements the JCS and SHA-256 steps and none of the other three.")
     print("  Divergence on a vector that exercises them is the CORRECT result.")
     print()
 
@@ -127,12 +132,13 @@ def main():
         vid = v["id"]
 
         if v.get("must_fail"):
+            payload = v.get("input", v.get("payload", {}))
+            excl = v.get("exclusion_set") or []
             # Two-sided: the library must REFUSE, not merely differ.
             raised = None
             if _HAVE_CPB:
                 try:
-                    CPB_C.canonical_digest(v.get("input", v.get("payload", {})),
-                                           v.get("exclusion_set") or [])
+                    CPB_C.canonical_digest(payload, excl)
                     raised = None
                 except (FloatInDigestError, UnsafeIntegerError) as e:
                     raised = type(e).__name__
@@ -141,17 +147,39 @@ def main():
             cpb_ok = raised is not None
             # ARP's own EP strict-parse gate should refuse the same input.
             causes = set()
-            arp._ep_walk(v.get("input", v.get("payload", {})), 0, causes)
+            arp._ep_walk(payload, 0, causes)
             arp_refuses = bool(causes)
+
+            # The refusal is a THIRD divergence class, and it is the one that
+            # breaks the tidy version of the boundary rule. jcs-n refuses a
+            # digest-bearing float or an unsafe integer and emits no digest at
+            # all, while arp-subject-digest/1 happily digests either. That can
+            # happen on an input carrying no null member, no empty member and
+            # no exclusion set -- i.e. on an input that satisfies the whole of
+            # the structural precondition. So the precondition is NOT
+            # sufficient on its own, and this row is what proves it. Recorded
+            # as a named cause rather than left to the prose.
+            structural = normalizes_anything(payload, excl)
+            sd = arp_subject_digest(payload) if arp_refuses is not None else None
             rows.append({"vector": vid, "class": "must_fail",
                          "cpb_refused": cpb_ok, "cpb_exception": raised,
                          "arp_gate_refused": arp_refuses,
-                         "arp_gate_causes": sorted(causes)})
+                         "arp_gate_causes": sorted(causes),
+                         "structural_precondition_satisfied": structural is None,
+                         "divergence_cause": "digest-bearing-value-refused-by-jcs-n",
+                         "arp_subject_digest": sd})
             print(f"  {vid:<16} {'REFUSED' if cpb_ok else 'ACCEPTED!':<10} "
                   f"{'gate refuses' if arp_refuses else 'gate ACCEPTS':<16} {'':<16} "
-                  f"{','.join(sorted(causes)) or 'n/a'}")
+                  f"digest-bearing-value-refused-by-jcs-n")
             if not cpb_ok:
                 unattributed.append(f"{vid}: CPB library did not refuse a MUST-FAIL vector")
+            if cpb_ok and not arp_refuses:
+                # ARP would digest something jcs-n refuses AND ARP's own gate
+                # would let it through. That is a real gap, not a difference.
+                unattributed.append(
+                    f"{vid}: jcs-n refuses this input but ARP's strict-parse gate "
+                    "accepts it -- ARP would mint a digest over a value the other "
+                    "construction will not digest at all")
             continue
 
         payload = v["input"]
@@ -244,6 +272,19 @@ def main():
           f"jcs-n step ARP does not implement.")
     print(f"  {len(out_of_scope)} vectors are out of ARP's scope and are listed above with "
           f"the reason, not omitted.")
+    refused = [r for r in rows if r["class"] == "must_fail"]
+    struct_ok_but_refused = [r for r in refused
+                             if r.get("structural_precondition_satisfied")]
+    print()
+    print("  The boundary, stated so it survives this suite:")
+    print("    jcs-n and arp-subject-digest/1 coincide exactly when the payload")
+    print("    (a) carries no null or empty member,")
+    print("    (b) has no exclusion set applied, AND")
+    print("    (c) is accepted by jcs-n's digest-bearing-value guards -- no float,")
+    print("        no integer outside the ECMAScript safe range.")
+    print(f"    (c) is not implied by (a) and (b): {len(struct_ok_but_refused)} vector(s) in this")
+    print("    suite satisfy (a) and (b) and are still refused outright by jcs-n,")
+    print("    which emits no digest while ARP emits one.")
     if unattributed:
         print()
         print("  !! UNATTRIBUTED RESULTS -- these are defects, not table rows:")
@@ -256,6 +297,9 @@ def main():
 
     out = os.path.abspath(ARGS.json)
     os.makedirs(os.path.dirname(out), exist_ok=True)
+    # Print the basename. This transcript is committed, so an absolute path in
+    # it would make the committed file depend on where the author's checkout
+    # sat -- the same defect Songbo found in the result JSON, one layer out.
     with open(out, "w") as f:
         json.dump({
             "suite": "draft-mih-sokolov-scitt-payload-binding conformance vectors",
@@ -270,7 +314,7 @@ def main():
             "unattributed": unattributed,
         }, f, indent=2)
         f.write("\n")
-    print(f"\n  machine-readable result written to {out}")
+    print(f"\n  machine-readable result written to runs/{os.path.basename(out)}")
     return 1 if unattributed else 0
 
 

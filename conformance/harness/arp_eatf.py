@@ -398,8 +398,13 @@ def main():
     print("visible at the reconcile layer at all?")
     print()
     print(f"  cryptography backend : {_CRYPTO}")
+    # Print the corpus-relative location, not the absolute path. This console
+    # output is committed, and an absolute path would make the committed file
+    # depend on where the author's checkout sat -- the same defect Songbo found
+    # in the result JSON, one layer out.
     print(f"  trust anchors loaded : {len(anchors)}"
-          + (f"  from {kd}" if anchors else "   (issuer-trust unproven)"))
+          + (f"  from <corpus>/{os.path.relpath(kd, a.corpus)}" if anchors
+             else "   (issuer-trust unproven)"))
     print()
 
     rows = []

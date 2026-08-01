@@ -219,7 +219,7 @@ def main():
                        open(os.path.join(HERE, "..", "harness", "arp_reconcile.py"), "rb").read()).hexdigest(),
                    "passed": passed, "failed": failed, "rows": rows}, f, indent=2)
         f.write("\n")
-    print(f"  machine-readable result written to {out}")
+    print(f"  machine-readable result written to runs/{os.path.basename(out)}")
     return 0 if failed == 0 else 1
 
 

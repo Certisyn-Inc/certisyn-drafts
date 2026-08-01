@@ -6,7 +6,7 @@ Question (A. Sokolov, 27 Jul): which envelope-integrity negatives are
 visible at the reconcile layer at all?
 
   cryptography backend : True
-  trust anchors loaded : 1  from /tmp/eatf/test-vectors/keys
+  trust anchors loaded : 1  from <corpus>/keys
 
 ----------------------------------------------------------------------------------------------------
 VALID  (corpus expects verify=true)

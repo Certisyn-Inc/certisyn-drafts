@@ -59,4 +59,4 @@ SELF-CHECK
   Axis closure: every axis emitted is declared HARD or SOFT (compose_ex fails closed otherwise).
 
   RESULT: 5 passed, 0 failed
-  machine-readable result written to /tmp/scitt-arp-f39/conformance/runners/../runs/arp_outcome_vectors_v02_run.json
+  machine-readable result written to runs/arp_outcome_vectors_v02_run.json

@@ -1,0 +1,144 @@
+{
+  "@version": "ARP-OUTCOME-VECTORS-v0.1",
+  "status": "proposed-for-shared-set",
+  "construction": {
+    "id": "ep-arp-reconciliation-join/0.1",
+    "arp_subject_digest_profile": "arp-subject-digest/1",
+    "arp_subject_digest_profile_id": "f23ecefd99c54182",
+    "rule": "Both axes below are SOFT in ARP: they HOLD a verdict at INDETERMINATE and never produce a REFUSE. Neither is a reconciliation failure; both are statements about what the artefact does not establish."
+  },
+  "axes": [
+    {
+      "axis": "outcome-reported-only",
+      "class": "indeterminate",
+      "predicate": "The record asserts that an action was EXECUTED, and the only attesting party is the one that acted.",
+      "clears_on": "An ex post attestation, over the same subject digest, from a party other than the actor.",
+      "does_not_clear_on": "A named human approver. Approval is ex ante and establishes that the act was permitted, not that it occurred.",
+      "implementation": "arp_reconcile.py v2.1, leg source 'outcome'."
+    },
+    {
+      "axis": "physical-completion-unproven",
+      "class": "indeterminate",
+      "predicate": "As above, and the action is declared irreversible with no rollback reference, so the assertion concerns an effect outside the attestation system and nothing in the artefact can settle it.",
+      "relation": "Fires ADDITIONALLY to outcome-reported-only, never instead of it. A strict subset.",
+      "clears_on": "A settlement or delivery attestation from the party that observed the effect.",
+      "implementation": "arp_reconcile.py v2.1, leg source 'completion'."
+    }
+  ],
+  "vectors": [
+    {
+      "id": "accept_outcome_reported_only",
+      "action": {
+        "action_type": "payment.release.1",
+        "amount": "10.00",
+        "currency": "USD",
+        "destination": "acct:demo"
+      },
+      "record": {
+        "verdict": "EXECUTED",
+        "reversible": true,
+        "rollback_ref": null,
+        "attestors": [
+          "actor"
+        ]
+      },
+      "expect": {
+        "arp_disposition": "INDETERMINATE",
+        "axes": [
+          "outcome-reported-only"
+        ],
+        "admission_effect": "UNCHANGED",
+        "post_effect_reconciliation": "REQUIRED"
+      }
+    },
+    {
+      "id": "accept_physical_completion_unproven",
+      "action": {
+        "action_type": "payment.release.1",
+        "amount": "10.00",
+        "currency": "USD",
+        "destination": "acct:demo"
+      },
+      "record": {
+        "verdict": "EXECUTED",
+        "reversible": false,
+        "rollback_ref": null,
+        "attestors": [
+          "actor"
+        ]
+      },
+      "expect": {
+        "arp_disposition": "INDETERMINATE",
+        "axes": [
+          "outcome-reported-only",
+          "physical-completion-unproven"
+        ],
+        "admission_effect": "UNCHANGED",
+        "post_effect_reconciliation": "REQUIRED"
+      }
+    },
+    {
+      "id": "reject_approver_treated_as_outcome_corroboration",
+      "comment": "The negative control. An ex ante human approval MUST NOT clear either axis. A conformant implementation still holds at INDETERMINATE here.",
+      "action": {
+        "action_type": "payment.release.1",
+        "amount": "10.00",
+        "currency": "USD",
+        "destination": "acct:demo"
+      },
+      "record": {
+        "verdict": "EXECUTED",
+        "reversible": false,
+        "rollback_ref": null,
+        "attestors": [
+          "actor"
+        ],
+        "approval": {
+          "by": "HUMAN:reviewer-1",
+          "at": "2026-07-27T00:00:00Z"
+        }
+      },
+      "expect": {
+        "arp_disposition": "INDETERMINATE",
+        "axes": [
+          "outcome-reported-only",
+          "physical-completion-unproven"
+        ],
+        "admission_effect": "UNCHANGED",
+        "post_effect_reconciliation": "REQUIRED"
+      }
+    },
+    {
+      "id": "accept_outcome_corroborated_clears_both",
+      "comment": "The positive control. An ex post attestation from a party other than the actor clears both axes. Present so the axes are falsifiable rather than always-on.",
+      "action": {
+        "action_type": "payment.release.1",
+        "amount": "10.00",
+        "currency": "USD",
+        "destination": "acct:demo"
+      },
+      "record": {
+        "verdict": "EXECUTED",
+        "reversible": false,
+        "rollback_ref": null,
+        "attestors": [
+          "actor",
+          "settlement-observer"
+        ],
+        "settlement": [
+          {
+            "kid": "settlement-observer",
+            "over": "sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43"
+          }
+        ]
+      },
+      "expect": {
+        "arp_disposition": "INDETERMINATE",
+        "axes": [],
+        "admission_effect": "UNCHANGED",
+        "post_effect_reconciliation": "NOT_REQUIRED",
+        "note": "INDETERMINATE rather than APPROVE because the authorization leg is a separate question. Clearing the outcome axes removes the outcome objection; it does not authorize."
+      }
+    }
+  ]
+}

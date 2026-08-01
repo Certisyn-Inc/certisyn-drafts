@@ -1,0 +1,959 @@
+{
+ "anchors_loaded": 1,
+ "rows": [
+  {
+   "action": {
+    "action_type": "mcp.tools/call:payment.transfer",
+    "agent_id": "urn:eatf:tenant:demo:agent:mcp-gateway",
+    "event_type": "mcp.tools/call",
+    "policy_decision": "deny",
+    "policy_id": "atap-basic",
+    "system": "eatf-mcp-gateway",
+    "timestamp": "2026-05-14T12:05:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "182ae0227975d42c8cf0bf1be56176e06c6da3035390ab1d4466f37d0c3c2e2e",
+   "class": "FALSE-REFUSE",
+   "content_hash": "450789ece492f3812ae376a15c143667ef4d4fca0a60c9e0ccede30c80242755",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 6,
+   "expected_valid": true,
+   "issuer_in_anchor_set": false,
+   "kind": "valid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|match|None",
+    "issuer-trust|no-match|agent-principal-unverifiable",
+    "receipt-binding|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "",
+   "signature_path": "digestinfo-no-null",
+   "vector": "mcp-tools-call-denied-policy"
+  },
+  {
+   "action": {
+    "action_type": "mcp.tools/call:github.create_issue",
+    "agent_id": "urn:eatf:tenant:demo:agent:mcp-gateway",
+    "event_type": "mcp.tools/call",
+    "policy_decision": "allow",
+    "policy_id": "atap-basic",
+    "system": "eatf-mcp-gateway",
+    "timestamp": "2026-05-14T12:05:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "6bcbf3027b63d94487196e1155f714f2377223f02033bc7b5d3f2b4eb5c77644",
+   "class": "FALSE-REFUSE",
+   "content_hash": "0a1699f92d0337905587dec3d53930fcb3f9957889263784b0c638b188171259",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 6,
+   "expected_valid": true,
+   "issuer_in_anchor_set": false,
+   "kind": "valid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|match|None",
+    "issuer-trust|no-match|agent-principal-unverifiable",
+    "receipt-binding|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "",
+   "signature_path": "digestinfo-no-null",
+   "vector": "mcp-tools-call-valid"
+  },
+  {
+   "action": {
+    "action_type": "foundational:aep-response",
+    "agent_id": "urn:eatf:tenant:demo:agent:roundtrip",
+    "event_type": null,
+    "policy_decision": "allow",
+    "policy_id": "atap-basic",
+    "system": null,
+    "timestamp": "2026-07-25T12:00:00Z"
+   },
+   "arp_disposition": "INDETERMINATE",
+   "arp_subject_digest": "0ea012f0032db97f0251a6302ca29f7d85501f74e30061bab9079b78635805e9",
+   "class": "OK",
+   "content_hash": "1dc36b944c6c408469130937769383092f140505210de7706f796283cd006486",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 5,
+   "expected_valid": true,
+   "issuer_in_anchor_set": true,
+   "kind": "valid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "receipt-signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": true,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|match|None",
+    "signature|match|None",
+    "issuer-trust|match|None",
+    "receipt-binding|match|None",
+    "receipt-signature|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "",
+   "receipt_independently_signed": true,
+   "signature_path": "strict-pkcs1v15",
+   "vector": "minimal-roundtrip"
+  },
+  {
+   "action": {
+    "action_type": "sign",
+    "agent_id": null,
+    "event_type": "eatf.response",
+    "policy_decision": null,
+    "policy_id": null,
+    "system": "eatf-aep",
+    "timestamp": "2026-05-14T12:00:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "48d6c3b4264540ea81f239f16434f9f5e546a78abb140b2bb8c2459919e15cf8",
+   "class": "FALSE-REFUSE",
+   "content_hash": "99388830595363bd301a5af904d95323424e3a1826988926ceedabd26f140699",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 1,
+   "expected_valid": true,
+   "issuer_in_anchor_set": false,
+   "kind": "valid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|match|None",
+    "issuer-trust|no-match|agent-principal-unverifiable",
+    "receipt-binding|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "",
+   "signature_path": "digestinfo-no-null",
+   "vector": "valid-overt-profile"
+  },
+  {
+   "action": {
+    "action_type": "foundational:aep-response",
+    "agent_id": "urn:eatf:tenant:demo:agent:roundtrip-demo",
+    "event_type": null,
+    "policy_decision": "allow",
+    "policy_id": "atap-basic",
+    "system": null,
+    "timestamp": "2026-05-15T20:00:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "2591fe2e3afbf187a1b6cbc06dbe0f4dbf148bd73c82304e271c8266b2e3c656",
+   "class": "SEEN",
+   "content_hash": "c6f8d458c0de7f2c1181c37d13fc98cf1ce0b237d75fe7af2ce216fae4e5423a",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 5,
+   "expected_valid": false,
+   "issuer_in_anchor_set": true,
+   "kind": "invalid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|no-match|signature-invalid",
+    "issuer-trust|match|None",
+    "receipt-binding|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "RSA signature does not verify against public_key.pem.",
+   "signature_path": null,
+   "vector": "bad-signature-classical"
+  },
+  {
+   "action": {
+    "action_type": "foundational:aep-response",
+    "agent_id": "urn:eatf:tenant:demo:agent:roundtrip-demo",
+    "event_type": null,
+    "policy_decision": "allow",
+    "policy_id": "atap-basic",
+    "system": null,
+    "timestamp": "2026-05-15T20:00:00Z"
+   },
+   "arp_disposition": "INDETERMINATE",
+   "arp_subject_digest": "2591fe2e3afbf187a1b6cbc06dbe0f4dbf148bd73c82304e271c8266b2e3c656",
+   "class": "HELD",
+   "content_hash": "c6f8d458c0de7f2c1181c37d13fc98cf1ce0b237d75fe7af2ce216fae4e5423a",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 5,
+   "expected_valid": false,
+   "issuer_in_anchor_set": true,
+   "kind": "invalid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|match|None",
+    "issuer-trust|match|None",
+    "receipt-binding|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "timestamp.tsr missing or empty.",
+   "signature_path": "strict-pkcs1v15",
+   "vector": "bad-timestamp"
+  },
+  {
+   "arp_disposition": "REFUSE",
+   "class": "SEEN",
+   "expected_valid": false,
+   "kind": "invalid",
+   "legs": [
+    {
+     "axis": "capsule-component-absent",
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "no-match"
+    }
+   ],
+   "missing": [
+    "canonical.bin"
+   ],
+   "observable": [
+    "completeness|no-match|capsule-component-absent"
+   ],
+   "producer_diagnostic": "Missing required entry: canonical.bin.",
+   "vector": "missing-canonical-bin"
+  },
+  {
+   "action": {
+    "action_type": "foundational:aep-response",
+    "agent_id": "urn:eatf:tenant:demo:agent:roundtrip-demo",
+    "event_type": null,
+    "policy_decision": "allow",
+    "policy_id": "atap-basic",
+    "system": null,
+    "timestamp": "2026-05-15T20:00:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "2591fe2e3afbf187a1b6cbc06dbe0f4dbf148bd73c82304e271c8266b2e3c656",
+   "class": "SEEN",
+   "content_hash": "c6f8d458c0de7f2c1181c37d13fc98cf1ce0b237d75fe7af2ce216fae4e5423a",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 5,
+   "expected_valid": false,
+   "issuer_in_anchor_set": true,
+   "kind": "invalid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": "artifact-tampered",
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "artifact-tampered",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|no-match|artifact-tampered",
+    "metadata-binding|no-match|artifact-tampered",
+    "signature|no-match|signature-invalid",
+    "issuer-trust|match|None",
+    "receipt-binding|indeterminate|leg-not-independently-verified",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "canonical.bin does not match a supported canonical form.",
+   "signature_path": null,
+   "vector": "tampered-canonical-bin"
+  },
+  {
+   "action": {
+    "action_type": "foundational:aep-response",
+    "agent_id": "urn:eatf:tenant:demo:agent:roundtrip-demo",
+    "event_type": null,
+    "policy_decision": "allow",
+    "policy_id": "atap-basic",
+    "system": null,
+    "timestamp": "2026-05-15T20:00:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "2591fe2e3afbf187a1b6cbc06dbe0f4dbf148bd73c82304e271c8266b2e3c656",
+   "class": "SEEN",
+   "content_hash": "c6f8d458c0de7f2c1181c37d13fc98cf1ce0b237d75fe7af2ce216fae4e5423a",
+   "cross_check_divergences": [
+    {
+     "field": "policy.decision",
+     "metadata": "deny",
+     "receipt": "allow"
+    }
+   ],
+   "cross_check_fields_compared": 5,
+   "expected_valid": false,
+   "issuer_in_anchor_set": true,
+   "kind": "invalid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "profile-cross-check-divergent",
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|match|None",
+    "issuer-trust|match|None",
+    "receipt-binding|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|no-match|profile-cross-check-divergent",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "overt_receipt.json invalid: policy.decision (allow) does not match metadata.policy_decision (deny).",
+   "signature_path": "strict-pkcs1v15",
+   "vector": "tampered-metadata"
+  },
+  {
+   "action": {
+    "action_type": "sign",
+    "agent_id": null,
+    "event_type": "eatf.response",
+    "policy_decision": null,
+    "policy_id": null,
+    "system": "eatf-aep",
+    "timestamp": "2026-05-14T12:00:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "48d6c3b4264540ea81f239f16434f9f5e546a78abb140b2bb8c2459919e15cf8",
+   "class": "SEEN",
+   "content_hash": "99388830595363bd301a5af904d95323424e3a1826988926ceedabd26f140699",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 1,
+   "expected_valid": false,
+   "issuer_in_anchor_set": false,
+   "kind": "invalid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "digest-mismatch",
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|match|None",
+    "issuer-trust|no-match|agent-principal-unverifiable",
+    "receipt-binding|no-match|digest-mismatch",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "overt_receipt.json invalid: content_hash does not match hash.sha256.",
+   "signature_path": "digestinfo-no-null",
+   "vector": "tampered-overt-receipt"
+  },
+  {
+   "action": {
+    "action_type": "foundational:aep-response",
+    "agent_id": "urn:eatf:tenant:demo:agent:roundtrip-demo",
+    "event_type": null,
+    "policy_decision": "allow",
+    "policy_id": "atap-basic",
+    "system": null,
+    "timestamp": "2026-05-15T20:00:00Z"
+   },
+   "arp_disposition": "REFUSE",
+   "arp_subject_digest": "2591fe2e3afbf187a1b6cbc06dbe0f4dbf148bd73c82304e271c8266b2e3c656",
+   "class": "SEEN",
+   "content_hash": "c6f8d458c0de7f2c1181c37d13fc98cf1ce0b237d75fe7af2ce216fae4e5423a",
+   "cross_check_divergences": [],
+   "cross_check_fields_compared": 5,
+   "expected_valid": false,
+   "issuer_in_anchor_set": false,
+   "kind": "invalid",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "completeness",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "metadata-not-signature-bound",
+     "provenance": "computed",
+     "source": "metadata-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "crypto-verified",
+     "source": "issuer-trust",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "receipt-binding",
+     "verdict": "match"
+    },
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "profile-cross-check",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "metadata_signature_bound": false,
+   "observable": [
+    "completeness|match|None",
+    "content-binding|match|None",
+    "metadata-binding|indeterminate|metadata-not-signature-bound",
+    "signature|no-match|signature-invalid",
+    "issuer-trust|no-match|agent-principal-unverifiable",
+    "receipt-binding|match|None",
+    "timestamp|indeterminate|leg-not-independently-verified",
+    "profile-cross-check|match|None",
+    "caid-binding|indeterminate|caid-binding-unverified"
+   ],
+   "producer_diagnostic": "RSA signature does not verify against public_key.pem.",
+   "signature_path": null,
+   "vector": "untrusted-issuer"
+  }
+ ],
+ "summary": {
+  "beneath": 0,
+  "false_refuse": 3,
+  "held": 1,
+  "invalid": 7,
+  "seen": 6,
+  "valid": 4
+ }
+}

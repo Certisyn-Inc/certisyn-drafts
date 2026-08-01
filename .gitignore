@@ -10,3 +10,5 @@ draft-hillier-scitt-arp.pdf
 .DS_Store
 *.swp
 __pycache__/
+
+*.pyc

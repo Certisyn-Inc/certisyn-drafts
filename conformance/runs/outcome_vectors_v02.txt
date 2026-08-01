@@ -1,0 +1,62 @@
+
+====================================================================================================
+ARP-OUTCOME-VECTORS-v0.2  --  two-sided runner
+====================================================================================================
+  supersedes            : ARP-OUTCOME-VECTORS-v0.1
+  CAID suite            : jcs-sha256
+  action-type registry  : caid-action-types v1 (updated 2026-07-20)
+  ARP construction id   : arp-subject-digest/1 = f23ecefd99c54182
+
+  accept_outcome_reported_only
+    caid issuance : ISSUED  caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM
+    arp subject   : sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963
+    legs          : outcome/indeterminate/outcome-reported-only
+    disposition   : INDETERMINATE   expected INDETERMINATE
+    axes          : ['outcome-reported-only']   expected ['outcome-reported-only']
+    -> PASS
+
+  accept_physical_completion_unproven
+    caid issuance : ISSUED  caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM
+    arp subject   : sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963
+    legs          : outcome/indeterminate/outcome-reported-only, completion/indeterminate/physical-completion-unproven
+    disposition   : INDETERMINATE   expected INDETERMINATE
+    axes          : ['outcome-reported-only', 'physical-completion-unproven']   expected ['outcome-reported-only', 'physical-completion-unproven']
+    -> PASS
+
+  reject_approver_treated_as_outcome_corroboration
+    caid issuance : ISSUED  caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM
+    arp subject   : sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963
+    legs          : outcome/indeterminate/outcome-reported-only, completion/indeterminate/physical-completion-unproven
+    disposition   : INDETERMINATE   expected INDETERMINATE
+    axes          : ['outcome-reported-only', 'physical-completion-unproven']   expected ['outcome-reported-only', 'physical-completion-unproven']
+    -> PASS
+
+  accept_outcome_corroborated_clears_both
+    caid issuance : ISSUED  caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM
+    arp subject   : sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963
+    legs          : (none)
+    disposition   : APPROVE   expected APPROVE
+    axes          : []   expected []
+    -> PASS
+
+  reject_underspecified_action_object
+    caid issuance : REFUSED  ['missing_material_field:beneficiary_account', 'missing_material_field:payment_instruction_id']
+    arp subject   : sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43
+    legs          : caid-binding/indeterminate/caid-binding-unverified
+    disposition   : INDETERMINATE   expected INDETERMINATE
+    axes          : ['caid-binding-unverified']   expected ['caid-binding-unverified']
+    -> PASS
+
+====================================================================================================
+SELF-CHECK
+====================================================================================================
+  5/5 vectors agree with their pinned expectation.
+  Two-sided: 3 vector(s) expect an axis to FIRE, 1 expect BOTH axes to CLEAR, 1 expect CAID issuance to be REFUSED.
+  The axes are therefore falsifiable rather than always-on: an implementation
+  that always fired them would fail accept_outcome_corroborated_clears_both,
+  and one that never fired them would fail the other three.
+  Predicate nesting: physical-completion-unproven (2) is a strict subset of outcome-reported-only (3): True
+  Axis closure: every axis emitted is declared HARD or SOFT (compose_ex fails closed otherwise).
+
+  RESULT: 5 passed, 0 failed
+  machine-readable result written to /tmp/scitt-arp-f39/conformance/runners/../runs/arp_outcome_vectors_v02_run.json

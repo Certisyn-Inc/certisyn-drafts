@@ -1,0 +1,54 @@
+{
+  "@version": "EP-ARP-ADAPTER-v0.1",
+  "status": "interop-fixture",
+  "description": "A machine-readable boundary vector for ARP reconciliation feeding an EP/AEB relying-party admission decision.",
+  "construction": {
+    "id": "ep-arp-reconciliation-join/0.1",
+    "arp_subject_digest_profile": "arp-subject-digest/1",
+    "arp_subject_digest": "SHA-256(JCS(action))",
+    "ep_canonicalization_profile": "EP-CANONICALIZATION-v1",
+    "caid_profile": "caid:1:<action-type>:jcs-sha256:<base64url-digest>",
+    "rule": "ARP match/reconciliation is evidence input; it does not itself authorize or admit the effect."
+  },
+  "fixtures": [
+    {
+      "id": "shared-action-preimage",
+      "action": {
+        "action_type": "payment.release.1",
+        "amount": "10.00",
+        "currency": "USD",
+        "destination": "acct:demo"
+      },
+      "canonical_jcs_utf8": "{\"action_type\":\"payment.release.1\",\"amount\":\"10.00\",\"currency\":\"USD\",\"destination\":\"acct:demo\"}",
+      "action_digest": "sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43",
+      "caid": "caid:1:payment.release.1:jcs-sha256:RJLCOOL5IkrZ_C1Ee4Luz7WMXHApKTsA7mnicGY4m0M",
+      "expected": {
+        "arp_subject_digest_matches_ep": true,
+        "caid_recomputed": true,
+        "reconciliation": "MATCH",
+        "aec_input": "VERIFIED",
+        "aeb_admission": "policy-dependent"
+      }
+    },
+    {
+      "id": "missing-preimage",
+      "input": "ARP reports a positive action digest but the construction identifier and canonical preimage are absent",
+      "expected": { "reconciliation": "INDETERMINATE", "aec_input": "INDETERMINATE", "aeb_admission": "REFUSED" }
+    },
+    {
+      "id": "material-action-mutation",
+      "input": "destination changes after the ARP digest was produced",
+      "expected": { "reconciliation": "NO_MATCH", "aec_input": "UNSATISFIED", "aeb_admission": "REFUSED" }
+    },
+    {
+      "id": "same-party-evidence-not-independent",
+      "input": "the same actor supplies both the action attribution and the purported independent authorization",
+      "expected": { "reconciliation": "DIVERGENCE", "aec_input": "UNSATISFIED", "aeb_admission": "REFUSED" }
+    },
+    {
+      "id": "controller-outcome-is-not-physical-completion",
+      "input": "controller reports an outcome without evidence of external physical completion",
+      "expected": { "outcome_record": "CONTROLLER_REPORTED", "physical_completion": "NOT_CLAIMED", "aeb_admission": "UNCHANGED", "post_effect_reconciliation": "REQUIRED" }
+    }
+  ]
+}

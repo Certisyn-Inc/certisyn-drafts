@@ -1,0 +1,62 @@
+
+====================================================================================================
+ARP against draft-mih-sokolov-scitt-payload-binding conformance vectors
+====================================================================================================
+  suite            : 21 vectors
+  cpb reference lib: available
+
+  ARP constructions carried into this run:
+    arp-subject-digest/1     id=f23ecefd99c54182
+    arp-canonical-claim/1    id=7d90aa1cbee90ef9
+
+  jcs-n = absent-field normalization + exclusion set + JCS + SHA-256.
+  ARP implements the JCS and SHA-256 halves and NEITHER of the first two.
+  Divergence on a vector that exercises them is the CORRECT result.
+
+----------------------------------------------------------------------------------------------------
+1. jcs-n known-answer tests
+----------------------------------------------------------------------------------------------------
+  vector           cpb        subject-digest   canonical-claim  cause
+  jcs-n-kat-01     repro      agree            agree            -
+  jcs-n-kat-02     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-03     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-04     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-05     repro      agree            agree            -
+  jcs-n-kat-06     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-07     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-08     repro      diverge          diverge          exclusion-set-applied
+  jcs-n-kat-09     repro      diverge          diverge          exclusion-set-applied
+  jcs-n-kat-10     REFUSED    gate refuses                      non-integer-real
+  jcs-n-kat-11     repro      agree            agree            -
+
+----------------------------------------------------------------------------------------------------
+2. Vectors ARP cannot reach, and why. Reported, not skipped.
+----------------------------------------------------------------------------------------------------
+  jcs-n/derived-id         3 vector(s)
+      derived identifiers are computed over a payload MINUS a declared exclusion set. ARP has no
+      exclusion-set mechanism: its subject digest covers the whole action object by design,
+      because an ARP correlation digest that omitted fields could correlate two different actions.
+
+  typed-refs               5 vector(s)
+      typed digest references carry a declared artifact type, digest context and representation.
+      ARP-02 REQUIRES a correlation digest to identify its construction and defers the mechanism
+      to this draft rather than defining one, so ARP has nothing of its own to run here. This is
+      the gap the deferral creates, and it is deliberate.
+
+  profile-independence     2 vector(s)
+      these test that one payload profile does not reach inside another. ARP has a single profile
+      and no cross-profile surface, so the property is vacuously satisfied and testing it would
+      prove nothing.
+
+====================================================================================================
+SELF-CHECK
+====================================================================================================
+  CPB reference library reproduces 10/10 of its own pinned digests.
+  CPB library refuses 1/1 MUST-FAIL vectors (two-sided: a suite that only mismatched would pass a verifier that never refuses).
+  arp-subject-digest/1 agrees with jcs-n on 3/10 positive vectors.
+  Every one of the 7 divergences is attributed to a declared jcs-n step ARP does not implement.
+  10 vectors are out of ARP's scope and are listed above with the reason, not omitted.
+  No unattributed agreement or divergence.
+  SELF-CHECK: PASS
+
+  machine-readable result written to /tmp/scitt-arp-f39/conformance/runs/cpb_run.json

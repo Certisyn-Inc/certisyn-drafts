@@ -20,9 +20,17 @@ $(TXT): $(XML)
 html: $(XML)
 	$(XML2RFC) --html $(XML)
 
+# DEFECT FIX (Songbo, 2026-07-29). This passed --verbose, which current idnits
+# does not accept, so the documented lint command exited on an option error and
+# ran no validation at all. A lint target that cannot fail is not a lint target.
+# --nitcount reports the counts; a missing idnits is still tolerated, but an
+# idnits that RUNS and reports errors now fails the target.
 lint: $(TXT)
-	@command -v idnits >/dev/null 2>&1 && idnits --verbose $(TXT) \
-	  || echo "idnits not installed — use https://author-tools.ietf.org/idnits"
+	@if command -v idnits >/dev/null 2>&1; then \
+	  idnits --nitcount $(TXT); \
+	else \
+	  echo "idnits not installed - use https://author-tools.ietf.org/idnits"; \
+	fi
 
 # The failure that lost -01: the source said -00 while the datatracker said -01.
 check-docname:

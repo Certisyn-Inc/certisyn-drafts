@@ -41,7 +41,7 @@ and keeping a second copy here would invite it to drift.
 | `build_outcome_vectors_v02.py` | Regenerates `vectors/arp-outcome-vectors-v0.2.json` from the CAID registry and reference issuer. |
 | `run_outcome_vectors.py` | The five outcome vectors, two-sided. |
 | `run_cpb_vectors.py` | ARP against the `draft-mih-sokolov-scitt-payload-binding` conformance suite. |
-| `run_aac_vectors.py` | ARP against the Agent Action Capsule Class-1 frozen suite, with CPB's `jcs-n` as an independent third implementation of AAC's own `capsule_id`. |
+| `run_aac_vectors.py` | ARP against the Agent Action Capsule Class-1 frozen suite, plus a differential test of whether AAC's `capsule_id` and CPB's `jcs-n` are the same construction. **CPB-python and AAC-python are the same source and their agreement is code identity, not corroboration** — the runner discloses this and the evidence column is the AAC **Go** canonicalizer. Stage 3 needs `--go-shim`; without it it reports NOT RUN, not PASS. |
 
 ## runs/
 

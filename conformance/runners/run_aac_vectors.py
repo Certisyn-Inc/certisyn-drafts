@@ -62,7 +62,9 @@ _ap.add_argument("--aac-repo", required=True,
                       "at the pinned commit")
 _ap.add_argument("--cpb-repo", required=True,
                  help="checkout of github.com/action-state-group/scitt-payload-binding "
-                      "at the pinned commit; supplies the third implementation")
+                      "at the pinned commit. NOT an independent implementation: "
+                      "its canonicalizer is the same source as the AAC Python "
+                      "one. See the disclosure in the module docstring.")
 _ap.add_argument("--go-shim", default=os.environ.get("AAC_GO_SHIM"),
                  help="path to a built binary of aac/go/cmd/digest_shim; without "
                       "it stage 3 reports as NOT RUN rather than silently passing")
@@ -297,7 +299,8 @@ def main():
         except Exception as e:                                  # noqa: BLE001
             aac_exc = type(e).__name__
 
-        # --- 3. CPB, third implementation, same declared exclusion set ------
+        # --- CPB, same declared exclusion set. Same source as AAC-python, so
+        #     agreement here is code identity and is labelled as such. -------
         cpb_id = None
         cpb_exc = None
         try:
@@ -365,7 +368,7 @@ def main():
             neg += 1
             # A negative vector carries findings, not a recomputed id. What is
             # checkable here is whether the digest-bearing-value guards fire in
-            # all three implementations, since those are the only negatives
+            # the implementations, since those are the only negatives
             # that are a CANONICALIZATION matter rather than a semantic one.
             guard_case = aac_exc is not None or cpb_exc is not None
             row["guard_case"] = guard_case

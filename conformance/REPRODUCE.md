@@ -82,7 +82,7 @@ Clone each at the pinned commit:
 
 ## 3. Commands
 
-Run all six from `conformance/`. Outputs land in `runs/` and overwrite the
+Run all seven from `conformance/`. Outputs land in `runs/` and overwrite the
 committed copies, so `git diff` after a run IS the reproduction check.
 
     # (a) the main run: EMILIA frozen-v1 + the Noa receipt corpus
@@ -121,6 +121,10 @@ committed copies, so `git diff` after a run IS the reproduction check.
 
     python3 runners/run_aac_vectors.py --aac-repo <aac> --cpb-repo <cpb> \
       --go-shim /tmp/aac_digest
+
+    # (g) check this file against the tree it describes. Two digests here
+    #     were stale before this existed, and nothing caught them.
+    python3 runners/verify_manifest.py
 
 Vector file v0.2 is itself generated, not hand-written. To regenerate and
 confirm it is byte-identical:
@@ -169,12 +173,16 @@ two rows; see CHANGES-v2.1.md.
 ## 6. Script hashes
 
     00b10162e7bba48b9fc300cf07be124e9b454d86a8b9453aa716ce4a2b6e03bf  harness/arp_reconcile.py
-    267bcbf5f29fd74a6630920834e9ddab8bbb82cc294af8efac2c34b43221cc7c  harness/arp_eatf.py
+    6e7313642c623df3b6ed227cdacd52e42f6c70d309500171e212a76aa456f6fc  harness/arp_eatf.py
     c54bd187a9abe9b55103a9faff8b31bd01f049856b35bef2575095b83febdf44  harness/arp_adapter.py
-    8a90c49322409d8cc8f3a5bcb0f96e3e94dd0147386d501853b831449ed85475  runners/run_outcome_vectors.py
+    0ee49465873bb9f9c18330517a9830aa3ad9e100886c76e9ec3c61db234eec3c  runners/run_outcome_vectors.py
     f924e69ccfc7d91e9295415b6aaa455976601f967fc7b337c0aa246c801a484d  runners/build_outcome_vectors_v02.py
-    c93b1326414ca2bace59911b0fe9aa030a1d6bba770a96887ae44f850b226e04  runners/run_cpb_vectors.py
+    4170baf34c273423d14a7468750033315c840d3433a08657c12000af0454a66d  runners/run_cpb_vectors.py
+    583dc806ee49b50f27ef27c5270a5330657c63155e580cfb312b1c4d455db19d  runners/run_aac_vectors.py
+    cb964d52a7c30cf00d4527766916773772ac3eb0d2524ec00b3d6b44d6ec9f65  runners/aac_go_shim/main.go
+    2189f3c2422b9d70a93ffcb0396264311dc27cecd96abf048d340dea60c69da2  runners/verify_manifest.py
     8726e9f178ea94bb2b255af808bd0761e3f2f46473fcd403413fce5ab1db1b35  vectors/arp-outcome-vectors-v0.2.json
+    1e5d6a6b156f956e846ef3f4a5df6fa35efbe8197b5556106d2e060c70f59f2e  vectors/arp-aeb-adapter-v0.1.json   (EMILIA's, as received)
 
 The v1 harness that produced the first posted run remains byte-identical and
 is not in this tree; its md5 is 99240731f9947355de11006f91904d4d and it has

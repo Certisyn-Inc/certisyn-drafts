@@ -46,22 +46,56 @@ ARP against the AAC Class-1 frozen vector suite
   pos-unknown-effect-attestation             positive repro    agree     diverge   exclusion-set-applied
   pos-unknown-effect-type                    positive repro    agree     diverge   exclusion-set-applied
   pos-unknown-verdict-class                  positive repro    agree     diverge   exclusion-set-applied
+
+----------------------------------------------------------------------------------------------------
+3. Differential test on discriminating inputs
+----------------------------------------------------------------------------------------------------
+   These reach the paths the frozen suite never touches. AAC-python and
+   CPB-python are the SAME canonicalizer, so their agreement proves
+   nothing here either; the column that carries evidence is AAC-go.
+
+   case                               aac-py     cpb-py     aac-go     verdict
+   null-member-removed                9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   empty-object-removed               9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   empty-array-removed                9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   object-emptied-by-normalization    9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   nested-two-deep-emptied            9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   array-of-objects-normalized        933b2a17   933b2a17   933b2a17   py=py  go agrees
+   array-preserved-not-sorted         b86994ba   b86994ba   b86994ba   py=py  go agrees
+   nested-member-named-capsule_id     66635620   66635620   66635620   py=py  go agrees
+   nested-member-named-chain          e145579b   e145579b   e145579b   py=py  go agrees
+   key-sort-utf16-vs-codepoint        f343d8ac   f343d8ac   f343d8ac   py=py  go agrees
+   key-nfc-vs-nfd                     1d8b0a40   1d8b0a40   1d8b0a40   py=py  go agrees
+   string-escapes                     22074b1b   22074b1b   22074b1b   py=py  go agrees
+   control-char-below-0x20            dcc7e188   dcc7e188   dcc7e188   py=py  go agrees
+   non-bmp-value                      8da70d6d   8da70d6d   8da70d6d   py=py  go agrees
+   solidus-not-escaped                6af97e06   6af97e06   6af97e06   py=py  go agrees
+   integer-zero                       45b619e9   45b619e9   45b619e9   py=py  go agrees
+   integer-negative                   7e5830b4   7e5830b4   7e5830b4   py=py  go agrees
+   integer-at-safe-max                a9af4cfc   a9af4cfc   a9af4cfc   py=py  go agrees
+   integer-above-safe-max             UnsafeIntegerError UnsafeIntegerError REFUSED    py=py  go agrees
+   integer-at-safe-min                2bbb858a   2bbb858a   2bbb858a   py=py  go agrees
+   float-in-value                     FloatInDigestError FloatInDigestError REFUSED    py=py  go agrees
+   float-integral-valued              FloatInDigestError FloatInDigestError REFUSED    py=py  go agrees
+   bool-and-deep-nesting              0d09c110   0d09c110   0d09c110   py=py  go agrees
+   all-members-removed                44136fa3   44136fa3   44136fa3   py=py  go agrees
+
+   AAC-python vs CPB-python : 24/24 (expected 100%; they are the same source)
+   AAC-go vs AAC-python     : 24/24  <-- the column that carries evidence
 ====================================================================================================
 SELF-CHECK
 ====================================================================================================
-  Positive vectors: 27   Negative vectors: 5   Total: 32
-  AAC reproduces its own pinned capsule_id on 27/27.
-  CPB jcs-n, given AAC's exclusion set ['capsule_id', 'chain'], reproduces AAC's
-    capsule_id on 27/27 -- a THIRD implementation, no shared code.
+  Suite taxonomy (their `kind` field): honesty 1, negative 11, positive 17, store 3
+  Identifier-bearing vectors: 27 (honesty 1, negative 9, positive 17)
+  Carrying findings only, no recomputed identifier: 5
+  AAC-python reproduces its own pinned capsule_id on 27/27.
+  CPB-python, given AAC's exclusion set ['capsule_id', 'chain'] as its own
+    parameter, agrees on 27/27. This is NOT independent
+    corroboration: see the disclosure at the top of this file. The two
+    Python canonicalizers are the same source.
   arp-subject-digest/1 agrees with capsule_id on 0/27;
     every divergence is attributed to a declared step ARP does not implement.
 
-  FINDING. AAC's capsule_id is not a distinct construction. It is a CPB
-  jcs-n derived identifier under a FIXED exclusion set {capsule_id, chain}.
-  Three implementations agree byte-for-byte on all 27 positive vectors.
-  The composition draft can therefore CITE the binding draft's mechanism
-  rather than restate it, exactly as ARP-02 cites rather than restates the
-  capsule slots. One rule in the ecosystem beats two that almost agree.
 
   No unattributed agreement or divergence.
   SELF-CHECK: PASS

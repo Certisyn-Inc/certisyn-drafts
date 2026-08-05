@@ -1,41 +1,51 @@
 #!/usr/bin/env python3
-"""ARP against the Agent Action Capsule (AAC) Class-1 frozen vector suite.
+"""ARP against the Agent Action Capsule (AAC) Class-1 frozen vector suite,
+plus a differential test of the proposition that AAC's capsule_id and CPB's
+jcs-n are the same construction.
 
 Suite: action-state-group/agent-action-capsule, test-vectors/, 32 cases,
-SHA256SUMS-pinned, exercised by two independent runners (Python and Go) that
-share no code path.
+SHA256SUMS-pinned, exercised by two runners that share no code path
+(python/tests and go/cmd/vector_runner).
 
-AAC computes, per draft-mih-scitt-agent-action-capsule §2 and §5.1:
-
+AAC computes, per its §2 and §5.1:
     capsule_id = HEX(SHA-256(JCS(normalize(capsule minus {capsule_id, chain}))))
+CPB computes, per draft-mih-sokolov-scitt-payload-binding §3.1:
+    jcs-n      = HEX(SHA-256(JCS(normalize(payload minus exclusion_set))))
 
-`normalize` is absent-field normalization. That is the SAME SHAPE as CPB's
-jcs-n: an exclusion set, then absent-field normalization, then JCS, then
-SHA-256, with the same float and unsafe-integer refusals. The exclusion set is
-just fixed rather than declared per type.
+DISCLOSURE, because it decides how much the numbers below are worth. The CPB
+reference library and the AAC Python library are NOT independent
+implementations of these rules. Their `normalize`, `_jcs_string` and `jcs`
+functions are byte-identical after docstring stripping, `_jcs_value` differs
+only in an exception message, and both repositories are the same GitHub
+organisation. Agreement between those two is code identity, not corroboration,
+and this runner says so rather than counting it as a third opinion.
 
-So this runner asks three questions, in increasing order of usefulness:
+The genuinely independent implementation available here is the AAC **Go**
+canonicalizer, 251 lines with its own UTF-16 key comparison, its own escaping
+and its own number handling. Where the Go implementation agrees, that is
+evidence. Where only the two Python copies agree, it is not.
 
-  1. Does AAC reproduce its own pinned capsule_id on every positive vector,
-     and REFUSE every negative one? (Their claim, checked by us.)
+The second problem this runner now addresses. The 32 frozen vectors do not
+exercise the code the proposition is about: on all of them absent-field
+normalization is a no-op, no array appears, no integer appears, no non-ASCII
+or escaped character appears, and no nested member is named capsule_id or
+chain. So agreement on the frozen set could not distinguish the two
+constructions even if they differed. Stage 3 therefore generates
+DISCRIMINATING inputs that reach every one of those paths, and runs all three
+implementations over them.
 
-  2. Does ARP's arp-subject-digest/1 agree? It should not, on any capsule that
-     carries a null or empty member or a `chain` block, because ARP applies
-     neither the exclusion set nor the normalization. Every divergence must be
-     attributable, in both directions, or this runner fails.
+Stages:
+  1. The frozen suite: does AAC reproduce its own pinned identifiers, and do
+     the digest-bearing-value guards fire where the suite says they should?
+  2. ARP against the same suite. arp-subject-digest/1 applies no exclusion set
+     and no normalization, so it MUST diverge wherever either applies. Checked
+     in both directions: an unattributed divergence fails, and so does an
+     unexplained agreement.
+  3. Differential test on generated inputs that reach normalization, arrays,
+     escaping, the integer bounds, and nested exclusion-set names, across
+     AAC-Python, AAC-Go and CPB-Python.
 
-  3. THE ONE WORTH RUNNING. Does CPB's jcs-n derived-identifier mechanism,
-     given the exclusion set {capsule_id, chain}, reproduce AAC's capsule_id
-     EXACTLY -- on a third implementation that has never seen an AAC capsule?
-
-     If yes, AAC's capsule_id is not a new construction. It is a CPB derived
-     identifier with a fixed exclusion set, and the composition draft can cite
-     the binding draft rather than restate the mechanism. That is a
-     cite-don't-restate finding of the same kind ARP-02 already took, and it
-     is only worth asserting if a third implementation agrees byte-for-byte.
-
-An unattributed agreement or divergence is a hard failure of this runner, not
-a row in a table.
+An unattributed result at any stage is a hard failure, not a row in a table.
 """
 
 import argparse
@@ -53,12 +63,17 @@ _ap.add_argument("--aac-repo", required=True,
 _ap.add_argument("--cpb-repo", required=True,
                  help="checkout of github.com/action-state-group/scitt-payload-binding "
                       "at the pinned commit; supplies the third implementation")
+_ap.add_argument("--go-shim", default=os.environ.get("AAC_GO_SHIM"),
+                 help="path to a built binary of aac/go/cmd/digest_shim; without "
+                      "it stage 3 reports as NOT RUN rather than silently passing")
 _ap.add_argument("--json", default=os.path.join(HERE, "..", "runs", "aac_run.json"))
 ARGS = _ap.parse_args()
 
 sys.path.insert(0, os.path.join(HERE, "..", "harness"))
 sys.path.insert(0, os.path.join(ARGS.cpb_repo, "lib"))
 sys.path.insert(0, os.path.join(ARGS.aac_repo, "python"))
+
+import subprocess                                              # noqa: E402
 
 import arp_reconcile as arp                                    # noqa: E402
 
@@ -89,6 +104,153 @@ def structural_cause(capsule):
     if CPB.normalize(stripped) != stripped:
         causes.append("absent-field-normalization-applied")
     return causes
+
+
+
+# ---------------------------------------------------------------------------
+# Stage 3. Differential test on DISCRIMINATING inputs.
+#
+# The frozen suite cannot distinguish the two constructions: on all 32 cases
+# absent-field normalization is a no-op, no array or integer appears, no
+# escaped or non-ASCII character appears, and no nested member is named
+# capsule_id or chain. Nineteen of the seventy-one statements in the
+# canonicalizer never execute. Agreement there is agreement about nothing.
+#
+# These inputs are built to reach exactly the paths the frozen set misses.
+# Each is named for the rule it exercises, so a disagreement points at a rule
+# rather than at a blob.
+# ---------------------------------------------------------------------------
+
+DISCRIMINATING = [
+    ("null-member-removed",           {"a": "1", "b": None}),
+    ("empty-object-removed",          {"a": "1", "b": {}}),
+    ("empty-array-removed",           {"a": "1", "b": []}),
+    ("object-emptied-by-normalization", {"a": "1", "b": {"c": None}}),
+    ("nested-two-deep-emptied",       {"a": "1", "b": {"c": {"d": None}}}),
+    ("array-of-objects-normalized",   {"a": [{"x": None, "y": "1"}, {"z": "2"}]}),
+    ("array-preserved-not-sorted",    {"a": ["b", "a", "c"]}),
+    ("nested-member-named-capsule_id", {"a": {"capsule_id": "inner"}}),
+    ("nested-member-named-chain",     {"a": {"chain": "inner"}}),
+    ("key-sort-utf16-vs-codepoint",   {"\U0001F600": "hi", "\uFF3A": "wide"}),
+    ("key-nfc-vs-nfd",                {"A\u030A": "combining", "B": "plain"}),
+    ("string-escapes",                {"a": "q\"b\\\\s\u0008\u0009\u000a\u000c\u000d"}),
+    ("control-char-below-0x20",       {"a": "x\u0001y"}),
+    ("non-bmp-value",                 {"a": "\U0001F600"}),
+    ("solidus-not-escaped",           {"a": "a/b"}),
+    ("integer-zero",                  {"a": 0}),
+    ("integer-negative",              {"a": -1}),
+    ("integer-at-safe-max",           {"a": 9007199254740991}),
+    ("integer-above-safe-max",        {"a": 9007199254740992}),
+    ("integer-at-safe-min",           {"a": -9007199254740991}),
+    ("float-in-value",                {"a": 1.5}),
+    ("float-integral-valued",         {"a": 2.0}),
+    ("bool-and-deep-nesting",         {"a": True, "b": {"c": {"d": {"e": "f"}}}}),
+    ("all-members-removed",           {"a": None, "b": [], "c": {}}),
+]
+
+
+def go_digest_batch(shim, objs):
+    """One process, one line of JSON per object, one digest per line."""
+    payload = "\n".join(json.dumps(o, ensure_ascii=False) for o in objs) + "\n"
+    p = subprocess.run([shim], input=payload.encode("utf-8"),
+                       capture_output=True, timeout=120)
+    return p.stdout.decode("utf-8").splitlines()
+
+
+def run_stage3(unattributed):
+    print()
+    hr()
+    print("3. Differential test on discriminating inputs")
+    hr()
+    print("   These reach the paths the frozen suite never touches. AAC-python and")
+    print("   CPB-python are the SAME canonicalizer, so their agreement proves")
+    print("   nothing here either; the column that carries evidence is AAC-go.")
+    print()
+
+    objs = [o for _n, o in DISCRIMINATING]
+    go_out = None
+    if ARGS.go_shim and os.path.exists(ARGS.go_shim):
+        try:
+            go_out = go_digest_batch(ARGS.go_shim, objs)
+        except Exception as e:                                  # noqa: BLE001
+            print(f"   go shim failed to run: {e}")
+    if go_out is None:
+        print("   !! AAC-go NOT RUN. Build aac/go/cmd/digest_shim and pass --go-shim.")
+        print("      Stage 3 is reported as NOT RUN rather than passed, because a")
+        print("      differential test with one of its two independent sides missing")
+        print("      is not a differential test.")
+    if go_out is not None and len(go_out) != len(objs):
+        unattributed.append(
+            f"go shim returned {len(go_out)} lines for {len(objs)} inputs")
+        go_out = None
+
+    print(f"   {'case':<34} {'aac-py':<10} {'cpb-py':<10} {'aac-go':<10} verdict")
+    out = []
+    agree_py = agree_go = 0
+    tested_go = 0
+    for i, (nm, obj) in enumerate(DISCRIMINATING):
+        def call(fn):
+            try:
+                return fn(), None
+            except Exception as e:                              # noqa: BLE001
+                return None, type(e).__name__
+        a_id, a_exc = call(lambda: AAC.compute_capsule_id(obj))
+        c_id, c_exc = call(lambda: CPB.canonical_digest(obj, AAC_EXCLUSION))
+        g = go_out[i] if go_out else None
+        g_ref = g.startswith("REFUSED") if g else None
+
+        a_tok = a_exc or (a_id[:8] if a_id else "?")
+        c_tok = c_exc or (c_id[:8] if c_id else "?")
+        g_tok = ("REFUSED" if g_ref else (g[:8] if g else "-"))
+
+        py_same = (a_id == c_id) and (a_exc == c_exc)
+        agree_py += py_same
+        go_same = None
+        if g is not None:
+            tested_go += 1
+            if g_ref:
+                go_same = a_exc is not None
+            else:
+                go_same = (g == a_id)
+            agree_go += bool(go_same)
+
+        verdict = ("py=py " if py_same else "PY DIFFER ")
+        if go_same is None:
+            verdict += " go:not-run"
+        elif go_same:
+            verdict += " go agrees"
+        else:
+            verdict += " GO DIFFERS"
+
+        if not py_same:
+            unattributed.append(
+                f"stage3/{nm}: the two Python canonicalizers, which are the same "
+                f"source, disagree ({a_tok} vs {c_tok}). That should be impossible.")
+        if go_same is False:
+            unattributed.append(
+                f"stage3/{nm}: AAC-go disagrees with AAC-python ({g_tok} vs {a_tok}). "
+                "Two implementations of the same stated rules diverge on an input "
+                "the frozen suite does not cover.")
+
+        print(f"   {nm:<34} {a_tok:<10} {c_tok:<10} {g_tok:<10} {verdict}")
+        out.append({"case": nm, "input": obj,
+                    "aac_python": a_id, "aac_python_exception": a_exc,
+                    "cpb_python": c_id, "cpb_python_exception": c_exc,
+                    "aac_go": g, "python_pair_agree": py_same,
+                    "go_agrees_with_python": go_same})
+
+    print()
+    print(f"   AAC-python vs CPB-python : {agree_py}/{len(DISCRIMINATING)} "
+          "(expected 100%; they are the same source)")
+    if tested_go:
+        print(f"   AAC-go vs AAC-python     : {agree_go}/{tested_go}  "
+              "<-- the column that carries evidence")
+    else:
+        print("   AAC-go vs AAC-python     : NOT RUN")
+    return {"cases": out, "python_pair_agree": agree_py,
+            "go_agree": agree_go if tested_go else None,
+            "go_tested": tested_go,
+            "total": len(DISCRIMINATING)}
 
 
 def main():
@@ -139,8 +301,11 @@ def main():
         cpb_id = None
         cpb_exc = None
         try:
-            stripped = {k: v for k, v in capsule.items() if k not in AAC_EXCLUSION}
-            cpb_id = CPB.canonical_digest(stripped, [])
+            # Pass the exclusion set as CPB's OWN parameter rather than
+            # stripping the fields first, so CPB's exclusion machinery is the
+            # thing under test. Read from AAC.CHAIN_LINKAGE_FIELDS, not
+            # transcribed.
+            cpb_id = CPB.canonical_digest(capsule, AAC_EXCLUSION)
         except (FloatInDigestError, UnsafeIntegerError) as e:
             cpb_exc = type(e).__name__
         except Exception as e:                                  # noqa: BLE001
@@ -165,6 +330,7 @@ def main():
 
         if pinned is not None:
             pos += 1
+            row["suite_kind"] = kind
             row["aac_reproduces_pinned"] = (aac_id == pinned)
             row["cpb_agrees_with_aac"] = (cpb_id == aac_id and aac_id is not None)
             row["arp_agrees_with_aac"] = (arp_id == aac_id)
@@ -219,24 +385,27 @@ def main():
                   f"{'digest-value-guard' if guard_case else 'semantic, not canonicalization'}")
         rows.append(row)
 
+    stage3 = run_stage3(unattributed)
+
     hr("=")
     print("SELF-CHECK")
     hr("=")
-    print(f"  Positive vectors: {pos}   Negative vectors: {neg}   Total: {len(cases)}")
-    print(f"  AAC reproduces its own pinned capsule_id on {aac_repro}/{pos}.")
-    print(f"  CPB jcs-n, given AAC's exclusion set {AAC_EXCLUSION}, reproduces AAC's")
-    print(f"    capsule_id on {cpb_agrees}/{pos} -- a THIRD implementation, no shared code.")
+    from collections import Counter
+    suite_kinds = Counter(r.get("kind") for r in rows)
+    idbearing = Counter(r.get("suite_kind") for r in rows if r.get("suite_kind"))
+    print(f"  Suite taxonomy (their `kind` field): "
+          + ", ".join(f"{k} {v}" for k, v in sorted(suite_kinds.items())))
+    print(f"  Identifier-bearing vectors: {pos} "
+          f"({', '.join(f'{k} {v}' for k, v in sorted(idbearing.items()))})")
+    print(f"  Carrying findings only, no recomputed identifier: {neg}")
+    print(f"  AAC-python reproduces its own pinned capsule_id on {aac_repro}/{pos}.")
+    print(f"  CPB-python, given AAC's exclusion set {AAC_EXCLUSION} as its own")
+    print(f"    parameter, agrees on {cpb_agrees}/{pos}. This is NOT independent")
+    print("    corroboration: see the disclosure at the top of this file. The two")
+    print("    Python canonicalizers are the same source.")
     print(f"  arp-subject-digest/1 agrees with capsule_id on {arp_agrees}/{pos};")
     print(f"    every divergence is attributed to a declared step ARP does not implement.")
     print()
-    if cpb_agrees == pos and pos:
-        print("  FINDING. AAC's capsule_id is not a distinct construction. It is a CPB")
-        print("  jcs-n derived identifier under a FIXED exclusion set {capsule_id, chain}.")
-        print("  Three implementations agree byte-for-byte on all "
-              f"{pos} positive vectors.")
-        print("  The composition draft can therefore CITE the binding draft's mechanism")
-        print("  rather than restate it, exactly as ARP-02 cites rather than restates the")
-        print("  capsule slots. One rule in the ecosystem beats two that almost agree.")
     print()
     if unattributed:
         print("  !! UNATTRIBUTED RESULTS -- defects, not table rows:")
@@ -262,6 +431,12 @@ def main():
                        "cpb_agrees_with_aac": cpb_agrees,
                        "arp_agrees_with_aac": arp_agrees},
             "rows": rows,
+            "stage3_differential": stage3,
+            "code_identity_disclosure": (
+                "cpb.canonicalize and agent_action_capsule.canonical share "
+                "byte-identical normalize/_jcs_string/jcs after docstring "
+                "stripping and are published by the same organisation. "
+                "Agreement between them is code identity, not corroboration."),
             "unattributed": unattributed,
         }, f, indent=2)
         f.write("\n")

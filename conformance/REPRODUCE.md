@@ -82,7 +82,7 @@ Clone each at the pinned commit:
 
 ## 3. Commands
 
-Run all five from `conformance/`. Outputs land in `runs/` and overwrite the
+Run all six from `conformance/`. Outputs land in `runs/` and overwrite the
 committed copies, so `git diff` after a run IS the reproduction check.
 
     # (a) the main run: EMILIA frozen-v1 + the Noa receipt corpus
@@ -107,9 +107,20 @@ committed copies, so `git diff` after a run IS the reproduction check.
     # (e) ARP against the CPB conformance vector suite
     python3 runners/run_cpb_vectors.py --cpb-repo <cpb>
 
-    # (f) ARP against the AAC Class-1 frozen suite, with CPB as a third
-    #     independent implementation of AAC's own capsule_id
-    python3 runners/run_aac_vectors.py --aac-repo <aac> --cpb-repo <cpb>
+    # (f) ARP against the AAC Class-1 frozen suite, PLUS a differential test
+    #     of whether AAC's capsule_id and CPB's jcs-n are the same
+    #     construction. Stage 3 needs the Go side; without --go-shim it
+    #     reports NOT RUN rather than passing on one leg.
+    #
+    #     Build the shim first. runners/aac_go_shim/main.go is the source;
+    #     it must be built INSIDE the AAC checkout because it imports that
+    #     module.
+    mkdir -p <aac>/go/cmd/digest_shim
+    cp runners/aac_go_shim/main.go <aac>/go/cmd/digest_shim/main.go
+    (cd <aac>/go && go build -o /tmp/aac_digest ./cmd/digest_shim)
+
+    python3 runners/run_aac_vectors.py --aac-repo <aac> --cpb-repo <cpb> \
+      --go-shim /tmp/aac_digest
 
 Vector file v0.2 is itself generated, not hand-written. To regenerate and
 confirm it is byte-identical:
@@ -137,6 +148,8 @@ No other fixture is used. Everything else is read from the pinned corpora.
       sha256 a2ad66d4f7acb573f3b63dd5874fae127261984348413d5c1a03e98d6f55aa28
     runs/cpb_run.json                       SELF-CHECK PASS, 0 unattributed
       sha256 cc94f74e9187d0c6d609c66e4a93b3cc9e576738d624ea7247c4cafa2d2527bf
+    runs/aac_run.json                       SELF-CHECK PASS, 0 unattributed
+      sha256 421a8bef08d33a47ad302b281a66c0773fd025ab55d7996c2964f335294982d4
     runs/arp_adapter_run.json               5 of 5
       sha256 a25629f0e1ccdee444d1f86a4a61476780e32d7132df4b5cc67251befc28280e
     runs/eatf_run_noanchor.json

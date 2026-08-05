@@ -27,6 +27,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "honesty",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -44,6 +45,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -61,6 +63,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -78,6 +81,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -95,6 +99,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -126,6 +131,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -164,6 +170,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -181,6 +188,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -198,6 +206,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -215,6 +224,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "negative",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -253,6 +263,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -284,6 +295,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -301,6 +313,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -318,6 +331,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -335,6 +349,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -352,6 +367,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -369,6 +385,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -386,6 +403,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -403,6 +421,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -420,6 +439,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -437,6 +457,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -454,6 +475,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -485,6 +507,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -502,6 +525,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -519,6 +543,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -536,6 +561,7 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
@@ -553,10 +579,370 @@
       "divergence_causes": [
         "exclusion-set-applied"
       ],
+      "suite_kind": "positive",
       "aac_reproduces_pinned": true,
       "cpb_agrees_with_aac": true,
       "arp_agrees_with_aac": false
     }
   ],
+  "stage3_differential": {
+    "cases": [
+      {
+        "case": "null-member-removed",
+        "input": {
+          "a": "1",
+          "b": null
+        },
+        "aac_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "aac_python_exception": null,
+        "cpb_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "cpb_python_exception": null,
+        "aac_go": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "empty-object-removed",
+        "input": {
+          "a": "1",
+          "b": {}
+        },
+        "aac_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "aac_python_exception": null,
+        "cpb_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "cpb_python_exception": null,
+        "aac_go": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "empty-array-removed",
+        "input": {
+          "a": "1",
+          "b": []
+        },
+        "aac_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "aac_python_exception": null,
+        "cpb_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "cpb_python_exception": null,
+        "aac_go": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "object-emptied-by-normalization",
+        "input": {
+          "a": "1",
+          "b": {
+            "c": null
+          }
+        },
+        "aac_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "aac_python_exception": null,
+        "cpb_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "cpb_python_exception": null,
+        "aac_go": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "nested-two-deep-emptied",
+        "input": {
+          "a": "1",
+          "b": {
+            "c": {
+              "d": null
+            }
+          }
+        },
+        "aac_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "aac_python_exception": null,
+        "cpb_python": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "cpb_python_exception": null,
+        "aac_go": "9afeb0f2b203f254312ec8ded441d0318b7c34c57f8695ede42d2215a30c0960",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "array-of-objects-normalized",
+        "input": {
+          "a": [
+            {
+              "x": null,
+              "y": "1"
+            },
+            {
+              "z": "2"
+            }
+          ]
+        },
+        "aac_python": "933b2a170b2f20ae7aed24aa4829c840837da0dc4eb66e4bbf901a573c302af7",
+        "aac_python_exception": null,
+        "cpb_python": "933b2a170b2f20ae7aed24aa4829c840837da0dc4eb66e4bbf901a573c302af7",
+        "cpb_python_exception": null,
+        "aac_go": "933b2a170b2f20ae7aed24aa4829c840837da0dc4eb66e4bbf901a573c302af7",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "array-preserved-not-sorted",
+        "input": {
+          "a": [
+            "b",
+            "a",
+            "c"
+          ]
+        },
+        "aac_python": "b86994baad57fff516a7abb8b44ea4636eede4dd04a41f84573bff0a5a205c0b",
+        "aac_python_exception": null,
+        "cpb_python": "b86994baad57fff516a7abb8b44ea4636eede4dd04a41f84573bff0a5a205c0b",
+        "cpb_python_exception": null,
+        "aac_go": "b86994baad57fff516a7abb8b44ea4636eede4dd04a41f84573bff0a5a205c0b",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "nested-member-named-capsule_id",
+        "input": {
+          "a": {
+            "capsule_id": "inner"
+          }
+        },
+        "aac_python": "66635620f153896b5510f2e09e7d42235bcfbd39425f089860025871fdb580ea",
+        "aac_python_exception": null,
+        "cpb_python": "66635620f153896b5510f2e09e7d42235bcfbd39425f089860025871fdb580ea",
+        "cpb_python_exception": null,
+        "aac_go": "66635620f153896b5510f2e09e7d42235bcfbd39425f089860025871fdb580ea",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "nested-member-named-chain",
+        "input": {
+          "a": {
+            "chain": "inner"
+          }
+        },
+        "aac_python": "e145579b44e1305c8a079595a9f0ef21fed904ace2b7d7e6e2186df0642c9989",
+        "aac_python_exception": null,
+        "cpb_python": "e145579b44e1305c8a079595a9f0ef21fed904ace2b7d7e6e2186df0642c9989",
+        "cpb_python_exception": null,
+        "aac_go": "e145579b44e1305c8a079595a9f0ef21fed904ace2b7d7e6e2186df0642c9989",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "key-sort-utf16-vs-codepoint",
+        "input": {
+          "\ud83d\ude00": "hi",
+          "\uff3a": "wide"
+        },
+        "aac_python": "f343d8ac9c4d80fcc70afa65897ef00b2457b4e5e902d2321115b1d12352faff",
+        "aac_python_exception": null,
+        "cpb_python": "f343d8ac9c4d80fcc70afa65897ef00b2457b4e5e902d2321115b1d12352faff",
+        "cpb_python_exception": null,
+        "aac_go": "f343d8ac9c4d80fcc70afa65897ef00b2457b4e5e902d2321115b1d12352faff",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "key-nfc-vs-nfd",
+        "input": {
+          "A\u030a": "combining",
+          "B": "plain"
+        },
+        "aac_python": "1d8b0a40f79e5ad5268e73a05caaa3c49f9e6a740deaf24542357e9978bd9ebd",
+        "aac_python_exception": null,
+        "cpb_python": "1d8b0a40f79e5ad5268e73a05caaa3c49f9e6a740deaf24542357e9978bd9ebd",
+        "cpb_python_exception": null,
+        "aac_go": "1d8b0a40f79e5ad5268e73a05caaa3c49f9e6a740deaf24542357e9978bd9ebd",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "string-escapes",
+        "input": {
+          "a": "q\"b\\\\s\b\t\n\f\r"
+        },
+        "aac_python": "22074b1b82815452c3bc3ae348f2323abe14bddc434660cb199506b60946cffa",
+        "aac_python_exception": null,
+        "cpb_python": "22074b1b82815452c3bc3ae348f2323abe14bddc434660cb199506b60946cffa",
+        "cpb_python_exception": null,
+        "aac_go": "22074b1b82815452c3bc3ae348f2323abe14bddc434660cb199506b60946cffa",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "control-char-below-0x20",
+        "input": {
+          "a": "x\u0001y"
+        },
+        "aac_python": "dcc7e1887e7aeedb50a18b5718fdfd3750f9cd71b65162cfc9395ab9d5724aee",
+        "aac_python_exception": null,
+        "cpb_python": "dcc7e1887e7aeedb50a18b5718fdfd3750f9cd71b65162cfc9395ab9d5724aee",
+        "cpb_python_exception": null,
+        "aac_go": "dcc7e1887e7aeedb50a18b5718fdfd3750f9cd71b65162cfc9395ab9d5724aee",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "non-bmp-value",
+        "input": {
+          "a": "\ud83d\ude00"
+        },
+        "aac_python": "8da70d6db48a3dc32fa9526602b4970d2eb551ffbbb8c497d97e4cb24f637d04",
+        "aac_python_exception": null,
+        "cpb_python": "8da70d6db48a3dc32fa9526602b4970d2eb551ffbbb8c497d97e4cb24f637d04",
+        "cpb_python_exception": null,
+        "aac_go": "8da70d6db48a3dc32fa9526602b4970d2eb551ffbbb8c497d97e4cb24f637d04",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "solidus-not-escaped",
+        "input": {
+          "a": "a/b"
+        },
+        "aac_python": "6af97e068868f1784ed86718bb0fe550e9454dee6b0493ac5f49700b0a13fc50",
+        "aac_python_exception": null,
+        "cpb_python": "6af97e068868f1784ed86718bb0fe550e9454dee6b0493ac5f49700b0a13fc50",
+        "cpb_python_exception": null,
+        "aac_go": "6af97e068868f1784ed86718bb0fe550e9454dee6b0493ac5f49700b0a13fc50",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "integer-zero",
+        "input": {
+          "a": 0
+        },
+        "aac_python": "45b619e97b5d9b029af4522e9ffb02fa99ff2bf226c82ee22a7cc10269a557e8",
+        "aac_python_exception": null,
+        "cpb_python": "45b619e97b5d9b029af4522e9ffb02fa99ff2bf226c82ee22a7cc10269a557e8",
+        "cpb_python_exception": null,
+        "aac_go": "45b619e97b5d9b029af4522e9ffb02fa99ff2bf226c82ee22a7cc10269a557e8",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "integer-negative",
+        "input": {
+          "a": -1
+        },
+        "aac_python": "7e5830b4ab7d92b604d6ef43438553c9c917b4d7d9035c09fa63706317838d89",
+        "aac_python_exception": null,
+        "cpb_python": "7e5830b4ab7d92b604d6ef43438553c9c917b4d7d9035c09fa63706317838d89",
+        "cpb_python_exception": null,
+        "aac_go": "7e5830b4ab7d92b604d6ef43438553c9c917b4d7d9035c09fa63706317838d89",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "integer-at-safe-max",
+        "input": {
+          "a": 9007199254740991
+        },
+        "aac_python": "a9af4cfcb37cc6c571d3b396a59af5f6e42c8ea43d06cafc89705e3fb495649d",
+        "aac_python_exception": null,
+        "cpb_python": "a9af4cfcb37cc6c571d3b396a59af5f6e42c8ea43d06cafc89705e3fb495649d",
+        "cpb_python_exception": null,
+        "aac_go": "a9af4cfcb37cc6c571d3b396a59af5f6e42c8ea43d06cafc89705e3fb495649d",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "integer-above-safe-max",
+        "input": {
+          "a": 9007199254740992
+        },
+        "aac_python": null,
+        "aac_python_exception": "UnsafeIntegerError",
+        "cpb_python": null,
+        "cpb_python_exception": "UnsafeIntegerError",
+        "aac_go": "REFUSED:*canonical.UnsafeIntError",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "integer-at-safe-min",
+        "input": {
+          "a": -9007199254740991
+        },
+        "aac_python": "2bbb858ae01f3f721370e806b33be7dd3ab381006bb3409ae01d29f8e326a8c2",
+        "aac_python_exception": null,
+        "cpb_python": "2bbb858ae01f3f721370e806b33be7dd3ab381006bb3409ae01d29f8e326a8c2",
+        "cpb_python_exception": null,
+        "aac_go": "2bbb858ae01f3f721370e806b33be7dd3ab381006bb3409ae01d29f8e326a8c2",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "float-in-value",
+        "input": {
+          "a": 1.5
+        },
+        "aac_python": null,
+        "aac_python_exception": "FloatInDigestError",
+        "cpb_python": null,
+        "cpb_python_exception": "FloatInDigestError",
+        "aac_go": "REFUSED:*canonical.FloatError",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "float-integral-valued",
+        "input": {
+          "a": 2.0
+        },
+        "aac_python": null,
+        "aac_python_exception": "FloatInDigestError",
+        "cpb_python": null,
+        "cpb_python_exception": "FloatInDigestError",
+        "aac_go": "REFUSED:*canonical.FloatError",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "bool-and-deep-nesting",
+        "input": {
+          "a": true,
+          "b": {
+            "c": {
+              "d": {
+                "e": "f"
+              }
+            }
+          }
+        },
+        "aac_python": "0d09c1105e6644e95345e5366a4b16ddaa4e42105d185e97e7c791281b543f80",
+        "aac_python_exception": null,
+        "cpb_python": "0d09c1105e6644e95345e5366a4b16ddaa4e42105d185e97e7c791281b543f80",
+        "cpb_python_exception": null,
+        "aac_go": "0d09c1105e6644e95345e5366a4b16ddaa4e42105d185e97e7c791281b543f80",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      },
+      {
+        "case": "all-members-removed",
+        "input": {
+          "a": null,
+          "b": [],
+          "c": {}
+        },
+        "aac_python": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "aac_python_exception": null,
+        "cpb_python": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "cpb_python_exception": null,
+        "aac_go": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "python_pair_agree": true,
+        "go_agrees_with_python": true
+      }
+    ],
+    "python_pair_agree": 24,
+    "go_agree": 24,
+    "go_tested": 24,
+    "total": 24
+  },
+  "code_identity_disclosure": "cpb.canonicalize and agent_action_capsule.canonical share byte-identical normalize/_jcs_string/jcs after docstring stripping and are published by the same organisation. Agreement between them is code identity, not corroboration.",
   "unattributed": []
 }

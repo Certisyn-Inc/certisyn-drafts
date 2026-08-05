@@ -1102,17 +1102,22 @@ Reference and source corrections in this revision:
 - A note to the RFC Editor records the {{RFC8785}} downref explicitly, so that
   it can be called out at IETF Last Call per {{RFC8067}} rather than found
   there.
-- Measured, and recorded here because it supports a claim this revision makes
-  rather than one it needs: the Agent Action Capsule `capsule_id` of
-  {{I-D.mih-sato-agent-accountability-composition}}'s companion capsule
-  specification is not a distinct construction. It is a derived identifier of
-  the kind {{I-D.mih-sokolov-scitt-payload-binding}} defines, under a fixed
-  exclusion set. Three implementations sharing no code -- the capsule
-  reference implementation, the binding draft's reference library, and this
-  author's -- agree byte-for-byte on all 27 positive vectors of the capsule
-  suite's frozen Class-1 set. That is the outcome
-  {{construction-distinctness}} argues for: one construction, identified, with
-  the parameters that affect the bytes committed to and nothing else.
+- Measured, and recorded here because it supports a claim this revision
+  already makes rather than one it needs. The Agent Action Capsule
+  `capsule_id` of the capsule specification companion to
+  {{I-D.mih-sato-agent-accountability-composition}} appears not to be a
+  distinct construction: both it and the derived identifier of
+  {{I-D.mih-sokolov-scitt-payload-binding}} are specified as a digest over an
+  {{RFC8785}} serialisation of a payload after absent-field normalisation and
+  the removal of an exclusion set, and the capsule's exclusion set is simply
+  fixed rather than declared per type. Two implementations that share no
+  source -- the capsule specification's Python and Go libraries -- agree
+  byte-for-byte on 24 generated inputs chosen to reach absent-field
+  normalisation, arrays, string escaping, UTF-16 member sorting and both
+  integer bounds, none of which the capsule suite's own frozen vectors
+  exercise. That is the outcome {{construction-distinctness}} argues for: one
+  construction, identified, committing to the parameters that affect the
+  serialised bytes and to nothing else.
 
 ## Since draft-hillier-scitt-arp-00
 

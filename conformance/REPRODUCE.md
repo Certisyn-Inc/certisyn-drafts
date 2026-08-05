@@ -54,6 +54,13 @@ silently passing.
        spec-pure reference library under lib/. Steven's pin. main carries only
        the six later kats at the time of this run.)
 
+    AAC Class-1 frozen vector suite
+      https://github.com/action-state-group/agent-action-capsule
+      10342f504b051a24908053465927efdaea3ec2f6
+      (Steven's pin. 32 frozen cases under test-vectors/, SHA256SUMS-verified,
+       exercised by two runners that share no code: python/tests and
+       go/cmd/vector_runner. main is mid-restructure; do not chase it.)
+
     ARP draft source
       https://github.com/Certisyn-Inc/scitt-arp-f39
       branch feat/revision-02-canonicalization
@@ -69,6 +76,9 @@ Clone each at the pinned commit:
     git clone https://github.com/action-state-group/scitt-payload-binding cpb && \
       git -C cpb checkout bc08d78a210f8e77d4abfd8c04c10ea9b57d4390 && \
       pip install -e cpb/lib
+    git clone https://github.com/action-state-group/agent-action-capsule aac && \
+      git -C aac checkout 10342f504b051a24908053465927efdaea3ec2f6 && \
+      pip install -e aac/python
 
 ## 3. Commands
 
@@ -96,6 +106,10 @@ committed copies, so `git diff` after a run IS the reproduction check.
 
     # (e) ARP against the CPB conformance vector suite
     python3 runners/run_cpb_vectors.py --cpb-repo <cpb>
+
+    # (f) ARP against the AAC Class-1 frozen suite, with CPB as a third
+    #     independent implementation of AAC's own capsule_id
+    python3 runners/run_aac_vectors.py --aac-repo <aac> --cpb-repo <cpb>
 
 Vector file v0.2 is itself generated, not hand-written. To regenerate and
 confirm it is byte-identical:

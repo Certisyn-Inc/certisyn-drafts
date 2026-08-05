@@ -1,0 +1,69 @@
+
+====================================================================================================
+ARP against the AAC Class-1 frozen vector suite
+====================================================================================================
+  cases                : 32
+  AAC exclusion set    : ['capsule_id', 'chain']  (read from their module)
+
+  Three constructions in this run:
+    arp-subject-digest/1  id=f23ecefd99c54182   SHA-256(JCS(v)), no exclusion, no normalization
+    aac capsule_id        SHA-256(JCS(normalize(v minus {capsule_id, chain})))
+    cpb jcs-n derived id  SHA-256(JCS(normalize(v minus <declared exclusion set>)))
+
+----------------------------------------------------------------------------------------------------
+1. Per-vector
+----------------------------------------------------------------------------------------------------
+  vector                                     kind  aac      cpb=aac   arp=aac   cause
+  honesty-dishonest-human-disposed           honesty repro    agree     diverge   exclusion-set-applied
+  neg-approver-invalid                       negative repro    agree     diverge   exclusion-set-applied
+  neg-attestation-missing-when-required      negative repro    agree     diverge   exclusion-set-applied
+  neg-attestation-present-when-not-applicable negative repro    agree     diverge   exclusion-set-applied
+  neg-capsule-id-mismatch                    negative repro    agree     diverge   exclusion-set-applied
+  neg-chain-missing-parent                   store findings -         -         semantic, not canonicalization
+  neg-confirmed-without-response             negative repro    agree     diverge   exclusion-set-applied
+  neg-float-in-digest-field                  negative FloatInDigestError FloatInDigestError non-integer-real digest-value-guard
+  neg-format-version-unknown                 negative repro    agree     diverge   exclusion-set-applied
+  neg-never-dispatch-confirmed-no-response   negative repro    agree     diverge   exclusion-set-applied
+  neg-never-dispatch-conflict                negative repro    agree     diverge   exclusion-set-applied
+  neg-never-dispatch-with-dispatched-effect  negative repro    agree     diverge   exclusion-set-applied
+  neg-unsafe-integer-in-digest-field         negative UnsafeIntegerError UnsafeIntegerError integer-outside-safe-range digest-value-guard
+  pos-blocked                                positive repro    agree     diverge   exclusion-set-applied
+  pos-concurrent-supersedes                  store findings -         -         semantic, not canonicalization
+  pos-confirmed-runtime-claimed              positive repro    agree     diverge   exclusion-set-applied
+  pos-deferred                               positive repro    agree     diverge   exclusion-set-applied
+  pos-denied                                 positive repro    agree     diverge   exclusion-set-applied
+  pos-dispatched-unconfirmed-required        positive repro    agree     diverge   exclusion-set-applied
+  pos-errored                                positive repro    agree     diverge   exclusion-set-applied
+  pos-executed-confirmed                     positive repro    agree     diverge   exclusion-set-applied
+  pos-failed-required                        positive repro    agree     diverge   exclusion-set-applied
+  pos-hitl-dispatched                        positive repro    agree     diverge   exclusion-set-applied
+  pos-not-applicable-absent                  positive repro    agree     diverge   exclusion-set-applied
+  pos-planned-carve                          positive repro    agree     diverge   exclusion-set-applied
+  pos-reverted-required                      positive repro    agree     diverge   exclusion-set-applied
+  pos-supersedes-chain                       store findings -         -         semantic, not canonicalization
+  pos-timeout-post-dispatch                  positive repro    agree     diverge   exclusion-set-applied
+  pos-timeout-pre-dispatch                   positive repro    agree     diverge   exclusion-set-applied
+  pos-unknown-effect-attestation             positive repro    agree     diverge   exclusion-set-applied
+  pos-unknown-effect-type                    positive repro    agree     diverge   exclusion-set-applied
+  pos-unknown-verdict-class                  positive repro    agree     diverge   exclusion-set-applied
+====================================================================================================
+SELF-CHECK
+====================================================================================================
+  Positive vectors: 27   Negative vectors: 5   Total: 32
+  AAC reproduces its own pinned capsule_id on 27/27.
+  CPB jcs-n, given AAC's exclusion set ['capsule_id', 'chain'], reproduces AAC's
+    capsule_id on 27/27 -- a THIRD implementation, no shared code.
+  arp-subject-digest/1 agrees with capsule_id on 0/27;
+    every divergence is attributed to a declared step ARP does not implement.
+
+  FINDING. AAC's capsule_id is not a distinct construction. It is a CPB
+  jcs-n derived identifier under a FIXED exclusion set {capsule_id, chain}.
+  Three implementations agree byte-for-byte on all 27 positive vectors.
+  The composition draft can therefore CITE the binding draft's mechanism
+  rather than restate it, exactly as ARP-02 cites rather than restates the
+  capsule slots. One rule in the ecosystem beats two that almost agree.
+
+  No unattributed agreement or divergence.
+  SELF-CHECK: PASS
+
+  machine-readable result written to runs/aac_run.json

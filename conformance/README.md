@@ -41,6 +41,7 @@ and keeping a second copy here would invite it to drift.
 | `build_outcome_vectors_v02.py` | Regenerates `vectors/arp-outcome-vectors-v0.2.json` from the CAID registry and reference issuer. |
 | `run_outcome_vectors.py` | The five outcome vectors, two-sided. |
 | `run_cpb_vectors.py` | ARP against the `draft-mih-sokolov-scitt-payload-binding` conformance suite. |
+| `run_aac_vectors.py` | ARP against the Agent Action Capsule Class-1 frozen suite, with CPB's `jcs-n` as an independent third implementation of AAC's own `capsule_id`. |
 
 ## runs/
 
@@ -55,6 +56,7 @@ against the next one.
 | `arp_adapter_run.json`, `arp_adapter.txt` | `harness/arp_adapter.py` |
 | `arp_outcome_vectors_v02_run.json`, `outcome_vectors_v02.txt` | `runners/run_outcome_vectors.py` |
 | `cpb_run.json`, `cpb_run.txt` | `runners/run_cpb_vectors.py` |
+| `aac_run.json`, `aac_run.txt` | `runners/run_aac_vectors.py` |
 | `arp-outcome-vectors-v0.1-superseded.json` | `harness/arp_adapter.py`. Kept so the supersession by v0.2 is checkable rather than asserted. Do not use it. |
 
 The two EATF configurations are kept apart deliberately: they differ, and the

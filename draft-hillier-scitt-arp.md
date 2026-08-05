@@ -1102,6 +1102,17 @@ Reference and source corrections in this revision:
 - A note to the RFC Editor records the {{RFC8785}} downref explicitly, so that
   it can be called out at IETF Last Call per {{RFC8067}} rather than found
   there.
+- Measured, and recorded here because it supports a claim this revision makes
+  rather than one it needs: the Agent Action Capsule `capsule_id` of
+  {{I-D.mih-sato-agent-accountability-composition}}'s companion capsule
+  specification is not a distinct construction. It is a derived identifier of
+  the kind {{I-D.mih-sokolov-scitt-payload-binding}} defines, under a fixed
+  exclusion set. Three implementations sharing no code -- the capsule
+  reference implementation, the binding draft's reference library, and this
+  author's -- agree byte-for-byte on all 27 positive vectors of the capsule
+  suite's frozen Class-1 set. That is the outcome
+  {{construction-distinctness}} argues for: one construction, identified, with
+  the parameters that affect the bytes committed to and nothing else.
 
 ## Since draft-hillier-scitt-arp-00
 

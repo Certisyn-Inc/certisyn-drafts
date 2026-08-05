@@ -1,0 +1,161 @@
+{
+  "suite": "ARP contribution to the CPB typed-reference conformance vectors",
+  "target": "draft-mih-sokolov-scitt-payload-binding-01",
+  "vectors_file": "arp-typed-ref-cpb01-v0.1.json",
+  "vectors_sha256": "88153dd1c4b62cfd313cd890ae84fc65de1f67bcd6db7556fce00b7893ce673d",
+  "harness": "arp_reconcile.py v2.1",
+  "harness_sha256": "00b10162e7bba48b9fc300cf07be124e9b454d86a8b9453aa716ce4a2b6e03bf",
+  "rows": [
+    {
+      "id": "typed-ref-cpb01-01",
+      "finding_class": "conformance_baseline",
+      "must_fail": false,
+      "requirement_verified": true,
+      "requirement_source": "draft-mih-sokolov-scitt-payload-binding-01",
+      "observed_verified": true,
+      "prediction_held": true,
+      "preconditions": {},
+      "detail": "recomputed 0c837d01faa4106c...",
+      "extra": {
+        "recomputed_digest": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      }
+    },
+    {
+      "id": "typed-ref-cpb01-02",
+      "finding_class": "revision_uplift_gap",
+      "must_fail": true,
+      "requirement_verified": false,
+      "requirement_source": "draft-mih-sokolov-scitt-payload-binding-01",
+      "observed_verified": true,
+      "prediction_held": true,
+      "preconditions": {},
+      "detail": "library accepted digest_alg 'SHA-512' against a jcs-n (SHA-256) registry entry. The field is bound into TypedRef and never read again, so it constrains nothing.",
+      "extra": {
+        "other_algorithm_names_also_accepted": {
+          "not-a-hash-algorithm": true,
+          "MD5": true,
+          "(empty string)": true
+        },
+        "library_reads_digest_alg": false
+      }
+    },
+    {
+      "id": "typed-ref-cpb01-03",
+      "finding_class": "specification_question",
+      "must_fail": true,
+      "requirement_verified": false,
+      "requirement_source": "draft-mih-sokolov-scitt-payload-binding-01",
+      "observed_verified": true,
+      "prediction_held": true,
+      "preconditions": {},
+      "detail": "library accepted a 64-char hex string under a registry entry declaring representation 'raw'. Its _check_representation applies the bare-hex test to the 'raw' branch, which follows from verify_typed_ref taking digest as a str -- raw octets cannot be handed to it at all. Recorded to ground the question, not as a defect against the library.",
+      "extra": {
+        "declared_representation": "raw"
+      }
+    },
+    {
+      "id": "typed-ref-cpb01-04",
+      "finding_class": "suite_coverage_gap",
+      "must_fail": true,
+      "requirement_verified": false,
+      "requirement_source": "draft-mih-sokolov-scitt-payload-binding-01",
+      "observed_verified": "not-applicable",
+      "prediction_held": null,
+      "preconditions": {
+        "correct_leaf_input_is_32_bytes": true,
+        "correct_leaf_input_bytes_reproduce": true,
+        "incorrect_leaf_input_is_64_bytes": true,
+        "incorrect_leaf_input_bytes_reproduce": true,
+        "sha256_derivations_reproduce": true,
+        "rfc6962_derivations_reproduce": true,
+        "distinguishable_by_length_alone": true,
+        "five_leaf_related_substrings_absent_from_lib_cpb": true
+      },
+      "detail": "swept lib/cpb for leaf-related substrings and found none. That is a substring sweep over .py files, not a proof of absence: it reads comments, and it would miss a leaf constructor written with binascii.unhexlify. The claim that this library constructs no leaf rests on its module set, canonicalize, derive_id, typed_ref, none of which does. Either way there is nothing there for this vector to accept or refuse, so it is scored on its own preconditions: 8/8 hold. Correct leaf_input 32 bytes, incorrect 64.",
+      "extra": {
+        "leaf_symbols_found_in_cpb_lib": [],
+        "cpb_lib_modules": [
+          "canonicalize",
+          "derive_id",
+          "typed_ref"
+        ],
+        "probe": "substring sweep over lib/cpb/*.py for: leaf_input, fromhex, 6962, merkle, inclusion. Establishes absence of these substrings, not absence of leaf construction."
+      }
+    },
+    {
+      "id": "typed-ref-cpb01-05",
+      "finding_class": "contributor_side_defect",
+      "must_fail": true,
+      "requirement_verified": true,
+      "requirement_source": "vector.property_tested (draft-hillier-scitt-arp); the vector also records that ARP-01 does not state it",
+      "observed_verified": false,
+      "prediction_held": true,
+      "preconditions": {
+        "cpb_verified_every_record_carrying_a_reference": true,
+        "every_recorded_arp_digest_reproduces": true,
+        "every_recorded_caid_reproduces": true,
+        "caid_digest_is_the_same_construction_as_the_arp_digest": true,
+        "every_action_object_is_accepted_by_the_caid_issuer": true,
+        "instability_is_not_specific_to_typed_references": true
+      },
+      "detail": "CPB verified the typed reference in every record that carries one (correct); the differing members are outside the cited artifact's digest context. ARP produced 5 distinct identifiers from 5 records. The CAID count is NOT reported beside it: caid.canonicalize is byte-identical to arp.jcs_bytes and the CAID digest field is 'sha256:' + the ARP subject digest, so it is the same digest in two encodings and not a second measurement. Diverging from base: registered_optional_field_memo, registered_optional_field_memo_empty_string, typed_digest_reference_added, optional_member_inside_the_typed_reference. 2 of those carry no typed reference at all, which is why the cause is ARP's whole-object digest and not CPB's ignore rule.",
+      "extra": {
+        "distinct_arp_identifiers": 5,
+        "records": 5,
+        "measured": {
+          "base": {
+            "arp_subject_digest": "2c8fd85ff54ceda401159bf8591f6c0c10fb6e84a795c21edeaf8fcaa15ce528",
+            "matches_recorded": true,
+            "caid": "caid:1:payment.release.1:jcs-sha256:LI_YX_VM7aQBFZv4WR9sDBD7boSnlcIe3q-PyqFc5Sg",
+            "caid_refusals": null,
+            "caid_matches_recorded": true,
+            "caid_is_the_same_construction": true,
+            "cpb_verified": null,
+            "carries_typed_reference": false
+          },
+          "registered_optional_field_memo": {
+            "arp_subject_digest": "5bfde46a95c58f3f5e666be17260994eec3eec162f9d7d0c601a845e0a4df31e",
+            "matches_recorded": true,
+            "caid": "caid:1:payment.release.1:jcs-sha256:W_3kapXFjz9eZmvhcmCZTuw-7BYvnX0MYBqEXgpN8x4",
+            "caid_refusals": null,
+            "caid_matches_recorded": true,
+            "caid_is_the_same_construction": true,
+            "cpb_verified": null,
+            "carries_typed_reference": false
+          },
+          "registered_optional_field_memo_empty_string": {
+            "arp_subject_digest": "68dfbf49f992933090dbbc60479016968791c60c8f06f258da1f39e507be09ae",
+            "matches_recorded": true,
+            "caid": "caid:1:payment.release.1:jcs-sha256:aN-_SfmSkzCQ27xgR5AWloeRxgyPBvJY2h855Qe-Ca4",
+            "caid_refusals": null,
+            "caid_matches_recorded": true,
+            "caid_is_the_same_construction": true,
+            "cpb_verified": null,
+            "carries_typed_reference": false
+          },
+          "typed_digest_reference_added": {
+            "arp_subject_digest": "bf790e1b3a5955820b1a231452b54ce63adfb1dbf85839263b6c9997eff2a9f2",
+            "matches_recorded": true,
+            "caid": "caid:1:payment.release.1:jcs-sha256:v3kOGzpZVYILGiMUUrVM5jrfsdv4WDkmO2yZl-_yqfI",
+            "caid_refusals": null,
+            "caid_matches_recorded": true,
+            "caid_is_the_same_construction": true,
+            "cpb_verified": true,
+            "carries_typed_reference": true
+          },
+          "optional_member_inside_the_typed_reference": {
+            "arp_subject_digest": "3ec73283179b2ed6e76c007593179b0bc7e91ea1bff29a3f62858ba94da51ddc",
+            "matches_recorded": true,
+            "caid": "caid:1:payment.release.1:jcs-sha256:PscygxebLtbnbAB1kxebC8fpHqG_8po_YoWLqU2lHdw",
+            "caid_refusals": null,
+            "caid_matches_recorded": true,
+            "caid_is_the_same_construction": true,
+            "cpb_verified": true,
+            "carries_typed_reference": true
+          }
+        }
+      }
+    }
+  ],
+  "hard_failures": []
+}

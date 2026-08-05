@@ -33,12 +33,15 @@ and keeping a second copy here would invite it to drift.
 |---|---|
 | `arp-outcome-vectors-v0.2.json` | Ours. Five vectors, two-sided. **Generated** by `runners/build_outcome_vectors_v02.py`, never hand-edited — regenerate and diff rather than trusting it. Supersedes v0.1. |
 | `arp-aeb-adapter-v0.1.json` | EMILIA's boundary fixture, **as received, unmodified**. Third-party input; do not edit it here. |
+| `arp-typed-ref-cpb01-v0.1.json` | Ours. ARP's contribution to the CPB typed-reference vectors, built against **CPB-01**. Five vectors, two-sided, each declaring its finding class. **Generated** by `runners/build_typed_ref_vectors.py`; never hand-edited. |
 
 ## runners/
 
 | File | Drives |
 |---|---|
 | `build_outcome_vectors_v02.py` | Regenerates `vectors/arp-outcome-vectors-v0.2.json` from the CAID registry and reference issuer. |
+| `build_typed_ref_vectors.py` | Regenerates `vectors/arp-typed-ref-cpb01-v0.1.json` from the CPB reference library and the CAID issuer. **Refuses to run unless a known-bad action object raises when put through the builder's own guard** — exercising the guard, not merely the validator behind it. A guard that has never refused anything cannot be distinguished from an absent one. |
+| `run_typed_ref_vectors.py` | The five CPB-01 typed-reference vectors. Each vector's `finding_class` is a falsifiable prediction about the gap between what a requirement states and what the implementation does, and a prediction that stops holding is a hard failure in **both** directions — including the direction where a gap was closed. Four of the five requirements are CPB-01's; **vector 05's is ARP's own**, and every row in the result JSON carries a `requirement_source` so the two cannot be confused. The one class that makes no prediction reports NOT APPLICABLE rather than encoding "unreachable" as "refused". |
 | `run_outcome_vectors.py` | The five outcome vectors, two-sided. |
 | `run_cpb_vectors.py` | ARP against the `draft-mih-sokolov-scitt-payload-binding` conformance suite. |
 | `run_aac_vectors.py` | ARP against the Agent Action Capsule Class-1 frozen suite, plus a differential test of whether AAC's `capsule_id` and CPB's `jcs-n` are the same construction. **CPB-python and AAC-python are the same source and their agreement is code identity, not corroboration** — the runner discloses this and the evidence column is the AAC **Go** canonicalizer. Stage 3 needs `--go-shim`; without it it reports NOT RUN, not PASS. |
@@ -57,6 +60,7 @@ against the next one.
 | `arp_outcome_vectors_v02_run.json`, `outcome_vectors_v02.txt` | `runners/run_outcome_vectors.py` |
 | `cpb_run.json`, `cpb_run.txt` | `runners/run_cpb_vectors.py` |
 | `aac_run.json`, `aac_run.txt` | `runners/run_aac_vectors.py` |
+| `typed_ref_cpb01_run.json`, `typed_ref_cpb01_run.txt` | `runners/run_typed_ref_vectors.py` |
 | `arp-outcome-vectors-v0.1-superseded.json` | `harness/arp_adapter.py`. Kept so the supersession by v0.2 is checkable rather than asserted. Do not use it. |
 
 The two EATF configurations are kept apart deliberately: they differ, and the
@@ -71,7 +75,22 @@ difference is a finding, not noise.
 3. Vector sets are **two-sided**. A suite of negative vectors can detect an
    implementation that is too loose and structurally cannot detect one that is
    too strict.
+   The same rule applies to the guards. A check that has never refused
+   anything cannot be distinguished from an absent check, so a builder whose
+   job is to refuse malformed input proves the refusal path on every run.
 4. A run that cannot reach a vector says so, with the reason, in its own
    output. Silence is not a pass.
 5. Result files record content hashes and relative paths only. A result whose
    bytes depend on where the checkout sits cannot be compared by hash.
+6. Preconditions belong to the vector, not to the runner. A registry entry, an
+   exclusion set or a representation that exists only in runner source cannot
+   be checked by anyone who did not write the runner, and the runner refuses
+   to supply defaults for any of them.
+7. Every finding is classed before it is reported. A specification question, a
+   revision-uplift gap and an implementation defect are three different things
+   and are never conflated.
+8. Two numbers produced by one construction are one measurement. Reporting
+   them side by side as agreement is code identity dressed as corroboration.
+   This tree has made that mistake twice — the CPB and AAC Python
+   canonicalizers, and then the CAID and ARP digests — so any run reporting
+   two counts states whether they are independent.

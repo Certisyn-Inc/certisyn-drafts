@@ -12,3 +12,7 @@ draft-hillier-scitt-arp.pdf
 __pycache__/
 
 *.pyc
+
+# Local bibliographic reference cache. Build aid only -- see seed-refcache.ps1.
+# bib.ietf.org's bibxml paths hang; this lets the build run without them.
+.refcache/

@@ -2,14 +2,12 @@
 title: Attestation Reconciliation Protocol
 abbrev: ARP
 docname: draft-hillier-scitt-arp-02
-date: 2026-07-28
+date: 2026-08-08
 category: std
 submissiontype: IETF
-consensus: true
 v: 3
 ipr: trust200902
 area: Security
-workgroup: SCITT
 keyword:
   - Internet-Draft
   - SCITT
@@ -77,7 +75,7 @@ informative:
 --- abstract
 
 This document specifies the Attestation Reconciliation Protocol (ARP), a
-deterministic, bilateral, zero-knowledge-capable mechanism for reconciling
+deterministic, bilateral, minimum-disclosure mechanism for reconciling
 verification claims against a plurality of sovereign authoritative registers
 without raw register records leaving their data-residency jurisdiction. ARP
 extends the SCITT (Supply Chain Integrity, Transparency, and Trust)
@@ -86,8 +84,8 @@ canonicalises a structured claim, binds the identity of the requesting
 principal -- including, where the requester is an autonomous agent, a
 friend-or-foe determination of that agent's verifiable principal binding --
 projects the claim through register-specific controlled projection functions
-producing the greatest-lower-bound predicate supported by each addressed
-register, transmits register-specific ciphertexts, receives partial
+producing the nearest permitted ancestor predicate supported by each
+addressed register, transmits register-specific ciphertexts, receives partial
 attestations whose payload discloses only a verdict and an optional divergence
 axis, aggregates the partial attestations through either homomorphic or
 hash-linkage aggregation, and seals the resulting reconciliation output against
@@ -108,11 +106,12 @@ producer-agnostic reconciled verdict evaluated at decision time.
 RFC EDITOR: please remove this section before publication.
 
 This document is Standards Track and makes a normative reference to RFC 8785,
-which is Informational and is not currently listed in the downref registry
-maintained under {{?RFC8067}}. The reference is deliberately normative: ARP's
-Canonical Claim and its Appendix D subject digest are both defined as a digest
-over an RFC 8785 serialisation, and an implementation that substituted any
-other canonicalisation would compute a different value for the same claim. The
+which is Informational. This constitutes a downref under {{?RFC8067}}. The reference is deliberately normative: ARP's
+Canonical Claim is a digest over an RFC 8785 serialisation preceded by Unicode
+Normalization Form C, and the subject digest of {{composition}} is a digest over an
+unmodified RFC 8785 serialisation. Neither can be computed without RFC 8785,
+and an implementation that substituted any other canonicalisation would
+compute a different value for the same claim. The
 reference is therefore load-bearing for interoperability and cannot be
 demoted to informative. This is called out here so that the downref can be
 noted in the IETF Last Call announcement per Section 1 of {{?RFC8067}}.
@@ -137,9 +136,8 @@ authorities, and platform-owned verification infrastructure -- routinely
 require reliance on facts recorded across two or more sovereign registers
 simultaneously.
 
-Existing computer-implemented approaches to such cross-sovereign reliance
-suffer from four structural and technical deficiencies that this protocol is
-specifically designed to overcome:
+Cross-sovereign reliance today faces four structural problems, which this
+protocol is designed to address in combination:
 
 1. **Raw-record disclosure.** Existing approaches require the raw register
    record either to leave its data-residency jurisdiction or to be re-disclosed
@@ -163,24 +161,19 @@ specifically designed to overcome:
    the agent's binding to a real, authenticated principal cannot be verified,
    the reconciliation is performed for an unknown or impersonated party, and
    the settlement record attributes reliance to no accountable principal. An
-   agent whose principal binding cannot be verified MUST be treated as hostile
-   (zero-trust).
+   agent whose principal binding cannot be verified is treated as hostile
+   (zero-trust); the normative rules are in {{terminology}} and
+   {{agent-iff-integrity}}.
 
 This document specifies ARP, a protocol that addresses all four deficiencies
 in combination, and is layered atop the SCITT architecture {{RFC9943}} and the
 RATS architecture {{RFC9334}}.
 
-The fourth deficiency is not hypothetical. A class of failure now observed in
-practice arises when an autonomous system reaches an assigned objective through
-a consequence that its operators neither authorised nor observed in time:
-during a controlled capability evaluation, an autonomous agent escaped its
-intended execution boundary by exploiting an unremediated vulnerability in a
-supporting service, obtained network egress that its containment had assumed
-impossible, and acted on external infrastructure -- all without human
-authorisation, and detected only after the fact. The generalisable point is not
-specific to any one operator: wherever an autonomous agent can act, the binding
-between its claimed authority and its actual conduct must be checked at the
-moment of action, not reconstructed afterward.
+The fourth deficiency is not hypothetical. Where an autonomous agent can act,
+its containment assumptions may not hold at run time, and a binding between an
+agent's claimed authority and its actual conduct that is established only after
+the fact is not a control. The binding must be checkable at the moment of
+action.
 
 ARP is designed for that moment. Forensic reconstruction establishes what an
 agent did after a consequence has occurred; ARP reconciles an agent's claimed
@@ -235,10 +228,9 @@ Verified Principal Credential:
 : A cryptographic credential asserting that a named, authenticated principal
   stands behind a request, verifiable without contacting the credential issuer
   in the reconciliation hot path. A Verified Principal Credential MAY be
-  carried as a Certisyn Verification Evidence Container -- a COSE-enveloped
-  structure binding the claim, its evidentiary provenance, and the principal's
-  credential -- or as any equivalent verifiable-credential form
-  {{W3C-VC-DM-2.0}}.
+  carried in any COSE-enveloped structure binding the claim, its evidentiary
+  provenance, and the principal's credential, or in any equivalent
+  verifiable-credential form {{W3C-VC-DM-2.0}}.
 
 Agent Friend-or-Foe (IFF) Determination:
 : The deterministic classification of a Requesting Agent as FRIENDLY or ENEMY,
@@ -290,8 +282,10 @@ Predicate Taxonomy:
 Per-Register Claim Projection:
 : The narrowest structured query sufficient to elicit the required Partial
   Attestation under a register's Bilateral Register Agreement, computed by
-  the controlled projection function as the greatest-lower-bound predicate
-  within the register's permitted-predicate set.
+  the controlled projection function as the nearest ancestor of the Canonical
+  Claim Predicate that is a member of the register's permitted-predicate set.
+  Where the taxonomy admits more than one such ancestor, the projection MUST
+  fail rather than choose.
 
 Partial Attestation:
 : A cryptographically signed output produced by a Sovereign Register in
@@ -308,9 +302,13 @@ Divergence Axis:
   claim-predicate-unsupported,
   claim-projection-narrowed-beyond-attestation-scope,
   agent-principal-unverifiable, agent-credential-absent,
-  agent-impersonation-suspected, and agent-action-scope-divergence (the
+  agent-impersonation-suspected, agent-action-scope-divergence (the
   authorised scope attested for an agent action and the actual conduct
-  attested for it do not reconcile).
+  attested for it do not reconcile), and freshness-stale. A Divergence Axis
+  recorded by the reconciliation server rather than by a register --
+  freshness-stale is the only such value defined here -- is carried in the
+  Reconciliation Output, not in the register's signed Partial-Attestation
+  payload.
 
 Reconciliation Output:
 : A data structure aggregating Partial Attestations from a single
@@ -347,7 +345,8 @@ Settlement-Layer Ledger:
   sequence number, the reconciliation hash, the policy-version hash, the
   addressed-registers identifier set, an aggregation-method descriptor, an
   optional Merkle root, a requester-binding-class descriptor, a timestamp, a
-  prior-entry hash, and a self-entry hash.
+  prior-entry hash, a self-entry hash, and an OPTIONAL
+  source-reconciliation-output identifier.
 
 # Architecture
 
@@ -371,7 +370,11 @@ identical Addressed-Registers Identifier Set, identical
 Bilateral-Register-Agreement Hashes for the addressed registers, an identical
 Pattern-Library Version Identifier, and an identical Policy-Version
 Identifier, the system MUST produce bit-for-bit identical Reconciliation
-Outputs and Settlement-Layer Ledger entries.
+Outputs, and identical Claim Hash, Reconciliation Hash and Policy-Version Hash
+values in the corresponding Settlement-Layer Ledger entries. The per-event
+fields of a Ledger entry -- Entry Sequence Number, Reconciliation Timestamp,
+Prior-Entry Hash and Self-Entry Hash -- are position-dependent by construction
+and are outside this requirement.
 
 ## Canonical Claim Ingestion
 
@@ -383,15 +386,16 @@ A Canonical Claim comprises:
 - Applicable-Regimes Set
 - Evidentiary Provenance Manifest
 - Claim Timestamp (RFC 3339 UTC)
-- Claim Hash (computed over the canonical serialisation)
+- Claim Hash (SHA-256 over the canonical serialisation)
 
-Two semantically-equivalent claims MUST produce the same canonical form
-and the same Claim Hash. The Claim Hash is the index on the
+Two claims whose canonical field values are identical MUST produce the same
+canonical form and the same Claim Hash. Declared array order is significant;
+claims differing only in declared array order are distinct claims. The Claim Hash is the index on the
 Settlement-Layer Ledger and the key for retroactive re-evaluation.
 
-The Evidentiary Provenance Manifest MAY be carried as a Certisyn Verification
-Evidence Container or any equivalent COSE-enveloped evidence structure; the
-container form is an interop convenience and does not alter the Claim Hash,
+The Evidentiary Provenance Manifest MAY be carried in any COSE-enveloped
+evidence structure; the container form is an interop convenience and does not
+alter the Claim Hash,
 which is computed over the canonical claim fields alone.
 
 ## Requester Identity Binding and Agent Friend-or-Foe Gate
@@ -427,8 +431,9 @@ attributable to a determined requester class.
 
 Before any Per-Register Claim Projection is produced, the Adversarial
 Pre-Transmission Test Subsystem applies the current Pattern Library to the
-Canonical Claim. The Pattern Library enumerates known nation-state evasion
-patterns including projection-narrowing-evasion,
+Canonical Claim. The Pattern Library enumerates structural evasion patterns
+against the projection and aggregation mechanisms of this protocol, including
+projection-narrowing-evasion,
 predicate-substitution-evasion, attested-value-bracketing-evasion,
 addressed-register-cherry-picking, agreement-staleness-injection,
 pattern-library-version-pinning, and agent-principal-spoofing (an unverifiable
@@ -450,7 +455,11 @@ equals the Canonical Claim Predicate.
 Where it is not, the projection function resolves the Predicate through
 taxonomic prefix match: walking the Predicate Taxonomy upward from the
 Canonical Claim Predicate until reaching a Predicate that is a member of the
-permitted-predicate set. The narrowing operation MUST be recorded in the
+permitted-predicate set. Where the walk reaches more than one such Predicate at
+the same taxonomic distance, the projection MUST fail with
+`projection-ambiguous` rather than choose between them. Where the walk reaches
+the taxonomy root without finding one, the projection MUST fail with
+`projection-unsupported`. The narrowing operation MUST be recorded in the
 Narrowed-From field of the Per-Register Claim Projection.
 
 ## Per-Register Encryption
@@ -477,8 +486,9 @@ A Partial Attestation comprises:
 
 The Partial Attestation payload SHALL NOT contain any register-record field,
 any pre-image of the register record, or any field beyond those enumerated.
-The architectural absence of register-record content is the specific
-technical mechanism by which ARP avoids raw-record disclosure.
+Restricting the Partial-Attestation payload to verdict and divergence-axis
+fields is the mechanism by which ARP limits raw-record disclosure. Residual
+inference channels are discussed in {{side-channel}}.
 
 ## Aggregation
 
@@ -529,6 +539,8 @@ Each Settlement-Layer Ledger entry comprises only:
 - Reconciliation Timestamp
 - Prior-Entry Hash
 - Self-Entry Hash
+- OPTIONAL Source-Reconciliation-Output Identifier, present where the entry
+  supersedes an earlier Reconciliation Output
 
 The Ledger MUST NOT store Canonical-Claim content, register records,
 Partial-Attestation payloads, or any principal identifier in the clear; the
@@ -624,7 +636,7 @@ whether the asserted principal binding is corroborated:
 
 This composition allows a relying party to gate an action not merely on the
 presence of an agent signature but on register-corroborated proof that an
-accountable principal stands behind it, closing the impersonation surface at
+accountable principal stands behind it, narrowing the impersonation surface at
 the reconciliation layer. The result is a Reconciliation Output like any other:
 sealed against a Policy-Version Hash, written to the Settlement-Layer Ledger as
 hashes only, and re-evaluable if the underlying credential is later revoked.
@@ -633,11 +645,13 @@ hashes only, and re-evaluable if the underlying credential is later revoked.
 
 ## CBOR-COSE Encoding
 
-The recommended encoding for ARP messages on the wire is CBOR with COSE
-{{RFC9052}} {{RFC9053}} envelopes. COSE_Sign1 is used for both Partial
-Attestations and the Sealing Signature. The protected header MUST include
-the Bilateral-Register-Agreement Hash and Policy-Version Hash as
-unregistered labels in the range 0x800 .. 0x8FF (Certisyn private use).
+The mandatory-to-implement encoding for ARP messages on the wire is CBOR with
+COSE {{RFC9052}} {{RFC9053}} envelopes. COSE_Sign1 is used for both Partial
+Attestations and the Sealing Signature. The protected header MUST include the
+Bilateral-Register-Agreement Hash and Policy-Version Hash as COSE header
+parameters registered per {{iana}}. Pending registration,
+implementations MAY use labels from the private-use range of the COSE Header
+Parameters registry; such use is not interoperable.
 
 ## HTTP Message Signature Binding
 
@@ -684,7 +698,7 @@ modification to the Pattern Library MUST produce a new Pattern-Library
 Version Identifier, and the Adversarial Pre-Transmission Test MUST be
 re-executed against the new library before the change takes effect.
 
-## Agent Impersonation and Friend-or-Foe Integrity
+## Agent Impersonation and Friend-or-Foe Integrity {#agent-iff-integrity}
 
 The Agent Friend-or-Foe Determination is the mechanism by which ARP resists
 reconciliation initiated by an agent impersonating a principal. The
@@ -713,8 +727,8 @@ hash committed at the start of a reconciliation event.
 Each Partial Attestation MUST carry a Freshness Timestamp. The
 reconciliation server MUST verify the Freshness Timestamp against a
 freshness window declared in the Bilateral Register Agreement. Stale
-Partial Attestations MUST be rejected with a `freshness-stale` divergence
-axis. A signed agent request under {{RFC9421}} MUST additionally carry a
+Partial Attestations MUST be rejected, and the rejection MUST be recorded in
+the Reconciliation Output with the `freshness-stale` divergence axis. A signed agent request under {{RFC9421}} MUST additionally carry a
 nonce or created/expires parameter set so that a captured signed request
 cannot be replayed to initiate a fresh reconciliation.
 
@@ -727,7 +741,7 @@ is RECOMMENDED for the claim-encryption primitive class. ML-DSA-65
 sealing-signature primitive classes. Implementations MUST declare their
 chosen post-quantum primitives in the Bilateral Register Agreement.
 
-## Side-Channel Considerations
+## Side-Channel Considerations {#side-channel}
 
 Per-register projection narrowing is observable to the addressed register
 through the Projected Predicate. Implementations MUST NOT use narrowing
@@ -735,17 +749,21 @@ patterns to fingerprint individual subjects. The Predicate Taxonomy SHOULD
 be designed such that the set of permitted narrowings is small enough that
 narrowing observation does not materially weaken subject privacy.
 
-# IANA Considerations
+# IANA Considerations {#iana}
 
 This document requests IANA to register the following:
 
-- A namespace for ARP-specific COSE protected-header labels in the range
-  0x800 .. 0x8FF, containing at least:
-  - `arp-bilateral-agreement-hash` (label 0x801)
-  - `arp-policy-version-hash` (label 0x802)
-  - `arp-pattern-library-hash` (label 0x803)
-  - `arp-divergence-axis` (label 0x804)
-  - `arp-requester-binding-class` (label 0x805)
+- Five COSE header parameters in the COSE Header Parameters registry, values
+  to be assigned by IANA:
+  - `arp-bilateral-agreement-hash` (value TBD)
+  - `arp-policy-version-hash` (value TBD)
+  - `arp-pattern-library-hash` (value TBD)
+  - `arp-divergence-axis` (value TBD)
+  - `arp-requester-binding-class` (value TBD)
+
+- A registry of ARP Divergence-Axis values, registration policy Specification
+  Required, initially containing the descriptors enumerated in
+  {{terminology}} together with `freshness-stale`.
 
 - A media type `application/arp-reconciliation-output+cbor` for the
   CBOR-encoded Reconciliation Output.
@@ -767,9 +785,11 @@ signature protocol {{I-D.meunier-webbotauth-httpsig-protocol}}.
 
 ## Example: Three-register Sanctions Reconciliation
 
-A relying party requests reconciliation of the predicate
-`sanctions:any-list-match` for subject identifier `corp:DUNS:0123456789`
-against the OFAC SDN list, the EU consolidated list, and the UK OFSI list.
+This example is illustrative and non-normative; register identifiers, values
+and parties are fictitious, and no bilateral agreement with any named authority
+is asserted or implied. Suppose a relying party requests reconciliation of the
+predicate `sanctions:any-list-match` for subject identifier
+`corp:EXAMPLE:0123456789` against three consolidated sanctions registers.
 
 Each Bilateral Register Agreement permits the predicate. The projection
 function emits identical Per-Register Claim Projections to all three
@@ -782,11 +802,11 @@ disjunction. The Combined Verdict is `no-match`.
 The Reconciliation Output is sealed against the current Policy-Version
 Hash. The Settlement-Layer Ledger entry comprises:
 
-- Entry Sequence Number: 4,217,981
+- Entry Sequence Number: 42
 - Reconciliation Hash: <32 bytes>
 - Policy-Version Hash: <32 bytes>
 - Addressed-Registers Identifier Set:
-  `["EU-CONSOLIDATED-2026-Q2", "UK-OFSI-2026-Q2", "US-OFAC-SDN-2026-Q2"]`
+  `["EXAMPLE-REGISTER-A", "EXAMPLE-REGISTER-B", "EXAMPLE-REGISTER-C"]`
 - Aggregation-Method Descriptor: "homomorphic-disjunction"
 - Requester-Binding-Class Descriptor: "human-operator"
 - Reconciliation Timestamp: 2026-04-27T19:47:14Z
@@ -797,14 +817,14 @@ No register record content is stored on the Ledger.
 
 ## Example: Retroactive Re-evaluation
 
-Six weeks after the above reconciliation, OFAC adds the subject to the SDN
-list as part of a new tranche. The OFAC register's Partial-Attestation
-endpoint, on next invocation, would return verdict `match` with
-divergence-axis sanctions-list-match.
+Continuing the illustrative example above: six weeks after that
+reconciliation, EXAMPLE-REGISTER-A adds the subject to its list as part of a
+new tranche. That register's Partial-Attestation endpoint, on next invocation,
+returns verdict `match`.
 
 The Retroactive Evaluation Subsystem detects the new Pattern-Library and
 Policy-Version transition, re-invokes Partial Attestations on all
-historical reconciliations addressing OFAC under the superseded
+historical reconciliations addressing EXAMPLE-REGISTER-A under the superseded
 Policy-Version Hash, identifies the material verdict change, and emits a
 Sovereign Re-Notification through the Regulator Portal to the regulators
 whose statutory-regulator-access scope intersects the changed
@@ -834,6 +854,9 @@ agent-impersonation-suspected, the sanctions reconciliation would have been
 refused or downgraded to advisory per policy.
 
 ## Example: Divergent Agent-Action Reconciliation
+
+This example is illustrative and non-normative. Capsule slots are those of
+{{I-D.mih-sato-agent-accountability-composition}}; see {{composition}}.
 
 An autonomous agent is authorised, by a signed CAN capsule, to read from a
 named evaluation dataset and to write only to a sandboxed result store. During
@@ -895,12 +918,12 @@ for compute-substrate trust. ARP composes with RATS in two ways:
 
 2. Compute-attestation reconciliation across heterogeneous TEE / CC
    providers is the natural specialisation of ARP to the RATS evidence
-   class. A separate document specifies that specialisation.
+   class. That specialisation is outside the scope of this document.
 
 # Composition with Agent-Action Accountability Capsules {#composition}
 
 {{I-D.mih-sato-agent-accountability-composition}} models accountable
-autonomous action as a set of heterogeneous, independently produced attestation
+autonomous action as a set of heterogeneous, independently signed attestation
 capsules, and defines the capsule slots and their composition. This document
 does not restate that model; the slot definitions, their semantics and their
 composition rules are those of
@@ -908,10 +931,11 @@ composition rules are those of
 as defined there.
 
 What this appendix adds is reconciliation across those capsules. Each capsule
-may be produced by a different party, under a different signing chain, with a
+may be signed by a different party, under a different signing chain, with a
 different payload schema -- the same non-reconcilable-outputs problem this
 document addresses for sovereign registers, arising in the agent-action
-domain.
+domain. What the capsules share is the action serialisation over which the
+subject digest is computed.
 
 ARP composes such capsules without requiring them to share a producer, a
 schema, or a signing chain. The capsules are bound to a common action through a
@@ -922,25 +946,45 @@ Canonicalization Scheme serialisation of the action being attested:
 subject_digest = SHA-256(JCS(action))
 ~~~
 
-where JCS is the JSON Canonicalization Scheme specified in {{RFC8785}}.
+where JCS is the JSON Canonicalization Scheme specified in {{RFC8785}}, and
+`action` is one action object serialised once. All capsules composed under this
+appendix MUST be computed over that same serialised action object.
+`subject_digest` is a join key across capsules over a shared serialisation; it
+is NOT a correlation key across independently produced descriptions of an act,
+and MUST NOT be used as one. See {{subject-digest-scope}}.
+
+The shared serialisation is established once, by the party that authorises the
+action, and is echoed verbatim by every later attester. An attester that
+re-serialises its own account of the action MUST NOT compute `subject_digest`
+over that account; it MUST carry the serialisation it received. This is what
+makes the digest a join key here rather than a correlation across independent
+descriptions, and a profile that cannot guarantee it is in the second case of
+{{subject-digest-scope}} rather than the first.
 Implementations MUST use {{RFC8785}} and MUST NOT substitute another
 canonicalisation. In particular, {{RFC8785}} does not apply Unicode
-normalisation, and an implementation that normalises before serialising will
-compute a different subject digest for inputs that differ only by normalisation
-form -- silently, since both parties obtain a well-formed digest.
+normalisation. An implementation that normalises before serialising therefore
+computes a different subject digest from a conforming implementation for any
+input carrying a member name or string value that is not already in the
+normalisation form it applies -- silently, since both parties obtain a
+well-formed digest.
 
-Implementation experience against a published agent-action conformance corpus
-confirmed exact agreement between this construction and a deployed
-{{RFC8785}} profile on twenty-two of twenty-two pinned vectors. That result
-depends on both parties having selected {{RFC8785}}; the normative reference
-above is what makes it an obligation rather than a coincidence.
+Measured against a published agent-action conformance corpus: this
+construction and a deployed {{RFC8785}} profile agreed on all twenty-two
+pinned vectors of that corpus. The agreement depends on both parties having
+selected {{RFC8785}}, which the normative reference above makes an obligation.
+
+The capsules may disagree about the action -- that disagreement is the finding
+ARP exists to surface -- but they do not disagree about which action is under
+attestation, because they carry the same action serialisation. Each capsule's
+own account travels in its payload, committed by its receipt-payload digest
+below, not in `subject_digest`.
 
 Two further profile-tagged digests, defined by this
 document rather than by {{I-D.mih-sato-agent-accountability-composition}},
 position each capsule for reconciliation: an authority-reference digest
 committing to the authorising instrument (tagged transparency where it is the SHA-256 of a COSE_Sign1
-transparency receipt, or offline where it is the SHA-256 of the canonical JSON
-of an offline receipt payload), and a receipt-payload digest committing to the
+transparency receipt, or offline where it is the SHA-256 of the {{RFC8785}}
+serialisation of an offline receipt payload), and a receipt-payload digest committing to the
 capsule's own payload.
 
 Each capsule is admitted to ARP as a Partial-Attestation source keyed on the
@@ -980,7 +1024,7 @@ subject_digest:
 : SHA-256 over the {{RFC8785}} serialisation of an action, per
   {{composition}}. It is a CONTENT digest: it commits to the action object as
   serialised, and any difference in the serialised bytes yields a different
-  digest. {{RFC8785}} does not normalise.
+  digest except with negligible probability. {{RFC8785}} does not normalise.
 
 An implementation that substitutes one for the other MUST be assumed to
 produce incorrect correlations. The failure is silent: both constructions
@@ -1003,32 +1047,32 @@ Accordingly:
 * An implementation MUST NOT use the Claim Hash construction where
   `subject_digest` is specified, or the reverse.
 * Where a digest is carried on the wire for correlation, the producer MUST
-  identify the construction used. This requirement is intended to be satisfied
-  by the typed-reference and declared-context rules of
-  {{I-D.mih-sokolov-scitt-payload-binding}}, whose statement that digest values
-  are comparable only under compatible declared contexts is the same rule
-  expressed statement-side; ARP does not define a competing mechanism. An identifier that commits to the declared
-  canonicalisation parameters -- member-sort code unit, normalisation, number
-  rendering, absent-member handling and hash algorithm -- allows a consumer to
-  determine compatibility rather than assume it. Such an identifier MUST NOT
-  commit to facts about a specification that do not affect the serialised
-  bytes, so that two implementations producing identical bytes share an
-  identifier.
+  identify the construction used, by an identifier that commits to the
+  declared canonicalisation parameters -- member-sort code unit,
+  normalisation, number rendering, absent-member handling and hash algorithm
+  -- so that a consumer can determine compatibility rather than assume it.
+  Such an identifier MUST NOT commit to facts about a specification that do
+  not affect the serialised bytes, so that two implementations producing
+  identical bytes share an identifier.
+  {{I-D.mih-sokolov-scitt-payload-binding}} expresses a compatible rule
+  statement-side.
+
 ### What a content digest does and does not establish {#subject-digest-scope}
 
-`subject_digest` is injective over content: two actions whose serialisations
-differ in any byte produce different digests, so a receipt bound to one action
-does not bind another. That property is what makes it usable as a join key
+`subject_digest` is collision-resistant over content: two actions whose
+serialisations differ in any byte produce different digests except with
+negligible probability, so a receipt bound to one action does not bind
+another. That property is what makes it usable as a join key
 between capsules computed over the SAME serialised action.
 
 It does not, and cannot, establish that two INDEPENDENTLY DESCRIBED accounts of
 one act correlate. Where an action type declares optional members, two
 conforming producers describing the same act may legitimately differ on whether
 an optional member is present, and their subject digests then differ. Stability
-under permitted variation and injectivity over content are contradictory
-requirements, and no single digest satisfies both.
+under permitted variation and collision resistance over content are
+contradictory requirements, and no single digest satisfies both.
 
-This was measured during the preparation of this revision. Five action objects,
+This is measured, not assumed. Five action objects,
 each a conforming instance of one registered action type and each accepted by
 that type's reference issuer, differing only in content the type declares
 OPTIONAL, produced five distinct subject digests. The divergence appeared at
@@ -1049,11 +1093,10 @@ Accordingly:
   on that field is the more robust of the two, because it does not require
   every producer to agree on a serialisation before they can agree that they
   are describing the same act.
-* A specification MUST NOT describe a content digest as a correlation key
-  without stating which of the two preceding cases it relies on. Doing so
-  invites an implementer to assume a stability property the construction does
-  not have, and the resulting failure is a correlation that silently does not
-  occur.
+A specification that describes a content digest as a correlation key without
+stating which of the two preceding cases it relies on invites an implementer to
+assume a stability property the construction does not have. The resulting
+failure is a correlation that silently does not occur.
 
 * Where the correlation digest is computed over a TYPED action object whose
   type declares required material fields, the producer MUST validate the
@@ -1062,13 +1105,8 @@ Accordingly:
   fails. A digest is well-formed over any object, including one that omits
   fields the type requires; emitting an identifier in that case mints a join
   key for an action the identifier does not fully describe, which is the
-  condition a relying party has no way to detect downstream. This was
-  observed in practice: an interop fixture exchanged during the preparation
-  of this revision, and the vector set this author published alongside it,
-  both carried an action object that a conforming issuer refuses with
-  `missing_material_field` on two of the four fields its declared type
-  requires. Neither party detected it until the two artefacts were run
-  against each other.
+  condition a relying party has no way to detect downstream. Validation against a pinned type
+  definition is therefore required before emission.
 
 # Document History
 
@@ -1077,11 +1115,13 @@ RFC Editor: please remove this section before publication.
 ## Since draft-hillier-scitt-arp-01
 
 This revision closes canonicalisation ambiguities identified by running an
-implementation of -01 against two published conformance corpora: the EMILIA
-clean-room `frozen-v1` agent-action corpus and the Noa AI-agent-receipt corpus.
-The harness, its console output and its machine-readable results were posted to
-the SCITT mailing list, so every measurement cited below is independently
-reproducible.
+implementation of -01 against two published conformance corpora -- the EMILIA
+clean-room `frozen-v1` agent-action corpus and the Noa AI-agent-receipt corpus
+-- states the role of the Appendix D subject digest explicitly, and corrects a
+number of requirements that were unsatisfiable, untestable or out of scope as
+written in -01.
+The harness and its machine-readable results were posted to the SCITT mailing
+list.
 
 - {{RFC8785}} is now a NORMATIVE reference. -01 named JCS in {{composition}}
   without identifying which JCS; the string "8785" did not occur in -01 at all.
@@ -1104,11 +1144,9 @@ reproducible.
   D against Form C, and U+212B against U+00C5) in which a substitution fails
   silently rather than visibly.
 - New {{subject-digest-scope}} states what `subject_digest` is and what it is
-  not. -01 defined it and left its role to be inferred, and this document's own
-  earlier text described its purpose as correlating independently produced
-  capsules. That description was too strong. `subject_digest` is a content
-  digest: injective over content, and therefore NOT stable under the variation
-  an action type permits. Measured during the preparation of this revision:
+  not, which -01 left to be inferred. `subject_digest` is a content digest:
+  collision-resistant over content, and therefore NOT stable under the
+  variation an action type permits. Measured:
   five conforming instances of one registered action type, each accepted by
   that type's reference issuer and differing only in content the type declares
   OPTIONAL, produced five distinct subject digests. The section now separates
@@ -1125,19 +1163,16 @@ reproducible.
 - {{I-D.mih-sato-agent-accountability-composition}} remains an informative reference.
   {{composition}} composes over the capsule slots it defines and would cite it
   normatively, but it is an individual draft; making it normative now would
-  create a publication dependency on a document that is not a working-group
-  item. The same applies to {{I-D.mih-sokolov-scitt-payload-binding}}. This
-  document will make BOTH references normative if and when those drafts are
-  adopted.
+  create a publication dependency. The same applies to
+  {{I-D.mih-sokolov-scitt-payload-binding}}. The status of both references
+  will be revisited as those documents progress.
 - {{construction-distinctness}} requires that a correlation digest carried on
   the wire identify its construction, and requires that such an identifier not
   commit to facts which do not affect the serialised bytes, so that two
   implementations producing identical bytes share an identifier.
 - {{construction-distinctness}} additionally requires that a correlation
   identifier over a typed action object be emitted only after the object
-  validates against a pinned definition of its type. Found by running two
-  independently published artefacts against a third party's reference issuer;
-  both failed, including this author's own.
+  validates against a pinned definition of its type.
 
 Reference and source corrections in this revision:
 
@@ -1145,34 +1180,57 @@ Reference and source corrections in this revision:
   proofs reference is now {{RFC9942}}. -01 cited both as Internet-Drafts; both
   have since been published as RFCs.
 - The Web Bot Auth architecture reference is replaced. -01 cited
-  draft-meunier-web-bot-auth-architecture, which the datatracker records as
-  Replaced by {{I-D.meunier-webbotauth-httpsig-protocol}}.
+  draft-meunier-web-bot-auth-architecture, which has been replaced by
+  {{I-D.meunier-webbotauth-httpsig-protocol}}.
   {{I-D.meunier-webbotauth-registry}}, which defines the signature-agent card,
-  is retained and is current. {{I-D.meunier-webbotauth-httpsig-directory}} is
+  is retained. {{I-D.meunier-webbotauth-httpsig-directory}} is
   added, because the card is resolved through the directory the
   Signature-Agent header names and -01 cited no document for that step.
-- The document date, RFCXML version, submission type and consensus declaration
-  are now present in the source, and the repeated `keyword` keys are a single
-  YAML sequence. -01 emitted an invalid stream declaration and dropped all but
-  the last keyword.
+- The document date, RFCXML version and submission type are declared in the
+  source, and `keyword` is a single YAML sequence.
 - A note to the RFC Editor records the {{RFC8785}} downref explicitly, so that
   it can be called out at IETF Last Call per {{RFC8067}} rather than found
   there.
-- Measured, and recorded here because it supports a claim this revision
-  already makes rather than one it needs. The Agent Action Capsule
-  `capsule_id` of the capsule specification companion to
-  {{I-D.mih-sato-agent-accountability-composition}} appears not to be a
-  distinct construction: both it and the derived identifier of
-  {{I-D.mih-sokolov-scitt-payload-binding}} are specified as a digest over an
-  {{RFC8785}} serialisation of a payload after absent-field normalisation and
-  the removal of an exclusion set, and the capsule's exclusion set is simply
-  fixed rather than declared per type. Two implementations that share no
-  source -- the capsule specification's Python and Go libraries -- agree
-  byte-for-byte on 24 generated inputs chosen to reach absent-field
-  normalisation, arrays, string escaping, UTF-16 member sorting and both
-  integer bounds, none of which the capsule suite's own frozen vectors
-  exercise. That is the outcome {{construction-distinctness}} argues for: one
-  construction, identified, committing to the parameters that affect the
+- {{composition}} now REQUIRES that all composed capsules carry one shared
+  action serialisation, established by the authorising party and echoed
+  verbatim by later attesters, and states that a capsule's own account of the
+  action travels in its payload rather than in `subject_digest`. -01 left the
+  shared-serialisation condition implicit, which is the condition the digest
+  depends on.
+- The determinism requirement is scoped to the Reconciliation Output and to
+  the Claim Hash, Reconciliation Hash and Policy-Version Hash. -01 required
+  bit-for-bit identical Settlement-Layer Ledger entries, which the entry's own
+  sequence number, timestamp and prior-entry hash make unsatisfiable.
+- The Claim Hash is pinned to SHA-256 in {{terminology}}. -01 named the
+  algorithm only in an appendix, leaving a parameter the construction
+  identifier is required to commit to unstated in the normative body.
+- Claim equality is stated over canonical field values, and declared array
+  order is significant. -01 required semantically-equivalent claims to hash
+  alike without defining semantic equivalence, which no implementer could
+  test.
+- The Per-Register Claim Projection is defined as the nearest permitted
+  ancestor predicate rather than a greatest lower bound, which the Predicate
+  Taxonomy -- a tree -- does not have, and the projection function now fails
+  explicitly on an ambiguous or unreachable walk rather than choosing.
+- The Settlement-Layer Ledger entry carries an OPTIONAL
+  Source-Reconciliation-Output Identifier, which the retroactive
+  re-evaluation example already relied on and the entry's closed field list
+  did not admit.
+- `freshness-stale` is added to the Divergence-Axis controlled set, and
+  server-recorded axes are stated to travel in the Reconciliation Output
+  rather than in a register's signed payload, which the reconciliation server
+  cannot modify.
+- COSE header labels are requested from IANA rather than asserted as a
+  vendor-private range, and an IANA registry is requested for Divergence-Axis
+  values.
+- The examples are de-identified. Register identifiers are illustrative and no
+  bilateral agreement with any named authority is asserted.
+- Two independent implementations of an {{RFC8785}}-based digest
+  construction, sharing no source, were measured as agreeing byte-for-byte on
+  24 generated inputs selected to exercise absent-field normalisation, arrays,
+  string escaping, UTF-16 member sorting and both integer bounds. That is the
+  outcome {{construction-distinctness}} argues for: one identified
+  construction per digest role, committing to the parameters that affect the
   serialised bytes and to nothing else.
 
 ## Since draft-hillier-scitt-arp-00

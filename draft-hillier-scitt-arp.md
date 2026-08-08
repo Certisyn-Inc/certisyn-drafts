@@ -28,6 +28,7 @@ author:
     name: Joel David Hillier
     organization: Certisyn, Inc.
     email: jhillier@certisyn.com
+    country: United States of America
 
 normative:
   RFC2119:

@@ -978,8 +978,9 @@ Claim Hash:
 
 subject_digest:
 : SHA-256 over the {{RFC8785}} serialisation of an action, per
-  {{composition}}. Its purpose is to correlate independently produced capsules
-  describing the same action. {{RFC8785}} does not normalise.
+  {{composition}}. It is a CONTENT digest: it commits to the action object as
+  serialised, and any difference in the serialised bytes yields a different
+  digest. {{RFC8785}} does not normalise.
 
 An implementation that substitutes one for the other MUST be assumed to
 produce incorrect correlations. The failure is silent: both constructions
@@ -1013,6 +1014,47 @@ Accordingly:
   commit to facts about a specification that do not affect the serialised
   bytes, so that two implementations producing identical bytes share an
   identifier.
+### What a content digest does and does not establish {#subject-digest-scope}
+
+`subject_digest` is injective over content: two actions whose serialisations
+differ in any byte produce different digests, so a receipt bound to one action
+does not bind another. That property is what makes it usable as a join key
+between capsules computed over the SAME serialised action.
+
+It does not, and cannot, establish that two INDEPENDENTLY DESCRIBED accounts of
+one act correlate. Where an action type declares optional members, two
+conforming producers describing the same act may legitimately differ on whether
+an optional member is present, and their subject digests then differ. Stability
+under permitted variation and injectivity over content are contradictory
+requirements, and no single digest satisfies both.
+
+This was measured during the preparation of this revision. Five action objects,
+each a conforming instance of one registered action type and each accepted by
+that type's reference issuer, differing only in content the type declares
+OPTIONAL, produced five distinct subject digests. The divergence appeared at
+the first optional member and did not require any nested reference or unusual
+value.
+
+Accordingly:
+
+* A profile MAY key capsules on `subject_digest` where those capsules are
+  computed over the same serialised action object. {{composition}} is such a
+  profile: the capsules it composes share one action serialisation.
+* A profile that requires correlation across independently produced
+  descriptions of one act MUST NOT rely on `subject_digest` alone. It MUST
+  either pin the exact member set over which the digest is computed, so that
+  permitted variation cannot enter it, or correlate on a material identifier
+  the action type declares for that purpose. Where the action type declares
+  such an identifier -- for example a payment instruction identifier -- joining
+  on that field is the more robust of the two, because it does not require
+  every producer to agree on a serialisation before they can agree that they
+  are describing the same act.
+* A specification MUST NOT describe a content digest as a correlation key
+  without stating which of the two preceding cases it relies on. Doing so
+  invites an implementer to assume a stability property the construction does
+  not have, and the resulting failure is a correlation that silently does not
+  occur.
+
 * Where the correlation digest is computed over a TYPED action object whose
   type declares required material fields, the producer MUST validate the
   object against a pinned definition of that type before emitting a
@@ -1061,6 +1103,20 @@ reproducible.
   one another, and records the two observed COLLISION cases (Normalization Form
   D against Form C, and U+212B against U+00C5) in which a substitution fails
   silently rather than visibly.
+- New {{subject-digest-scope}} states what `subject_digest` is and what it is
+  not. -01 defined it and left its role to be inferred, and this document's own
+  earlier text described its purpose as correlating independently produced
+  capsules. That description was too strong. `subject_digest` is a content
+  digest: injective over content, and therefore NOT stable under the variation
+  an action type permits. Measured during the preparation of this revision:
+  five conforming instances of one registered action type, each accepted by
+  that type's reference issuer and differing only in content the type declares
+  OPTIONAL, produced five distinct subject digests. The section now separates
+  the case the construction supports -- capsules over one shared serialisation,
+  which is what {{composition}} composes -- from the case it does not, and
+  requires a profile needing the latter to pin its member set or to join on a
+  material identifier the action type declares. It also forbids describing a
+  content digest as a correlation key without saying which case is relied on.
 - The order of canonicalisation operations in {{terminology}} is now normative.
   Normalization Form C is applied BEFORE the member sort. The two do not
   commute: for an object whose member names are U+0041 U+030A and "B",

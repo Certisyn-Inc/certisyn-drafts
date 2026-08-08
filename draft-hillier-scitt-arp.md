@@ -106,7 +106,7 @@ producer-agnostic reconciled verdict evaluated at decision time.
 RFC EDITOR: please remove this section before publication.
 
 This document is Standards Track and makes a normative reference to RFC 8785,
-which is Informational. This constitutes a downref under {{?RFC8067}}. The reference is deliberately normative: ARP's
+which is Informational. This constitutes a downref under {{RFC8067}}. The reference is deliberately normative: ARP's
 Canonical Claim is a digest over an RFC 8785 serialisation preceded by Unicode
 Normalization Form C, and the subject digest of {{composition}} is a digest over an
 unmodified RFC 8785 serialisation. Neither can be computed without RFC 8785,
@@ -114,7 +114,7 @@ and an implementation that substituted any other canonicalisation would
 compute a different value for the same claim. The
 reference is therefore load-bearing for interoperability and cannot be
 demoted to informative. This is called out here so that the downref can be
-noted in the IETF Last Call announcement per Section 1 of {{?RFC8067}}.
+noted in the IETF Last Call announcement per Section 1 of {{RFC8067}}.
 
 # Introduction
 

@@ -38,7 +38,7 @@ normative:
   RFC9421:        # HTTP Message Signatures
   RFC8785:        # JSON Canonicalization Scheme (JCS)
   RFC9943:        # SCITT Architecture (was I-D.ietf-scitt-architecture)
-  RFC9942:        # COSE Merkle Tree Proofs (was I-D.ietf-cose-merkle-tree-proofs)
+  RFC9942:        # COSE Receipts (was I-D.ietf-cose-merkle-tree-proofs)
   UAX15:
     title: "Unicode Standard Annex #15: Unicode Normalization Forms"
     target: https://www.unicode.org/reports/tr15/
@@ -1057,6 +1057,16 @@ Accordingly:
   {{I-D.mih-sokolov-scitt-payload-binding}} expresses a compatible rule
   statement-side.
 
+* Where the correlation digest is computed over a TYPED action object whose
+  type declares required material fields, the producer MUST validate the
+  object against a pinned definition of that type before emitting a
+  correlation identifier for it, and MUST NOT emit one where validation
+  fails. A digest is well-formed over any object, including one that omits
+  fields the type requires; emitting an identifier in that case mints a join
+  key for an action the identifier does not fully describe, which is the
+  condition a relying party has no way to detect downstream. Validation against a pinned type
+  definition is therefore required before emission.
+
 ### What a content digest does and does not establish {#subject-digest-scope}
 
 `subject_digest` is collision-resistant over content: two actions whose
@@ -1093,20 +1103,11 @@ Accordingly:
   on that field is the more robust of the two, because it does not require
   every producer to agree on a serialisation before they can agree that they
   are describing the same act.
+
 A specification that describes a content digest as a correlation key without
 stating which of the two preceding cases it relies on invites an implementer to
 assume a stability property the construction does not have. The resulting
 failure is a correlation that silently does not occur.
-
-* Where the correlation digest is computed over a TYPED action object whose
-  type declares required material fields, the producer MUST validate the
-  object against a pinned definition of that type before emitting a
-  correlation identifier for it, and MUST NOT emit one where validation
-  fails. A digest is well-formed over any object, including one that omits
-  fields the type requires; emitting an identifier in that case mints a join
-  key for an action the identifier does not fully describe, which is the
-  condition a relying party has no way to detect downstream. Validation against a pinned type
-  definition is therefore required before emission.
 
 # Document History
 

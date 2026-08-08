@@ -29,6 +29,7 @@ $RFCS = @{
   "2119" = @("Key words for use in RFCs to Indicate Requirement Levels", @("S. Bradner"), "1997", "March")
   "8174" = @("Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words", @("B. Leiba"), "2017", "May")
   "8067" = @("Updating When Standards Track Documents May Refer Normatively to Documents at a Lower Level", @("B. Leiba"), "2017", "January")
+  "6350" = @("vCard Format Specification", @("S. Perreault"), "2011", "August")
   "8259" = @("The JavaScript Object Notation (JSON) Data Interchange Format", @("T. Bray"), "2017", "December")
   "8785" = @("JSON Canonicalization Scheme (JCS)", @("A. Rundgren", "B. Jordan", "S. Erdtman"), "2020", "June")
   "9052" = @("CBOR Object Signing and Encryption (COSE): Structures and Process", @("J. Schaad"), "2022", "August")

@@ -415,6 +415,15 @@ Sovereign Re-Notification:
   Settlement-Layer Ledger so that a relying party that acted on the superseded
   Output can discover the change.
 
+Reconciliation Nonce:
+: A value of at least 128 bits drawn from a cryptographically secure random
+  source, unique to one Per-Register Claim Projection and therefore to one
+  register within one reconciliation. It is never reused. Two registers
+  addressed in the same reconciliation receive different nonces, so their Query
+  Bindings differ even where the Projected Predicate and Subject Reference are
+  identical, and an attestation elicited from one register cannot be presented
+  as an answer from another.
+
 Source-Version Skew:
 : The condition, recorded as source-version-skew, in which two Partial
   Attestations answer the same Projected Predicate against different states of
@@ -515,17 +524,21 @@ A Canonical Claim comprises:
 - Applicable-Regimes Set
 - Evidentiary Provenance Manifest
 - Claim Timestamp (RFC 3339 UTC)
-- Claim Hash (SHA-256 over the canonical serialisation)
+- Claim Hash (SHA-256 over the canonical serialisation together with the
+  Deployment Blinding Value of {{sealing}})
 
 Two claims whose canonical field values are identical MUST produce the same
-canonical form and the same Claim Hash. Declared array order is significant;
+canonical form, and the same Claim Hash within one deployment. Across
+deployments the Claim Hash differs by the Deployment Blinding Value while the
+canonical form does not. Declared array order is significant;
 claims differing only in declared array order are distinct claims. The Claim Hash is the index on the
 Settlement-Layer Ledger and the key for retroactive re-evaluation.
 
 The Evidentiary Provenance Manifest MAY be carried in any COSE-enveloped
 evidence structure; the container form is an interop convenience and does not
 alter the Claim Hash,
-which is computed over the canonical claim fields alone.
+which is computed over the canonical claim fields together with the Deployment
+Blinding Value of {{sealing}} and over nothing else.
 
 ## Requester Identity Binding and Agent Friend-or-Foe Gate
 
@@ -853,17 +866,23 @@ rejected under {{replay-defence}}.
 
 Each Per-Register Claim Projection MUST be encrypted under the addressed
 register's public-key material declared in the Bilateral Register Agreement.
-The encryption operation MUST bind the Bilateral-Register-Agreement Hash and the
-Reconciliation Nonce into the ciphertext as authenticated additional data, such
-that a register attempting to decrypt under a stale
-Bilateral-Register-Agreement Hash fails at the authenticated-additional-data
-verification step.
+The Reconciliation Nonce MUST be transmitted in the clear alongside the
+ciphertext, and the encryption operation MUST bind the
+Bilateral-Register-Agreement Hash and that nonce into the ciphertext as
+authenticated additional data, such that a register attempting to decrypt under
+a stale Bilateral-Register-Agreement Hash, or with a nonce other than the one
+the ciphertext was sealed against, fails at the authenticated-additional-data
+verification step. The register MUST verify that the nonce so bound equals the
+Reconciliation Nonce field of the decrypted projection.
+
+The nonce travels in the clear because authenticated additional data is an input
+to the decryption operation and cannot be recovered from the plaintext that
+operation produces. It discloses nothing: it is a random value carrying no
+information about the subject or the claim.
 
 These two are the only values so bound. Authenticated additional data detects a
 mismatch only against an expectation the receiver independently holds. A
-register independently holds its own agreement, and it holds the nonce because
-the nonce is inside the projection it is decrypting, which binds the ciphertext
-to a single reconciliation. It does not hold the Pattern-Library Version
+register independently holds its own agreement, and it is handed the nonce. It does not hold the Pattern-Library Version
 Identifier: the Pattern Library is the reconciliation server's internal
 adversarial-test corpus and is not published to registers, so binding it would
 either fail universally or be supplied alongside the ciphertext by the same
@@ -891,9 +910,12 @@ A Partial Attestation comprises:
   actually applied in evaluating the Projected Predicate, present wherever the
   Profile Parameter Set of the Per-Register Claim Projection was non-empty
 - Query Binding, the SHA-256 digest over the deterministically encoded CBOR
-  concatenation of the Reconciliation Identifier, the Projected Predicate, the
-  Subject Reference and the Reconciliation Nonce of the Per-Register Claim
-  Projection it answers
+  array `["arp-query-binding-v1", Reconciliation Identifier, Projected
+  Predicate, Subject Reference, Reconciliation Nonce]`, those four values taken
+  from the Per-Register Claim Projection it answers. The construction is a
+  four-element array under a fixed domain-separation string rather than a byte
+  concatenation, so that two implementations cannot differ on framing and the
+  digest cannot collide with any other construction in this document
 - Freshness Timestamp
 - Cryptographic Signature over the canonical payload of the foregoing
 
@@ -909,10 +931,17 @@ would not identify the question.
 
 The reconciliation server MUST recompute the Query Binding from the projection
 it transmitted and MUST reject an attestation whose Query Binding does not
-match, under {{no-answer}} with the reason `attestation-unverifiable`. The
-Reconciliation Nonce MUST be unique per Per-Register Claim Projection and MUST
-NOT be reused across reconciliations, so that an attestation is admissible only
-into the reconciliation that elicited it.
+match, under {{no-answer}} with the reason `attestation-unverifiable`.
+
+The Query Binding Record of {{reconciliation-output}} carries the three
+projection values and the register's signed attestation into the Output, so that
+a relying party or auditor can recompute the binding and verify the register's
+signature independently. A check performed only by the reconciliation server
+would rest on the honesty of the party the rest of this document declines to
+trust. The
+Reconciliation Nonce is unique per Per-Register Claim Projection per
+{{terminology}} and MUST NOT be reused, so that an attestation is admissible
+only into the reconciliation, and against the register, that elicited it.
 
 The Partial Attestation payload SHALL NOT contain any register-record field,
 any pre-image of the register record, or any field beyond those enumerated.
@@ -1131,6 +1160,10 @@ Each entry of the Per-Register Result Set comprises:
   Set the register reported where the Answer State is `answered`; required
   wherever a projection was transmitted and either the projection narrowed or
   the Profile Parameter Set was non-empty
+- Query Binding Record, present exactly where the Answer State is `answered`,
+  comprising the Projected Predicate, the Subject Reference and the
+  Reconciliation Nonce the server transmitted, and the register's signed Partial
+  Attestation
 
 Each member of the Server-Recorded Divergence-Axis Set is a pair of a Divergence
 Axis and the Register Identifier it concerns, or the Divergence Axis alone where
@@ -1182,9 +1215,19 @@ The Policy-Version Hash MUST be reconstructible under audit from a canonical
 policy state persisted in a policy-epoch store.
 
 The Claim Hash and the Policy-Version Hash MUST each be computed over a preimage
-that includes a Blinding Value of at least 128 bits drawn from a
-cryptographically secure random source, retained in the policy-epoch store
-alongside the canonical state and disclosed only under the audit path.
+that includes the Deployment Blinding Value: a secret of at least 128 bits drawn
+once from a cryptographically secure random source, persisted in the
+policy-epoch store, constant for the life of the deployment, and disclosed only
+under the audit path.
+
+It is constant rather than per-claim, and that is what makes it compatible with
+the rest of this document. The Claim Hash remains a deterministic function of
+the canonical claim fields within a deployment, so it remains usable as the
+Settlement-Layer Ledger index and as the retroactive-evaluation key, and the
+bit-for-bit requirement of {{architecture}} continues to hold: the same
+deployment given the same enumerated inputs produces the same digests. What
+changes is that the preimage is no longer guessable from outside the deployment.
+A per-claim random value would defeat all three properties.
 
 Both digests are otherwise taken over low-entropy preimages: a subject
 identifier is typically a company number of ten or so digits, a predicate is
@@ -1575,14 +1618,30 @@ from a genuine Output and are one-way.
 
 Each Bilateral Register Agreement MUST therefore declare the authority origin of
 the reconciliation server it authorises, and each register operator MUST publish
-the set of origins it has so authorised as a COSE Key Set at
-`/.well-known/arp-authorised-origins` on its own register origin, which is a
-member of the Addressed-Registers Identifier Set and so is known to the relying
-party from the Output. A relying party MUST verify that the origin component of
-the Sealing-Key Identifier appears in the authorised-origin set published by
-every register in that Set, and MUST reject the Output where it does not. The
-chain is then: register origins from the Output, authorised origins from each
-register, sealing key from the authorised origin.
+an Authorised-Origin Document at `/.well-known/arp-authorised-origins` on its own
+register origin. A Register Identifier is an origin, so the register origin is a
+member of the Addressed-Registers Identifier Set and is known to the relying
+party from the Output.
+
+An Authorised-Origin Document is a COSE_Sign1 whose payload comprises, for each
+reconciliation server the register operator has authorised, that server's
+authority origin and the identifier of the key that signs that server's sealing
+key set. It MUST be signed under a key served as a COSE Key Set at
+`/.well-known/arp-register-keys` on the same register origin, which the relying
+party fetches over its ordinary web PKI. Signing it matters for the same reason
+signing the sealing key set matters: an unsigned document fetched over TLS can
+be varied per audience, and this one is the root of the chain.
+
+A relying party MUST verify that the origin component of the Sealing-Key
+Identifier appears in the Authorised-Origin Document published by every register
+in the Addressed-Registers Identifier Set, and MUST reject the Output where it
+does not or where any such document cannot be verified.
+
+The chain is then: register origins from the Output; each register's own key
+from its register origin; the Authorised-Origin Document verified under that
+key; the authorised server origin and its key-set signing key identifier from
+that document; and the sealing key from the server's key set, verified under
+that identifier. Every step is fetchable by a party holding only the Output.
 
 A key entry MUST carry a validity interval and a status of `active`, `retired`
 or `revoked`. A relying party MUST reject a Sealing Signature made under a
@@ -1595,8 +1654,10 @@ may still be relied upon: retirement is by status, not by deletion, so that a
 historical Output remains verifiable while a compromised key can still be
 refused.
 
-The key set MUST itself be signed by a key whose identifier is declared in the
-Bilateral Register Agreements, and a relying party MUST verify that signature. A
+The key set MUST itself be signed under the key whose identifier the
+Authorised-Origin Document gives for that server, and a relying party MUST verify
+that signature. The identifier comes from a document the relying party can
+fetch, not from an agreement it does not hold. A
 key set fetched over TLS alone can be varied per audience, which would let a
 server present one key to one relying party and another to a second and seal two
 contradictory Outputs for the same reconciliation, each verifiable only by its
@@ -2066,7 +2127,8 @@ This document defines two digest constructions over JSON, for two different
 purposes, and they are NOT interchangeable:
 
 Claim Hash:
-: SHA-256 over the Canonical Claim serialisation of {{terminology}}. Its
+: SHA-256 over the Canonical Claim serialisation of {{terminology}} together
+  with the Deployment Blinding Value of {{sealing}}. Its
   purpose is to index a claim in the Settlement-Layer Ledger. It applies
   Unicode Normalization Form C.
 

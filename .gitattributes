@@ -1,0 +1,9 @@
+# The deliverable of this repository is a byte-exact Internet-Draft text and a
+# content-hashed conformance manifest. A working tree whose bytes differ from
+# the committed bytes cannot be checked against either, so the working tree is
+# pinned to LF on every platform rather than left to each clone's
+# core.autocrlf. Without this, a Windows clone with the default
+# core.autocrlf=true rewrites every text file on checkout and
+# conformance/runners/verify_manifest.py reports every digest in the manifest
+# as a mismatch on a tree that is in fact correct.
+* text=auto eol=lf

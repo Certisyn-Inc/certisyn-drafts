@@ -24,3 +24,8 @@ draft-hillier-scitt-arp-*.txt
 # Scratch. Files retired during a session land here for the human to remove.
 _to_delete/
 _send/
+
+# Pinned lint tooling, installed with
+#   npm install --prefix .tools @ietf-tools/idnits@3.1.0
+# and the idnits transcript verify-03.ps1 leaves there.
+.tools/

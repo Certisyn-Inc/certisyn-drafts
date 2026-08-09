@@ -79,15 +79,54 @@ if ($mOk) { Ok "MANIFEST: PASS" } else { Bad "MANIFEST: FAIL"; $fail++ }
 
 Head "idnits 3.1.0"
 $sendTxt = Join-Path $RepoPath "_send\draft-hillier-scitt-arp-03.txt"
-if (Test-Path $sendTxt) {
-    $n = & npx --yes @ietf-tools/idnits@latest $sendTxt 2>&1
+$log     = Join-Path $RepoPath ".tools\idnits-03.txt"
+$local   = Join-Path $RepoPath ".tools\node_modules\.bin\idnits.cmd"
+
+if (-not (Test-Path $sendTxt)) {
+    Bad "_send\draft-hillier-scitt-arp-03.txt missing"; $fail++
+} else {
+    # Prefer the pinned local install. npx fetches on every run, and a fetch
+    # that is slow, rate-limited or racing another npx produces no output at
+    # all -- which is indistinguishable from a clean document unless the
+    # script says which happened. Install once with:
+    #   npm install --prefix .tools @ietf-tools/idnits@3.1.0
+    if (Test-Path $local) {
+        Write-Host "  using $local" -ForegroundColor DarkGray
+        $n = & $local $sendTxt 2>&1
+    } else {
+        Write-Host "  no local install; falling back to npx (needs network)" -ForegroundColor Yellow
+        $n = & npx --yes @ietf-tools/idnits@3.1.0 $sendTxt 2>&1
+    }
+    New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null
+    $n | Out-File -FilePath $log -Encoding utf8
     $hit = $n | Select-String -Pattern 'Review the' | Select-Object -First 1
-    $line = if ($hit) { $hit.ToString().Trim() } else { "(idnits produced no summary line)" }
-    Write-Host "  $line" -ForegroundColor DarkGray
-    if ($line -match '\b1 error\b') {
-        Ok "1 error -- the deliberate RFC 8785 downref, documented in the Note to the RFC Editor"
-    } else { Bad "expected exactly 1 error; read the full idnits output"; $fail++ }
-} else { Bad "_send\draft-hillier-scitt-arp-03.txt missing"; $fail++ }
+
+    if (-not $hit) {
+        # The check did not run. That is a different thing from the check
+        # running and failing, and reporting it as a failure of the document
+        # would be exactly the mistake this document is about.
+        Bad "INCONCLUSIVE -- idnits produced no summary line, so nothing was measured"
+        Write-Host "        $($n.Count) line(s) of output, saved to .tools\idnits-03.txt" -ForegroundColor DarkGray
+        if ($n.Count) {
+            Write-Host "        last lines:" -ForegroundColor DarkGray
+            $n | Select-Object -Last 6 | ForEach-Object {
+                Write-Host "          $($_.ToString().Trim())" -ForegroundColor DarkGray }
+        } else {
+            Write-Host "        no output at all. Usually a network fetch that did not" -ForegroundColor DarkGray
+            Write-Host "        complete, or two npx runs racing. Install the pinned copy:" -ForegroundColor DarkGray
+            Write-Host "          npm install --prefix .tools @ietf-tools/idnits@3.1.0" -ForegroundColor DarkGray
+        }
+        $fail++
+    } else {
+        $line = $hit.ToString().Trim()
+        Write-Host "  $line" -ForegroundColor DarkGray
+        if ($line -match '\b1 error\b') {
+            Ok "1 error -- the deliberate RFC 8785 downref, documented in the Note to the RFC Editor"
+        } else {
+            Bad "expected exactly 1 error; full output in .tools\idnits-03.txt"; $fail++
+        }
+    }
+}
 
 Head "Attachments for the emails"
 $send = Join-Path $RepoPath "_send"

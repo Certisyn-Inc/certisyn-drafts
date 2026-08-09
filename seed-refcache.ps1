@@ -27,6 +27,13 @@ function Say($m, $c = "Gray") { Write-Host $m -ForegroundColor $c }
 # title | authors "Initials Surname" | year | month
 $RFCS = @{
   "2119" = @("Key words for use in RFCs to Indicate Requirement Levels", @("S. Bradner"), "1997", "March")
+  "3339" = @("Date and Time on the Internet: Timestamps", @("G. Klyne", "C. Newman"), "2002", "July")
+  "3986" = @("Uniform Resource Identifier (URI): Generic Syntax", @("T. Berners-Lee", "R. Fielding", "L. Masinter"), "2005", "January")
+  "6838" = @("Media Type Specifications and Registration Procedures", @("N. Freed", "J. Klensin", "T. Hansen"), "2013", "January")
+  "6839" = @("Additional Media Type Structured Syntax Suffixes", @("T. Hansen", "A. Melnikov"), "2013", "January")
+  "7638" = @("JSON Web Key (JWK) Thumbprint", @("M. Jones", "N. Sakimura"), "2015", "September")
+  "8949" = @("Concise Binary Object Representation (CBOR)", @("C. Bormann", "P. Hoffman"), "2020", "December")
+  "9530" = @("Digest Fields", @("R. Polli", "L. Pardue"), "2024", "February")
   "8174" = @("Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words", @("B. Leiba"), "2017", "May")
   "8067" = @("Updating When Standards Track Documents May Refer Normatively to Documents at a Lower Level", @("B. Leiba"), "2017", "January")
   "6350" = @("vCard Format Specification", @("S. Perreault"), "2011", "August")
@@ -39,6 +46,16 @@ $RFCS = @{
   "9421" = @("HTTP Message Signatures", @("A. Backman", "J. Richer", "M. Sporny"), "2024", "February")
   "9942" = @("CBOR Object Signing and Encryption (COSE) Receipts", @("O. Steele", "H. Birkholz", "A. Delignat-Lavaud", "C. Fournet"), "2026", "June")
   "9943" = @("An Architecture for Trustworthy and Transparent Digital Supply Chains", @("H. Birkholz", "A. Delignat-Lavaud", "C. Fournet", "Y. Deshpande", "S. Lasker"), "2026", "June")
+}
+
+# Sub-series membership. An RFC that is also part of an STD or BCP renders as
+# "STD 94, RFC 8949" rather than "RFC 8949", so the seriesInfo has to be here or
+# the reference list will not match what the RFC Editor publishes. Only the ones
+# this draft cites are listed.
+$SUBSERIES = @{
+  "3986" = @("STD", "66")
+  "6838" = @("BCP", "13")
+  "8949" = @("STD", "94")
 }
 
 function Esc($s) { $s -replace '&','&amp;' -replace '<','&lt;' -replace '>','&gt;' }
@@ -59,6 +76,10 @@ foreach ($num in ($RFCS.Keys | Sort-Object)) {
     }
     [void]$sb.AppendLine("    <date year='$year' month='$month' />")
     [void]$sb.AppendLine("  </front>")
+    if ($SUBSERIES.ContainsKey($num)) {
+        $sName, $sVal = $SUBSERIES[$num]
+        [void]$sb.AppendLine("  <seriesInfo name='$sName' value='$sVal' />")
+    }
     [void]$sb.AppendLine("  <seriesInfo name='RFC' value='$num' />")
     [void]$sb.AppendLine("  <seriesInfo name='DOI' value='10.17487/RFC$num' />")
     [void]$sb.AppendLine("</reference>")

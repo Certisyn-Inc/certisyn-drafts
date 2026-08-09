@@ -16,3 +16,10 @@ __pycache__/
 # Local bibliographic reference cache. Build aid only -- see seed-refcache.ps1.
 # bib.ietf.org's bibxml paths hang; this lets the build run without them.
 .refcache/
+
+# Versioned copies of the rendered text, made for idnits and for the
+# datatracker upload. Same reason as above: the .xml is the durable record.
+draft-hillier-scitt-arp-*.txt
+
+# Scratch. Files retired during a session land here for the human to remove.
+_to_delete/

@@ -206,7 +206,7 @@ two rows; see CHANGES-v2.1.md.
     4170baf34c273423d14a7468750033315c840d3433a08657c12000af0454a66d  runners/run_cpb_vectors.py
     583dc806ee49b50f27ef27c5270a5330657c63155e580cfb312b1c4d455db19d  runners/run_aac_vectors.py
     cb964d52a7c30cf00d4527766916773772ac3eb0d2524ec00b3d6b44d6ec9f65  runners/aac_go_shim/main.go
-    2189f3c2422b9d70a93ffcb0396264311dc27cecd96abf048d340dea60c69da2  runners/verify_manifest.py
+    0ddb8394c8c40d73356e0fc5b3ac09a8d1317aeb177f009f13c518e6b5d692ae  runners/verify_manifest.py
     2ce3ff85fbf7c10c8905c4392e56a6b33191704996911cc88bc3dc8887e634d7  runners/build_typed_ref_vectors.py
     b1056fa365900b196ad186e4a07fac2939d4c75843d0280629f21c0828e3b621  runners/run_typed_ref_vectors.py
     8726e9f178ea94bb2b255af808bd0761e3f2f46473fcd403413fce5ab1db1b35  vectors/arp-outcome-vectors-v0.2.json

@@ -174,11 +174,11 @@ No other fixture is used. Everything else is read from the pinned corpora.
     runs/arp_outcome_vectors_v02_run.json   5 passed, 0 failed
       sha256 a2ad66d4f7acb573f3b63dd5874fae127261984348413d5c1a03e98d6f55aa28
     runs/cpb_run.json                       SELF-CHECK PASS, 0 unattributed
-      sha256 cc94f74e9187d0c6d609c66e4a93b3cc9e576738d624ea7247c4cafa2d2527bf
+      sha256 c39d204c9685c78d39c66b46f89dcf406116ecde9f3c416b5f98fcf4878e6b9d
     runs/aac_run.json                       SELF-CHECK PASS, 0 unattributed
       sha256 421a8bef08d33a47ad302b281a66c0773fd025ab55d7996c2964f335294982d4
     runs/arp_adapter_run.json               5 of 5
-      sha256 16cf2f0628c7ac6c68e73f8d2de49aa76b796400ea7c7eefd2c9bb68156c1ed9
+      sha256 a25629f0e1ccdee444d1f86a4a61476780e32d7132df4b5cc67251befc28280e
     runs/typed_ref_cpb01_run.json           TYPED-REF RUN: PASS, 4/4
                                             predictions held, 1 not applicable
       sha256 16cf2f0628c7ac6c68e73f8d2de49aa76b796400ea7c7eefd2c9bb68156c1ed9

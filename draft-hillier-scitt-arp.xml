@@ -12,7 +12,7 @@
 ]>
 
 
-<rfc ipr="trust200902" docName="draft-hillier-scitt-arp-02" category="std" consensus="true" submissionType="IETF" tocInclude="true" sortRefs="true" symRefs="true">
+<rfc ipr="trust200902" docName="draft-hillier-scitt-arp-03" category="std" consensus="true" submissionType="IETF" tocInclude="true" sortRefs="true" symRefs="true">
   <front>
     <title abbrev="ARP">Attestation Reconciliation Protocol</title>
 
@@ -35,7 +35,7 @@
     <abstract>
 
 
-<?line 76?>
+<?line 113?>
 
 <t>This document specifies the Attestation Reconciliation Protocol (ARP), a
 deterministic, bilateral, minimum-disclosure mechanism for reconciling
@@ -57,10 +57,11 @@ ledger records only hashes, with no content. The protocol supports retroactive
 re-evaluation of historical reconciliations under updated pattern libraries or
 policy versions without bilateral renegotiation, and a
 cryptographic-primitive-upgrade path including post-quantum primitives. This
-revision adds agentic-principal reconciliation, requester identity binding,
-alignment with HTTP Message Signatures and COSE Receipts, and composition of
-heterogeneous agent-action accountability attestations into a single
-producer-agnostic reconciled verdict evaluated at decision time.</t>
+revision adds a normative binding to the SCITT Reference APIs, register
+data-format profiles for beneficial-ownership, corporate-registry, customs and
+consolidated-sanctions formats, and a source-data version binding that makes a
+change in a historical verdict attributable to a change in policy or to a change
+in the underlying published corpus.</t>
 
 
 
@@ -73,7 +74,7 @@ producer-agnostic reconciled verdict evaluated at decision time.</t>
   <middle>
 
 
-<?line 103?>
+<?line 141?>
 
 <section anchor="note-to-the-rfc-editor"><name>Note to the RFC Editor</name>
 
@@ -89,6 +90,14 @@ compute a different value for the same claim. The
 reference is therefore load-bearing for interoperability and cannot be
 demoted to informative. This is called out here so that the downref can be
 noted in the IETF Last Call announcement per Section 1 of <xref target="RFC8067"/>.</t>
+
+<t>This document also makes a normative reference to
+<xref target="I-D.ietf-scitt-scrapi"/>, a work in progress. <xref target="scrapi-binding"/> imposes
+requirements expressed in terms of that document's endpoints, status codes and
+media types, and an implementation cannot satisfy them without it, so the
+reference cannot be informative. RFC EDITOR: this document should not be
+published before that draft, and the reference should be updated to the
+resulting RFC number.</t>
 
 </section>
 <section anchor="introduction"><name>Introduction</name>
@@ -280,14 +289,31 @@ fail rather than choose.</t>
   <dd>
     <t>A cryptographically signed output produced by a Sovereign Register in
 response to a Per-Register Claim Projection. The Partial Attestation
-payload SHALL disclose only a Reconciliation-Verdict field and an
-OPTIONAL Divergence-Axis field; it SHALL NOT disclose any register
-record.</t>
+payload SHALL disclose, of the subject, only a Reconciliation-Verdict field
+and an OPTIONAL Divergence-Axis field; it SHALL NOT disclose any register
+record. Fields denoting state rather than the subject -- the Freshness
+Timestamp, and the Source-Data Version Identifier of <xref target="source-versioning"/> --
+are enumerated in <xref target="partial-attestation"/>.</t>
+  </dd>
+  <dt>Combined Verdict:</dt>
+  <dd>
+    <t>The single verdict value produced by aggregating the Reconciliation-Verdict
+fields of the Per-Register Result Set of <xref target="reconciliation-output"/> under the
+Verdict Arithmetic declared in the Applicable-Regimes Set. Its values are
+match, no-match, partial-match and indeterminate. The decisive values are
+match and no-match.</t>
+  </dd>
+  <dt>Reconciliation Hash:</dt>
+  <dd>
+    <t>The SHA-256 digest over the <xref target="RFC8785"/> serialisation of a Reconciliation
+Output excluding its Sealing Signature, preceded by Unicode Normalization
+Form C <xref target="UAX15"/>, as specified in <xref target="reconciliation-output"/>.</t>
   </dd>
   <dt>Divergence Axis:</dt>
   <dd>
-    <t>A controlled descriptor identifying the structural reason for a non-match
-verdict, drawn from a controlled set including identity-mismatch,
+    <t>A controlled descriptor identifying a structural qualification on a verdict.
+Most identify the reason for a non-match; those recorded by the reconciliation
+server may qualify a verdict of any value. The controlled set comprises identity-mismatch,
 jurisdictional-scope-mismatch, temporal-mismatch,
 ownership-threshold-mismatch, sanctions-list-match, register-record-absent,
 claim-predicate-unsupported,
@@ -295,11 +321,51 @@ claim-projection-narrowed-beyond-attestation-scope,
 agent-principal-unverifiable, agent-credential-absent,
 agent-impersonation-suspected, agent-action-scope-divergence (the
 authorised scope attested for an agent action and the actual conduct
-attested for it do not reconcile), and freshness-stale. A Divergence Axis
-recorded by the reconciliation server rather than by a register --
-freshness-stale is the only such value defined here -- is carried in the
-Reconciliation Output, not in the register's signed Partial-Attestation
-payload.</t>
+attested for it do not reconcile), source-version-skew, register-threshold-divergence (two
+registers answered the same predicate under different declared interest
+thresholds, per <xref target="profile-bods"/>), declared-not-determined (the register
+could answer only over a declared fact where the claim ranged over a
+determined one, per <xref target="profile-customs"/>), and freshness-stale. Divergence
+Axes recorded by the reconciliation server rather than by a register --
+freshness-stale, source-version-skew, register-threshold-divergence and
+declared-not-determined -- are carried in the Reconciliation Output, not
+in the register's signed Partial-Attestation payload.</t>
+  </dd>
+  <dt>Source-Data Version Identifier:</dt>
+  <dd>
+    <t>An identifier denoting the state of a published corpus, external to both the
+Bilateral Register Agreement and the Policy Version, against which a register
+evaluated a Projected Predicate. A consolidated sanctions list is the
+characteristic case. Its purpose is attribution: without it, a change in a
+historical Combined Verdict cannot be attributed to a change in policy state
+rather than to a change in the underlying corpus. Requirements are in
+<xref target="source-versioning"/>.</t>
+  </dd>
+  <dt>Post-Seal Evaluation Qualifier:</dt>
+  <dd>
+    <t>A controlled descriptor identifying a condition arising after a Reconciliation
+Output has been sealed, carried in a Post-Seal Evaluation Record per
+<xref target="post-seal"/> rather than in the Output. The values are
+notarisation-incomplete and attribution-indeterminate. A Post-Seal Evaluation
+Qualifier is not a Divergence Axis: a Divergence Axis qualifies a verdict, and
+a Post-Seal Evaluation Qualifier qualifies an operation on an Output whose
+verdict is already fixed.</t>
+  </dd>
+  <dt>Source-Version Skew:</dt>
+  <dd>
+    <t>The condition, recorded as source-version-skew, in which two Partial
+Attestations answer the same Projected Predicate against different states of
+the same published corpus. Both are within their freshness windows; the skew
+is in the corpus, not in the attestations. It is not a disagreement, and an
+implementation MUST NOT treat it as one.</t>
+  </dd>
+  <dt>Attribution Indeterminate:</dt>
+  <dd>
+    <t>The Post-Seal Evaluation Qualifier, recorded as attribution-indeterminate, in
+which a Retroactive Evaluation cannot determine whether a material change in a
+historical Combined Verdict arose from a change in policy state or from a
+change in Source-Data Version. It is a statement about the evaluation, not
+about any register's answer.</t>
   </dd>
   <dt>Reconciliation Output:</dt>
   <dd>
@@ -376,7 +442,12 @@ Outputs, and identical Claim Hash, Reconciliation Hash and Policy-Version Hash
 values in the corresponding Settlement-Layer Ledger entries. The per-event
 fields of a Ledger entry -- Entry Sequence Number, Reconciliation Timestamp,
 Prior-Entry Hash and Self-Entry Hash -- are position-dependent by construction
-and are outside this requirement.</t>
+and are outside this requirement. The Freshness Timestamps of the constituent
+Partial Attestations, and any Source-Data Version Identifiers they carry per
+<xref target="source-versioning"/>, are likewise outside it: both denote state external to
+the enumerated inputs. Two reconciliations agreeing on every enumerated input
+but differing in Source-Data Version are not required to be bit-identical, and
+an implementation MUST NOT treat such a difference as a determinism failure.</t>
 
 <section anchor="canonical-claim-ingestion"><name>Canonical Claim Ingestion</name>
 
@@ -451,7 +522,7 @@ transmission until a Pass result has been emitted or until an authorised
 operator has explicitly overridden the outcome.</t>
 
 </section>
-<section anchor="per-register-projection-function"><name>Per-Register Projection Function</name>
+<section anchor="projection"><name>Per-Register Projection Function</name>
 
 <t>For each addressed register, the controlled projection function MUST inspect
 the Canonical Claim against the permitted-predicate set declared in the
@@ -470,6 +541,216 @@ the taxonomy root without finding one, the projection MUST fail with
 Narrowed-From field of the Per-Register Claim Projection.</t>
 
 </section>
+<section anchor="format-profiles"><name>Register Data-Format Profiles</name>
+
+<t>A Bilateral Register Agreement MUST declare the data format in which the
+addressed register expresses the facts the permitted-predicate set ranges over.
+The projection function of <xref target="projection"/> operates on predicates, not on
+records; a format profile is what lets an implementer determine which predicates
+a given register can actually answer, and what a narrowing means against that
+register's own structure.</t>
+
+<t>A profile is a property of a data format, not of a register. It states, for the
+format it covers, how a permitted predicate is expressed and what the Predicate
+Taxonomy's parent relation corresponds to in that format. Parameters that vary
+between registers using the same format -- interest thresholds, maximum chain
+depths, the set of named lists and the identifiers a register uses for their
+states -- are not properties of the profile and MUST be declared in the
+Bilateral Register Agreement. A profile MUST enumerate the parameters a
+Bilateral Register Agreement declaring it is required to supply.</t>
+
+<t>Without that split a single registered identifier would carry facts that differ
+between registers, and two registers using the same format under different
+thresholds could not both declare it. A profile MUST NOT introduce a means of transporting register records; profiles
+constrain predicate expression only.</t>
+
+<t>The vocabulary documents a profile names are informative to this document and
+normative to an implementation of that profile: an implementation cannot
+evaluate a projection expressed in a vocabulary without it. A profile MUST pin
+the dated version of each vocabulary it names.</t>
+
+<t>This document defines four profiles, with the identifiers registered in
+<xref target="iana"/>:</t>
+
+<t><list style="symbols">
+  <t><spanx style="verb">arp-profile-bods</spanx> (<xref target="profile-bods"/>)</t>
+  <t><spanx style="verb">arp-profile-corporate-org</spanx> (<xref target="profile-corporate"/>)</t>
+  <t><spanx style="verb">arp-profile-customs-wco</spanx> (<xref target="profile-customs"/>)</t>
+  <t><spanx style="verb">arp-profile-sanctions-consolidated</spanx> (<xref target="profile-sanctions"/>)</t>
+</list></t>
+
+<t>Identifiers beginning <spanx style="verb">x-</spanx> are reserved for bilateral use and MUST NOT be
+registered. A Bilateral Register Agreement MAY declare one.</t>
+
+<section anchor="profile-bods"><name>Beneficial ownership: BODS</name>
+
+<t>For registers expressing beneficial ownership as <xref target="BODS"/> records, the
+permitted-predicate set is expressed over relationship records -- termed
+ownership-or-control statements before BODS 0.4 -- reachable from a declared
+subject entity. This profile is written against BODS 0.4.</t>
+
+<t>Taxonomic narrowing corresponds to reducing the depth of the ownership chain a
+predicate ranges over. A relying party's question is characteristically about
+ultimate beneficial ownership -- the transitive closure -- while a register may
+be able to answer only a bounded-depth predicate over direct or
+once-removed interests. The parent of a predicate at depth n is the corresponding predicate at depth
+n-1. The direct-interest predicate is the root of this profile's branch of the
+Predicate Taxonomy, and the walk of <xref target="projection"/> fails as
+<spanx style="verb">projection-unsupported</spanx> on reaching it, as it does at the taxonomy root.</t>
+
+<t>A Bilateral Register Agreement declaring <spanx style="verb">arp-profile-bods</spanx> MUST supply the
+maximum chain depth over which the register's permitted predicates are
+evaluated. Where the Canonical Claim ranges
+over the transitive closure and the register's declared maximum depth is finite,
+the projection is a narrowing and MUST be recorded in Narrowed-From. An
+implementation MUST NOT treat a bounded-depth <spanx style="verb">no-match</spanx> as a
+transitive-closure <spanx style="verb">no-match</spanx>. The rule is stated in <xref target="verdict-retyping"/> and
+applies to that register's contribution, not to the Combined Verdict: a
+<spanx style="verb">no-match</spanx> returned at bounded depth against a closure claim is re-typed to
+<spanx style="verb">indeterminate</spanx> before aggregation, and the Verdict Arithmetic then proceeds
+unchanged. A <spanx style="verb">match</spanx> found at any depth does establish the existential closure
+predicate and is not re-typed.</t>
+
+<t>The depth at which the register answered MUST be recorded in the Projection
+Record of <xref target="reconciliation-output"/>.</t>
+
+<t>Interest thresholds -- the percentage at which an interest becomes reportable --
+vary by jurisdiction and are properties of the register, not of the claim or of
+the format. A Bilateral Register Agreement declaring <spanx style="verb">arp-profile-bods</spanx> MUST
+supply the threshold its permitted predicates assume. Two
+registers answering the same predicate under different thresholds are not
+answering the same question. The reconciliation server MUST add
+<spanx style="verb">register-threshold-divergence</spanx> to the Server-Recorded Divergence-Axis Set
+wherever the Reconciliation Output combines registers whose declared thresholds
+differ, irrespective of the verdicts they returned.</t>
+
+</section>
+<section anchor="profile-corporate"><name>Corporate registries: vCard and the Organization Ontology</name>
+
+<t>For registers expressing legal-entity and organisational structure, a profile
+MAY declare <xref target="RFC6350"/> vCard properties or <xref target="W3C-ORG"/> classes and properties
+as the vocabulary in which permitted predicates are expressed.</t>
+
+<t>A profile MUST declare exactly one parent relation for each branch of its
+predicate space, and MUST partition that space so the branches do not overlap.
+Declaring two relations applicable to one predicate would make the taxonomic
+walk of <xref target="projection"/> reach two predicates at equal distance, which that
+section requires to fail as <spanx style="verb">projection-ambiguous</spanx>.</t>
+
+<t>Where <xref target="W3C-ORG"/> is used, <spanx style="verb">org:subOrganizationOf</spanx> is the parent relation for
+the organisational-structure branch, and <spanx style="verb">org:hasSite</spanx> for the branch of
+predicates ranging over establishment or place of business.</t>
+
+<t>Neither vocabulary asserts the legal effect of a recorded fact. <xref target="W3C-ORG"/> does
+carry a notion of legal recognition -- <spanx style="verb">org:FormalOrganization</spanx> denotes an
+organisation recognised in legal jurisdictions, and <spanx style="verb">org:identifier</spanx> a company
+registration number -- but recognition is not determination. A predicate
+expressed in these terms is a predicate about a register's recorded
+representation of an entity, not about the entity's status in law, and a profile
+MUST NOT be read as asserting the latter.</t>
+
+</section>
+<section anchor="profile-customs"><name>Customs and transport: UN/CEFACT and the WCO Data Model</name>
+
+<t>For customs declarations and transport registers, a profile MAY declare
+<xref target="UNCEFACT"/> core components or <xref target="WCO-DM"/> classes as the vocabulary for
+permitted predicates.</t>
+
+<t>Both express declaration-side and authority-side facts, and telling them apart
+is the purpose of this profile rather than a property of the vocabularies. The
+WCO Data Model's Declaration Response and its Licence, Permit, Certificate and
+Other packages record authority determinations, as does UN/CEFACT's eCERT for
+sanitary and phytosanitary certification; the goods and cargo declaration
+classes in both record what was declared to an authority.</t>
+
+<t>A Bilateral Register Agreement declaring <spanx style="verb">arp-profile-customs-wco</spanx> MUST supply,
+for each permitted predicate, whether it ranges over a declared fact or over a
+determined one. Where a relying party's Canonical Claim ranges over a determined
+fact and the register can answer only over a declared one, that is a narrowing
+and MUST be recorded in Narrowed-From. The reconciliation server MUST derive the Divergence
+Axis <spanx style="verb">declared-not-determined</spanx> from the Narrowed-From field and add it to the
+Server-Recorded Divergence-Axis Set of <xref target="reconciliation-output"/> whenever the
+narrowing occurred, whether or not it changed the Combined Verdict; the
+corresponding contribution is re-typed under <xref target="verdict-retyping"/>. The register
+cannot record it: the register never sees the Canonical Claim, and the Combined
+Verdict does not exist until every Partial Attestation has been received.</t>
+
+</section>
+<section anchor="profile-sanctions"><name>Sanctions: consolidated list formats</name>
+
+<t>For registers expressing designation status by reference to a consolidated list
+-- <xref target="OFAC-SDN"/>, <xref target="EU-CFSP"/> or equivalent -- the permitted-predicate set is
+expressed over designation of a subject entity on a named list.</t>
+
+<t>Consolidated lists are republished on no fixed schedule -- OFAC states there is
+no predetermined timetable, and the EU list is updated as amending regulations
+are adopted -- and are distributed either as full republications or as delta
+updates against a prior state. That the cadence is event-driven strengthens the
+requirement below rather than weakening it: a relying party cannot infer list
+state from the clock. A designation verdict is meaningful only relative to the
+list state that produced it, and this has a
+consequence the rest of this document depends on: without it, a change in a
+historical Combined Verdict cannot be attributed to a policy change rather than
+to a list change. Accordingly the requirements of <xref target="source-versioning"/> apply.</t>
+
+<t>A Bilateral Register Agreement declaring <spanx style="verb">arp-profile-sanctions-consolidated</spanx>
+MUST supply the set of lists the register consults and, for each, the identifier
+by which the register expresses that list's state. Where the register publishes both a full
+list and deltas, the identifier MUST denote the resulting state and not the
+delta applied to reach it.</t>
+
+</section>
+</section>
+<section anchor="source-versioning"><name>Source-Data Version Binding</name>
+
+<t>Where a register's answer depends on a source data state that changes
+independently of the Bilateral Register Agreement and of the Policy Version --
+a consolidated sanctions list being the characteristic case -- the Partial
+Attestation MUST carry a Source-Data Version Identifier Set: one identifier for each source consulted
+in evaluating the Projected Predicate. Each identifier is a tuple of the list
+name as declared in the Bilateral Register Agreement and the state identifier
+the register uses for that list, so that identifiers issued by one register over
+different lists cannot collide and a register consulting several lists can
+denote the state of each.</t>
+
+<t>The Source-Data Version Identifier Set MUST be carried in the
+<spanx style="verb">arp-source-data-version</spanx> COSE header parameter of the Partial Attestation's
+protected header, and is thereby covered by the Partial-Attestation signature.
+It MUST be carried into the Per-Register Result Set of
+<xref target="reconciliation-output"/> for each addressed register that supplied one, and is
+thereby covered by the Sealing Signature.</t>
+
+<t>A register MUST evaluate every Projected Predicate over a given list against the
+state the corresponding member of its declared Source-Data Version Identifier
+Set denotes, and MUST use the same identifier for every Partial Attestation it
+issues over that list until it adopts a new state. Without this the identifier would vary per subject and become
+a disclosure channel.</t>
+
+<t>Given that requirement this does not weaken minimum disclosure: a list-state
+identifier is a property of a published corpus rather than a register record, it
+discloses which published state was consulted and nothing about the subject
+entity, and it is identical across every Partial Attestation the register issues
+over that list regardless of verdict.</t>
+
+<t>Retroactive Evaluation depends on this. On re-evaluation under an updated
+Pattern Library or Policy Version, an implementation MUST distinguish a material
+change in a historical Combined Verdict arising from the change in policy state
+from one arising from a change in Source-Data Version. Both MUST trigger
+Sovereign Re-Notification where material, and the notification MUST state which
+of the two occurred. Where an implementation cannot distinguish them, it MUST
+emit a Post-Seal Evaluation Record carrying <spanx style="verb">attribution-indeterminate</spanx> per
+<xref target="post-seal"/> rather than attribute the change to policy.</t>
+
+<t>An implementation MUST NOT infer that two Partial Attestations whose
+Source-Data Version Identifier Sets differ for a list they have in common
+disagree. They may be answers to the
+same predicate against different states of the same corpus. The reconciliation
+server MUST record this as <spanx style="verb">source-version-skew</spanx>, which is distinct from
+<spanx style="verb">freshness-stale</spanx>: a skewed attestation is within its freshness window and is
+retained and combined, whereas a stale one falls outside that window and is
+rejected under <xref target="replay-defence"/>.</t>
+
+</section>
 <section anchor="per-register-encryption"><name>Per-Register Encryption</name>
 
 <t>Each Per-Register Claim Projection MUST be encrypted under the addressed
@@ -481,7 +762,7 @@ Bilateral-Register-Agreement Hash or Pattern-Library Version Identifier
 fails at the authenticated-additional-data verification step.</t>
 
 </section>
-<section anchor="partial-attestation-reception"><name>Partial Attestation Reception</name>
+<section anchor="partial-attestation"><name>Partial Attestation Reception</name>
 
 <t>A Partial Attestation comprises:</t>
 
@@ -491,14 +772,17 @@ fails at the authenticated-additional-data verification step.</t>
   <t>OPTIONAL Divergence-Axis Field</t>
   <t>Bilateral-Register-Agreement Hash</t>
   <t>Policy-Version Hash</t>
-  <t>Cryptographic Signature over the canonical payload of the foregoing</t>
+  <t>OPTIONAL Source-Data Version Identifier Set, present where required by
+<xref target="source-versioning"/> and carried in the <spanx style="verb">arp-source-data-version</spanx> COSE header
+parameter of <xref target="iana"/></t>
   <t>Freshness Timestamp</t>
+  <t>Cryptographic Signature over the canonical payload of the foregoing</t>
 </list></t>
 
 <t>The Partial Attestation payload SHALL NOT contain any register-record field,
 any pre-image of the register record, or any field beyond those enumerated.
-Restricting the Partial-Attestation payload to verdict and divergence-axis
-fields is the mechanism by which ARP limits raw-record disclosure. Residual
+Restricting the Partial-Attestation payload to the enumerated fields, of which
+only the verdict and divergence axis vary with the subject, is the mechanism by which ARP limits raw-record disclosure. Residual
 inference channels are discussed in <xref target="side-channel"/>.</t>
 
 </section>
@@ -523,7 +807,79 @@ verdict band MUST commit each register's verdict individually without
 disclosure of any other register's payload.</t>
 
 </section>
-<section anchor="policy-version-hash-sealing"><name>Policy-Version-Hash Sealing</name>
+<section anchor="verdict-retyping"><name>Verdict Re-Typing</name>
+
+<t>A register answers the Projected Predicate it was sent, which may be a narrowing
+of the Canonical Claim Predicate. Where the narrowing means the register's
+answer does not bear on the claim as asked, the reconciliation server MUST
+re-type that register's Reconciliation-Verdict Field before aggregation, and
+MUST record both the attested value and the re-typed value in the Per-Register
+Result Set.</t>
+
+<t>Re-typing is confined to these cases:</t>
+
+<t><list style="symbols">
+  <t>A <spanx style="verb">no-match</spanx> attested against a bounded-depth predicate, where the Canonical
+Claim ranged over a transitive closure, is re-typed to <spanx style="verb">indeterminate</spanx>. A
+bounded-depth <spanx style="verb">no-match</spanx> is evidence about the bounded depth only. A <spanx style="verb">match</spanx>
+is not re-typed: an interest found at any depth establishes the existential
+closure predicate.</t>
+  <t>A <spanx style="verb">match</spanx> or <spanx style="verb">no-match</spanx> attested over a declared fact, where the Canonical
+Claim ranged over a determined fact, is re-typed to <spanx style="verb">partial-match</spanx> where the
+Verdict Arithmetic admits that value and to <spanx style="verb">indeterminate</spanx> where it does not.</t>
+</list></t>
+
+<t>Re-typing operates on a register's contribution. It does not override the
+Verdict Arithmetic declared in the Applicable-Regimes Set, which is applied
+afterwards to the re-typed set and is otherwise unaffected. An implementation
+MUST NOT re-type on any ground not enumerated here.</t>
+
+</section>
+<section anchor="reconciliation-output"><name>Reconciliation Output</name>
+
+<t>A Reconciliation Output comprises:</t>
+
+<t><list style="symbols">
+  <t>Reconciliation Identifier</t>
+  <t>Combined Verdict</t>
+  <t>Addressed-Registers Identifier Set</t>
+  <t>Bilateral-Register-Agreement Hash Set</t>
+  <t>Policy-Version Hash</t>
+  <t>Pattern-Library Version Identifier</t>
+  <t>Requester-Binding Class</t>
+  <t>Per-Register Result Set, one entry per addressed register</t>
+  <t>Server-Recorded Divergence-Axis Set, possibly empty</t>
+  <t>Sealing Signature over the canonical serialisation of the foregoing</t>
+</list></t>
+
+<t>Each entry of the Per-Register Result Set comprises:</t>
+
+<t><list style="symbols">
+  <t>Register Identifier</t>
+  <t>Reconciliation-Verdict Field, as attested by that register or as re-typed
+under <xref target="verdict-retyping"/></t>
+  <t>OPTIONAL Divergence-Axis Field, as attested by that register</t>
+  <t>OPTIONAL Source-Data Version Identifier Set, as attested by that register</t>
+  <t>OPTIONAL Projection Record, comprising the Narrowed-From field of the
+Per-Register Claim Projection and the value of each profile parameter the
+Bilateral Register Agreement declared and the register applied</t>
+</list></t>
+
+<t>The Server-Recorded Divergence-Axis Set is a set rather than a single value: a
+reconciliation may be qualified on more than one axis, and an encoding admitting
+only one would force an implementation to choose between them silently.</t>
+
+<t>The Reconciliation Hash is the SHA-256 digest over the <xref target="RFC8785"/> serialisation
+of a Reconciliation Output excluding its Sealing Signature, preceded by Unicode
+Normalization Form C <xref target="UAX15"/>. It is the value recorded in the
+Settlement-Layer Ledger and the value a Post-Seal Evaluation Record references.</t>
+
+<t>A Reconciliation Output is immutable once sealed. Conditions arising after
+sealing are recorded under <xref target="post-seal"/> and MUST NOT be represented as fields
+of the Reconciliation Output.</t>
+
+</section>
+<section anchor="sealing"><name>Policy-Version-Hash Sealing</name>
 
 <t>The Policy-Version Hash MUST commit to:</t>
 
@@ -539,6 +895,44 @@ disclosure of any other register's payload.</t>
 
 <t>The Policy-Version Hash MUST be reconstructible under audit from a
 canonical policy state persisted in a policy-epoch store.</t>
+
+</section>
+<section anchor="post-seal"><name>Post-Seal Evaluation Records</name>
+
+<t>Two conditions arise after a Reconciliation Output has been sealed and therefore
+cannot be fields of it, and are not Divergence Axes: a Divergence Axis qualifies
+a verdict, and these qualify an operation performed on an Output that is already
+immutable.</t>
+
+<t><list style="symbols">
+  <t><spanx style="verb">notarisation-incomplete</spanx>, where notarisation under <xref target="scrapi-binding"/> neither
+completed nor was refused within the polling bound.</t>
+  <t><spanx style="verb">attribution-indeterminate</spanx>, where a Retroactive Evaluation could not
+determine whether a material change arose from a change in policy state or
+from a change in Source-Data Version.</t>
+</list></t>
+
+<t>Each is recorded in a Post-Seal Evaluation Record comprising:</t>
+
+<t><list style="symbols">
+  <t>the Reconciliation Hash of the Output it concerns</t>
+  <t>the Post-Seal Evaluation Qualifier, drawn from the registry of <xref target="iana"/></t>
+  <t>the Policy-Version Hash and Pattern-Library Version Identifier in force at
+the time of the evaluation, which may differ from those the Output was sealed
+under</t>
+  <t>a signature by the reconciliation-server sealing key</t>
+</list></t>
+
+<t>A Post-Seal Evaluation Record MUST NOT alter the Reconciliation Output it
+references, and a relying party MUST NOT treat the existence of one as
+invalidating that Output. A Reconciliation Output whose notarisation is
+incomplete remains valid under its Sealing Signature.</t>
+
+<t>Where a Sovereign Re-Notification is emitted under <xref target="retroactive"/> for a
+material change, the notification MUST state whether the change arose from
+policy state or from Source-Data Version, and where it cannot, a Post-Seal
+Evaluation Record carrying <spanx style="verb">attribution-indeterminate</spanx> MUST be emitted and
+referenced by the notification.</t>
 
 </section>
 <section anchor="settlement-layer-ledger"><name>Settlement-Layer Ledger</name>
@@ -589,7 +983,7 @@ field set. Each access MUST be recorded in an append-only subpoena-grade
 audit trail.</t>
 
 </section>
-<section anchor="retroactive-evaluation"><name>Retroactive Evaluation</name>
+<section anchor="retroactive"><name>Retroactive Evaluation</name>
 
 <t>Upon publication of an updated Pattern Library or an updated Policy
 Version, the Retroactive Evaluation Subsystem MUST execute a deterministic
@@ -671,9 +1065,12 @@ hashes only, and re-evaluable if the underlying credential is later revoked.</t>
 
 <t>The mandatory-to-implement encoding for ARP messages on the wire is CBOR with
 COSE <xref target="RFC9052"/> <xref target="RFC9053"/> envelopes. COSE_Sign1 is used for both Partial
-Attestations and the Sealing Signature. The protected header MUST include the
-Bilateral-Register-Agreement Hash and Policy-Version Hash as COSE header
-parameters registered per <xref target="iana"/>. Pending registration,
+Attestations and the Sealing Signature. The protected header MUST include the Bilateral-Register-Agreement Hash and
+Policy-Version Hash as COSE header parameters registered per <xref target="iana"/>.
+<spanx style="verb">arp-bilateral-agreement-hash</spanx> always carries an array, sorted in lexicographic
+byte order: a Partial Attestation's array has exactly one member, and a Sealing
+Signature's has one per addressed register. A single encoding for both avoids a
+decoder having to infer the type from context. Pending registration,
 implementations MAY use labels from the private-use range of the COSE Header
 Parameters registry; such use is not interoperable.</t>
 
@@ -693,7 +1090,138 @@ where required by the Agent-IFF policy, a Verified Principal Credential
 carried in the request body.</t>
 
 </section>
-<section anchor="verifiable-credentials-interop"><name>Verifiable Credentials Interop</name>
+<section anchor="scrapi-binding"><name>SCITT Reference API Binding</name>
+
+<t>A Reconciliation Output MAY be notarised into a SCITT Transparency Service as a
+transparent statement. Where it is, an implementation MUST use the binding in
+this section. <xref target="composition-scitt"/> states the architectural relationship; this
+section states the wire behaviour, so that two implementations registering the
+same Reconciliation Output against the same Transparency Service produce
+interchangeable results.</t>
+
+<section anchor="registration"><name>Registration</name>
+
+<t>The Reconciliation Output MUST be registered as a Signed Statement by
+<spanx style="verb">POST /entries</spanx> as defined in <xref target="I-D.ietf-scitt-scrapi"/>.</t>
+
+<t>The payload of the Signed Statement MUST be the sealed COSE_Sign1 -- the
+Reconciliation Output under its Sealing Signature, as produced by
+<xref target="sealing"/> -- and MUST NOT be the bare Reconciliation Output. Nesting is what
+makes the requirements below checkable: a relying party holding only the bare
+Output has neither the sealing key identity nor the Policy-Version Hash the seal
+committed to, and could not verify either.</t>
+
+<t>The Signed Statement is therefore a COSE_Sign1 whose payload is itself a
+COSE_Sign1. Its protected header MUST carry:</t>
+
+<t><list style="symbols">
+  <t>the content type <spanx style="verb">application/arp-reconciliation-output+cbor</spanx>, registered
+per <xref target="iana"/>;</t>
+  <t><spanx style="verb">arp-policy-version-hash</spanx>;</t>
+  <t><spanx style="verb">arp-bilateral-agreement-hash</spanx>, carrying the array of the
+Bilateral-Register-Agreement Hashes of the addressed registers, sorted in
+lexicographic byte order as required by <xref target="encoding"/>. A Reconciliation Output
+aggregates registers under more than one agreement, and an unordered encoding
+would make two conforming implementations produce non-interchangeable Signed
+Statements.</t>
+</list></t>
+
+<t>The <spanx style="verb">arp-policy-version-hash</spanx> in the outer protected header MUST equal the
+Policy-Version Hash carried in the nested sealed COSE_Sign1. A relying party
+MUST verify the Sealing Signature over the nested payload, MUST verify that
+equality, and MUST reject the Signed Statement where either fails.</t>
+
+<t>The verification key for the Sealing Signature is identified by the <spanx style="verb">kid</spanx> in the
+protected header of the nested COSE_Sign1 and is the reconciliation-server
+sealing key of the service-operator entity named in the Bilateral Register
+Agreements whose hashes the Output carries. A relying party evaluating a
+Reconciliation Output already relies on those agreements; the sealing key is
+established from the same source and requires no separate trust anchor. A
+relying party that cannot establish the sealing key MUST NOT rely on the
+notarised statement.</t>
+
+<t>Without nesting and this equality the Signed Statement would be a second and
+independent envelope: any party holding a valid Reconciliation Output could
+register it under a protected header asserting a policy version it was not
+sealed under, and a relying party following <xref target="policy-version-determination"/>
+would believe that assertion. A protected header cannot be altered after
+signing, but it can be false when signed, and integrity is not correctness.</t>
+
+<t>The payload MUST NOT be the Verifiable Credentials serialisation of
+<xref target="vc-interop"/>. That form is an interop convenience for relying parties and is
+not the notarised object; registering it instead would notarise a
+representation whose canonical form is unspecified.</t>
+
+</section>
+<section anchor="asynchronous-registration"><name>Asynchronous registration</name>
+
+<t>A Transparency Service may register synchronously or asynchronously, and an
+implementation MUST support both. This is the most likely source of divergence
+between two otherwise conforming implementations, and is therefore stated as a
+requirement rather than left to the referenced document.</t>
+
+<t>On <spanx style="verb">201 Created</spanx> the Receipt is available immediately. On <spanx style="verb">202 Accepted</spanx> the
+response carries a <spanx style="verb">Location</spanx> header, and the implementation MUST poll that URL
+verbatim rather than constructing a path of its own. A <spanx style="verb">204 No Content</spanx> means
+registration is still in progress and MUST NOT be treated as failure or as a
+negative result.</t>
+
+<t>A <spanx style="verb">404 Not Found</spanx> is terminal and MUST NOT be polled further. It carries two
+meanings in <xref target="I-D.ietf-scitt-scrapi"/> -- that the entry identifier is not known,
+and that the Signed Statement could not be persisted to the log -- and an
+implementation MUST distinguish them from the response body where it does so,
+because the second is a registration failure and the first may follow from
+having polled a URL the Transparency Service did not issue.</t>
+
+<t>An implementation MUST honour a <spanx style="verb">Retry-After</spanx> header where one is present, MUST
+NOT poll more frequently than once per second in its absence, and MUST bound
+total polling; a bound of 300 seconds is RECOMMENDED where the Bilateral
+Register Agreement declares none. Exhaustion of the bound MUST be recorded in a Post-Seal Evaluation Record
+carrying <spanx style="verb">notarisation-incomplete</spanx> per <xref target="post-seal"/>, rather than as either
+success or refusal. A
+Reconciliation Output whose notarisation is incomplete remains valid under its
+Sealing Signature; notarisation is an additional property, not a precondition of
+validity.</t>
+
+</section>
+<section anchor="receipt-validation"><name>Receipt validation</name>
+
+<t>A relying party MUST validate the Receipt against Transparency Service keys
+obtained from <spanx style="verb">GET /.well-known/scitt-keys</spanx>, or from
+<spanx style="verb">GET /.well-known/scitt-keys/{kid_value}</spanx> for a single key identified in the
+Receipt.</t>
+
+</section>
+<section anchor="policy-version-determination"><name>Policy-version determination</name>
+
+<t>A relying party MUST determine the Policy Version of a notarised Reconciliation
+Output from the <spanx style="verb">arp-policy-version-hash</spanx> parameter in the verified protected
+header of the Signed Statement, and MUST NOT determine it from any retrieval
+path, query parameter or Transparency Service index entry.</t>
+
+<t>Because the parameter is in the protected header, it is covered by the Receipt;
+and because <xref target="registration"/> requires the sealed COSE_Sign1 to be the nested
+payload and the outer parameter to equal the Policy-Version Hash it carries,
+what the header asserts is verifiably what the seal committed to. The policy version is
+therefore established by verification rather than by lookup, and a Transparency
+Service that indexed an entry incorrectly, or presented different index results
+to different relying parties, cannot cause a relying party to attribute a
+Reconciliation Output to a policy version it was not sealed under.</t>
+
+<t>This holds only because of the nesting and equality requirements in
+<xref target="registration"/>, both of which the relying party checks. A protected header
+alone establishes that a value was not altered after signing, not that it was
+true when signed.</t>
+
+<t><xref target="I-D.ietf-scitt-scrapi"/> defines retrieval by <spanx style="verb">EntryID</spanx> and defines no query
+surface. Correlating entries by policy version is consequently outside the scope
+of this binding and is a property of the deployment, not of the protocol. An
+implementation MUST NOT assume a standard retrieval path keyed on the
+Policy-Version Hash exists.</t>
+
+</section>
+</section>
+<section anchor="vc-interop"><name>Verifiable Credentials Interop</name>
 
 <t>A Reconciliation Output MAY be additionally serialised as a JSON-LD
 document conforming to the W3C Verifiable Credentials Data Model
@@ -790,7 +1318,7 @@ narrowing observation does not materially weaken subject privacy.</t>
 <t>This document requests IANA to register the following:</t>
 
 <t><list style="symbols">
-  <t>Five COSE header parameters in the COSE Header Parameters registry, values
+  <t>Six COSE header parameters in the COSE Header Parameters registry, values
 to be assigned by IANA:
   <list style="symbols">
       <t><spanx style="verb">arp-bilateral-agreement-hash</spanx> (value TBD)</t>
@@ -798,10 +1326,30 @@ to be assigned by IANA:
       <t><spanx style="verb">arp-pattern-library-hash</spanx> (value TBD)</t>
       <t><spanx style="verb">arp-divergence-axis</spanx> (value TBD)</t>
       <t><spanx style="verb">arp-requester-binding-class</spanx> (value TBD)</t>
+      <t><spanx style="verb">arp-source-data-version</spanx> (value TBD)</t>
     </list></t>
   <t>A registry of ARP Divergence-Axis values, registration policy Specification
-Required, initially containing the descriptors enumerated in
-<xref target="terminology"/> together with <spanx style="verb">freshness-stale</spanx>.</t>
+Required, initially containing exactly the descriptors enumerated in the
+Divergence Axis definition of <xref target="terminology"/>, which is a closed set.</t>
+  <t>A registry of ARP Post-Seal Evaluation Qualifiers, registration policy
+Specification Required, initially containing <spanx style="verb">notarisation-incomplete</spanx> and
+<spanx style="verb">attribution-indeterminate</spanx>, defined in <xref target="post-seal"/>. A registration MUST
+identify a condition arising after a Reconciliation Output is sealed; the
+designated expert MUST refuse a registration that qualifies a verdict, which
+belongs in the Divergence-Axis registry.</t>
+  <t>A registry of ARP Register Data-Format Profile identifiers, registration
+policy Specification Required, initially containing <spanx style="verb">arp-profile-bods</spanx>,
+<spanx style="verb">arp-profile-corporate-org</spanx>, <spanx style="verb">arp-profile-customs-wco</spanx> and
+<spanx style="verb">arp-profile-sanctions-consolidated</spanx>, defined in <xref target="format-profiles"/>.
+Identifiers beginning <spanx style="verb">x-</spanx> are reserved for bilateral use and are not
+registered. A registration MUST state the dated vocabulary in which permitted
+predicates are expressed, the relation corresponding to taxonomic narrowing
+for each branch of its predicate space, and the parameters a Bilateral
+Register Agreement declaring it must supply. The designated expert MUST refuse
+a registration that defines any means of transporting register records, that
+declares more than one parent relation applicable to a single predicate, that
+names a vocabulary without pinning its version, or that fixes in the profile a
+parameter that varies between registers using the same format.</t>
   <t>A media type <spanx style="verb">application/arp-reconciliation-output+cbor</spanx> for the
 CBOR-encoded Reconciliation Output.</t>
   <t>A media type <spanx style="verb">application/arp-reconciliation-output+json</spanx> for the
@@ -937,6 +1485,32 @@ signature protocol <xref target="I-D.meunier-webbotauth-httpsig-protocol"/>.</t>
   <seriesInfo name="DOI" value="10.17487/RFC9942"/>
 </reference>
 
+<reference anchor="I-D.ietf-scitt-scrapi">
+   <front>
+      <title>Supply Chain Integrity, Transparency, and Trust (SCITT) Reference APIs</title>
+      <author fullname="Henk Birkholz" initials="H." surname="Birkholz">
+         <organization>Fraunhofer SIT</organization>
+      </author>
+      <author fullname="Jon Geater" initials="J." surname="Geater">
+         <organization>Bowball Technologies Ltd</organization>
+      </author>
+      <author fullname="Antoine Delignat-Lavaud" initials="A." surname="Delignat-Lavaud">
+         <organization>Microsoft Research</organization>
+      </author>
+      <date day="26" month="June" year="2026"/>
+      <abstract>
+	 <t>   This document specifies a REST API with the HTTP resources, request
+   and response messages, and error handling needed for an interoperable
+   implementation of a SCITT Transparency Service, as defined by the
+   Supply Chain Integrity, Transparency, and Trust (SCITT) Architecture.
+
+	 </t>
+      </abstract>
+   </front>
+   <seriesInfo name="Internet-Draft" value="draft-ietf-scitt-scrapi-11"/>
+   
+</reference>
+
 <reference anchor="UAX15" target="https://www.unicode.org/reports/tr15/">
   <front>
     <title>Unicode Standard Annex #15: Unicode Normalization Forms</title>
@@ -964,6 +1538,73 @@ signature protocol <xref target="I-D.meunier-webbotauth-httpsig-protocol"/>.</t>
   <seriesInfo name="RFC" value="8259"/>
   <seriesInfo name="DOI" value="10.17487/RFC8259"/>
 </reference>
+
+<reference anchor="RFC6350">
+  <front>
+    <title>vCard Format Specification</title>
+    <author fullname="S. Perreault" initials="S." surname="Perreault"><organization/></author>
+    <date month="August" year="2011"/>
+  </front>
+  <seriesInfo name="RFC" value="6350"/>
+  <seriesInfo name="DOI" value="10.17487/RFC6350"/>
+</reference>
+
+<reference anchor="BODS" target="https://standard.openownership.org/">
+  <front>
+    <title>Beneficial Ownership Data Standard</title>
+    <author >
+      <organization>Open Ownership</organization>
+    </author>
+    <date year="2024"/>
+  </front>
+</reference>
+<reference anchor="W3C-ORG" target="https://www.w3.org/TR/vocab-org/">
+  <front>
+    <title>The Organization Ontology</title>
+    <author >
+      <organization>World Wide Web Consortium</organization>
+    </author>
+    <date year="2014"/>
+  </front>
+</reference>
+<reference anchor="WCO-DM" target="https://www.wcoomd.org/en/topics/facilitation/instrument-and-tools/tools/data-model.aspx">
+  <front>
+    <title>WCO Data Model</title>
+    <author >
+      <organization>World Customs Organization</organization>
+    </author>
+    <date year="2024"/>
+  </front>
+</reference>
+<reference anchor="UNCEFACT" target="https://unece.org/trade/uncefact">
+  <front>
+    <title>UN/CEFACT Core Component Library and XML Schemas</title>
+    <author >
+      <organization>United Nations Economic Commission for Europe</organization>
+    </author>
+    <date year="2024"/>
+  </front>
+</reference>
+<reference anchor="OFAC-SDN" target="https://ofac.treasury.gov/specially-designated-nationals-and-blocked-persons-list-sdn-human-readable-lists">
+  <front>
+    <title>Specially Designated Nationals and Blocked Persons List</title>
+    <author >
+      <organization>United States Department of the Treasury, Office of Foreign Assets Control</organization>
+    </author>
+    <date year="2026"/>
+  </front>
+</reference>
+<reference anchor="EU-CFSP" target="https://www.sanctionsmap.eu/">
+  <front>
+    <title>EU Consolidated Financial Sanctions List</title>
+    <author >
+      <organization>European Union</organization>
+    </author>
+    <date year="2026"/>
+  </front>
+</reference>
+
+
 
 <reference anchor="RFC8067">
   <front>
@@ -1054,32 +1695,6 @@ signature protocol <xref target="I-D.meunier-webbotauth-httpsig-protocol"/>.</t>
       </abstract>
    </front>
    <seriesInfo name="Internet-Draft" value="draft-mih-sokolov-scitt-payload-binding-01"/>
-   
-</reference>
-
-<reference anchor="I-D.ietf-scitt-scrapi">
-   <front>
-      <title>Supply Chain Integrity, Transparency, and Trust (SCITT) Reference APIs</title>
-      <author fullname="Henk Birkholz" initials="H." surname="Birkholz">
-         <organization>Fraunhofer SIT</organization>
-      </author>
-      <author fullname="Jon Geater" initials="J." surname="Geater">
-         <organization>Bowball Technologies Ltd</organization>
-      </author>
-      <author fullname="Antoine Delignat-Lavaud" initials="A." surname="Delignat-Lavaud">
-         <organization>Microsoft Research</organization>
-      </author>
-      <date day="26" month="June" year="2026"/>
-      <abstract>
-	 <t>   This document specifies a REST API with the HTTP resources, request
-   and response messages, and error handling needed for an interoperable
-   implementation of a SCITT Transparency Service, as defined by the
-   Supply Chain Integrity, Transparency, and Trust (SCITT) Architecture.
-
-	 </t>
-      </abstract>
-   </front>
-   <seriesInfo name="Internet-Draft" value="draft-ietf-scitt-scrapi-11"/>
    
 </reference>
 
@@ -1201,7 +1816,7 @@ signature protocol <xref target="I-D.meunier-webbotauth-httpsig-protocol"/>.</t>
 </references>
 
 
-<?line 783?>
+<?line 1336?>
 
 <section anchor="examples"><name>Examples</name>
 
@@ -1308,7 +1923,7 @@ agent-verified and no register or capsule content disclosed.</t>
 
 </section>
 </section>
-<section anchor="composition-with-the-scitt-architecture"><name>Composition with the SCITT Architecture</name>
+<section anchor="composition-scitt"><name>Composition with the SCITT Architecture</name>
 
 <t>The SCITT Architecture <xref target="RFC9943"/> provides notarisation
 of supply-chain artefacts, including transparency receipts, transparent
@@ -1555,6 +2170,102 @@ failure is a correlation that silently does not occur.</t>
 
 <t>RFC Editor: please remove this section before publication.</t>
 
+<section anchor="since-draft-hillier-scitt-arp-02"><name>Since draft-hillier-scitt-arp-02</name>
+
+<t>This revision answers a review of -02 on the SCITT list. Of its five asks, three
+are adopted as put, one is adopted in its goal and not in its mechanism, and one
+is declined for now with a reason.</t>
+
+<t><xref target="scrapi-binding"/> is new and normative. -02 composed with the SCITT Reference
+APIs permissively -- Reconciliation Outputs MAY be notarised, registration MAY
+use the APIs -- which is a permission and not a binding: two implementations
+could both conform to -02 and fail to interoperate against the same Transparency
+Service. The section now fixes the registration endpoint, the COSE_Sign1 framing
+and content type, receipt validation, and the asynchronous registration path.
+The asynchronous case is stated as a requirement because it is the most likely
+divergence between conforming implementations: a 202 Accepted with polling
+against 204 No Content is not the same code path as a 201 Created, and an
+implementer who codes only the latter interoperates with some Transparency
+Services and not others.</t>
+
+<t>The review also asked for a standard retrieval path keyed on the Policy-Version
+Hash. That is not specified here, because <xref target="I-D.ietf-scitt-scrapi"/> defines
+retrieval by EntryID and defines no query surface at all; a binding that
+specified one would specify an endpoint that does not exist. The goal --
+preventing policy equivocation over time -- is met instead by requiring the
+Policy-Version Hash in the protected header of the Signed Statement, so that it
+is covered by the Receipt. A relying party therefore establishes the policy
+version by verification rather than by lookup, which is the stronger property:
+an index can be wrong, or can present different results to different relying
+parties, and a signed protected header cannot.</t>
+
+<t><xref target="format-profiles"/> is new. -02 specified the controlled projection function
+over an abstract Predicate Taxonomy without saying how an implementer determines
+what a given register can answer. Four profiles are defined -- <xref target="BODS"/>,
+<xref target="RFC6350"/> with <xref target="W3C-ORG"/>, <xref target="UNCEFACT"/> with <xref target="WCO-DM"/>, and consolidated
+sanctions list formats. Profiles constrain predicate expression only and are
+prohibited from introducing any means of transporting register records, which
+would defeat the property the protocol exists to provide.</t>
+
+<t><xref target="source-versioning"/> is new, and is the substantive addition rather than the
+largest one. A designation verdict against a consolidated sanctions list is
+meaningful only relative to the state of that list, and consolidated lists are
+republished on a cadence and distributed as deltas. -02 could therefore record
+that a historical Combined Verdict had changed but could not attribute the
+change: a verdict that flipped because the policy changed and one that flipped
+because the list changed were indistinguishable, and Sovereign Re-Notification
+reported both as policy changes. Partial Attestations now carry a Source-Data
+Version Identifier under signature, Retroactive Evaluation must distinguish the
+two causes, and where it cannot it must report attribution-indeterminate rather
+than attribute the change to policy. A list-state identifier is a property of a
+published corpus and not a register record, so this does not weaken minimum
+disclosure.</t>
+
+<t>Three structural gaps predating this revision are closed, because the new
+material could not be made testable without them. <xref target="reconciliation-output"/>
+enumerates the Reconciliation Output, which no earlier revision did although
+both the Partial Attestation and the Ledger entry were enumerated; Reconciliation
+Hash and Combined Verdict are now defined in <xref target="terminology"/>, the former having
+been used inside the bit-for-bit determinism requirement while undefined; and
+the Server-Recorded Divergence-Axis Set is a set, since a reconciliation may be
+qualified on more than one axis and a single-valued encoding would force a
+silent choice.</t>
+
+<t><xref target="verdict-retyping"/> is new. Where a narrowing means a register's answer does
+not bear on the claim as asked, that register's contribution is re-typed before
+aggregation rather than the Combined Verdict being overridden after it, so the
+Verdict Arithmetic declared in the Applicable-Regimes Set is never displaced. A
+match found at any depth still establishes an existential closure predicate and
+is not re-typed.</t>
+
+<t><xref target="post-seal"/> is new. Notarisation outcomes and retroactive attribution failures
+arise after a Reconciliation Output is sealed and so can be carried neither in a
+Partial Attestation nor in the Output; they are Post-Seal Evaluation Qualifiers
+recorded in a separate signed record referencing the Reconciliation Hash, and
+are expressly not Divergence Axes.</t>
+
+<t>New Divergence Axis values: register-threshold-divergence,
+declared-not-determined and source-version-skew. New COSE header parameter
+arp-source-data-version, carrying a set so that a register consulting several
+lists can denote the state of each. arp-bilateral-agreement-hash now always
+carries a sorted array, of one member on a Partial Attestation and one per
+addressed register on a Sealing Signature, so that a decoder never has to infer
+the type from context. New IANA registries for Register Data-Format Profile
+identifiers and for Post-Seal Evaluation Qualifiers.
+<xref target="I-D.ietf-scitt-scrapi"/> moves from informative to normative, because
+<xref target="scrapi-binding"/> imposes requirements that cannot be met without it.</t>
+
+<t>The Freshness Timestamp is now enumerated before the signature line in
+<xref target="partial-attestation"/> and is therefore covered by it. It was listed after the
+signature in earlier revisions, and both replay defence and the new
+freshness-versus-skew distinction depend on it being signed.</t>
+
+<t>Not adopted: a statement that a reference implementation is forthcoming. It does
+not exist yet, and a draft should not carry a claim about an artefact a reader
+cannot check. When it is published it will be cited by repository and commit
+alongside the conformance vectors it is checked against.</t>
+
+</section>
 <section anchor="since-draft-hillier-scitt-arp-01"><name>Since draft-hillier-scitt-arp-01</name>
 
 <t>This revision closes canonicalisation ambiguities identified by running an
@@ -1720,468 +2431,707 @@ producer-agnostic verdict, with a worked divergent agent-action example.</t>
   </back>
 
 <!-- ##markdown-source:
-H4sIAAAAAAAAA+29aXPbWJI2+v38CoTrQ9s9hMqWXZvqbrIsd6nH21hy1fR9
-440xREIS2iTAAUDJnIqe337zyeUsAEiper7ejo5umQQPzpIn1ycz8zx3fdUv
-y6PsuO/Lri/6qqmzj+W8qefVspJ/fmibvpk3S1dcXrblLT378YNbNPO6WNEP
-F21x1ec31XJZlW3ezau+z4t2nT89dIuipwcOnx5+nz/9kf7r5vTBddNuj7Ku
-X7huc7mquo5e0W/X9ODZ6cVrR8M/d9W6Pcr6dtP1h0+f/kQjFW1ZHGXn5XzT
-Vv3WfSm3d027OHJZlmdndV+2ddnnrzAT/uj85Ozigv/6eHxxzn8UYX387zZZ
-I380b5uuy/9Or+gW1RwfF0v+Yt0sq/k2vy3bzp4trsu6r+b58Rn/86qtynqR
-N21+1ZTO0YvqxX8Uy6amZW3Lzq2ro+x/0SbOsq5p+7a86uiv7Qp//G/nik1/
-07S0mpwGy7Kq7o6yvx5krw6yX2Rb+WPZ7r825TJ7VdxWi+TLpr0u6uq/eDFH
-2UnZ9lW3rWe0OfMDfqBcFdXyKPu7HtT/M9dHDubNih+YN5u6x9F8qqu+XGTn
-tFlllzVX2fGqbKt54VzdtCt6w22Jjf/4+uTw2bOf9M8fn/3wQv/86el3h+HP
-5/bn8+cvjjL9zzd8LtlxO7+hd837TVvqUy8On0VP/XJx8SF7W3YdbXd2Xl3X
-BR7t9JU//Phd9Oxfz9+/y06Kuqlprkvdiux8flOuyuzxX0/On+grfnrxPPoZ
-k0oyk+zxXdFlZ/mrg6rsrzxFhwfCQIfRQCfvz09xc8pq3XeDMeZNV+a0i1+W
-ZU6nX+brtmmuOgz06fjfn313xCegN/ERHcC8WZQ4gXpRtIvsuK7Lr9k39Fxm
-373DUfhVvqZ/dY9kkKK9Lvuj7Kbv193Rt9/e3d0dbORHB0Qk37blmiiw+7Zv
-n333Lf/CUx//JwcpHWUXN6V/10lTg2qrjRCKv9XPnavqqwFN/Hj43U+DU9Ev
-nn7/Q/TFpzWNU9XX2W83Ze2X2mUXbTH/kr1q5psV3bAue1tsaVevylaWjDct
-t1nfRI8UfVZkb5o7euZNSV/T+7Dzq+om74q+yfmu5sWcKby4pDvfb+lIVuum
-q/i+xD9ovjTL5lZPfV1sl02xyC+rekFztQcjuujmbUGX20YoaauJC96Vl5dN
-j43N+Ryqa5w4M9EHPLqoiDn1YJO7n23L66rr5ZHXZx/OD58+T4jobbPYELG9
-IbZXzcv8ZdHRlf7Xcpuf1vNi3W2WQjhvy/kN8Y1uFYjt8ds3+b+evn3Co3V0
-88sOp2z08e7s/OKIX0kk8HyS5OZdOz+gQfuD6+b22/Xmkrgnv677dlH2xIa+
-varW3bf0c/pDeGxEVS/8il7cv6JX1XXVF8vAG9J1vDo/ftA6XvzP1vFi1zp+
-e36S/3qSv3qbHx48TVbzK03oqioul3S92nIBYVIsO2LsfYGVEo+nX+y80HfP
-+S5ffPz2dp7TG4t8hd/gLd+ms/jOuTwncXVJxFLMe+cubqouW+jdybp1Oad5
-EJ/v6cI/QAfIHpPwfzLLCkdbULarCvtTkVyja0XvbIvlLMOHq82K6LibL5sO
-p7LydEb8Isje+trd8kbIvmbzZVGt6EJfFyQDcavXyw0NSfcVcqhr6OGSTlpZ
-VtUzO8jkLpBwdncVfb7ps7a485/y28BZliVJTWI4tNKqzXjXSJZUtPfzbRZL
-/QNWcMqvPYl02RgREo/PN+s1MZ+TG5oeqx3X0EZm4Fl1tyYdhUairakX9Anp
-Lk9cLDXAs0TDCOvg9Q5UEXr74BNQL/2CtCcTbh0dWEE6VLvhoRcyEA7BZlwx
-Scm+4d9t+Z8bOlvs+LqtaOw13RoiDPpzuQFvm2V3NyVmGR6mvSNaKXi7m7pZ
-NZtO9B4cf6LxZEYMMl9+J7gyHv5Tl90GYg8vV55Kk6AZNX+nTZKZy570N22z
-ub7xp5grpc5JTyE1pVkuadX6O7zyalPzHx0GW2zmetBZXdKxECmtMb0eek1R
-z+kDosI1bRwIr8w6OlcScPTl5TYri/mNKxYL+hk4jE1gRvoonTIN0k1NqlrT
-7vVEM6TYtVACbumIiCRwrV2ke3a0zaQMZCpZMr0jULRqIq0CewUyZCqirW/W
-oofSg/QN7ee8dMXXit5SXF/TPFhHw0L1XVnyLtvFku4FneYNneGqadc3NOOm
-dTdFd5PTJfwC7cqGo98JCXclGJKQA8kLltUDuqSrtt70dl1dMVCUM7yAyJkI
-aL1mYsESp7RsellPbBEsKV8WW6J1Ot7r6O7yLzFcSSvHLc/qhimBfnHAyorJ
-VztMnBLRCfE82jjXlnl5Wyw3nj6JCxIN4DINFtVlm3pBb95APwGNYUPbOltW
-l20BIYKdk3Vmus4uM77jmSANWpOl01fRhhZu3m7XfXNNGgOdAGkEFVETzS7f
-rOmzBc6QFuZvJO1m1+f/uSnqfrPK/NMd1lt1tKTbineZaLXz9ki4X+myZvGl
-Nt6gV3DmiKVc1ywQeG93qN28ikTNlYVFqhRtrbsBL2hoPqVnGHkhtzTVwVJa
-rWpikMTUaELLUm8xXbHium4gYfx66EzsjuiR4lL3xILmsh99tSoPROytqsWC
-BnPfkPLYMwcGPZMymp0uKjp/5/jvV2cX7z8ekbApSamgF62IQdOTxPw6ZS+X
-JcktOqCgAxwMRSn9PdRisTmr4gsza2870fikzeIiYz54PwyZmbsjmrjBKGem
-U+NmyGGD1GkT+k3PYy2au5pGUUr9/XfVrv/xD7kK4QWYX0mUSyTZQ20OBhxE
-3J865+2l7ITZbsXDV9dgmZBSYEE2RVaiIHzkEq3B5hbCM9VScGOrJDsRGsG+
-k70Pdu3Hv6KpR7Tzj39Mvd5tatJtoKMsdszkIHun/I0EJJ0U0+MGVGHXMmyy
-ctVqtRZuIxNlYUWz0y3GIyQ4bUiTufLsXbNZLpy+gmd7xbvdZyDGkvUbXixZ
-6yLL+FBccigYWihKzAsSUrjw+G0Fb0ZD4spfEtywoq4bYi8laV2rBjMk0ols
-L6USEErBkhGrZnHeNbI6TMnIRraJrHkMVNX8HXwv2ZuC9v2ERsjwPpKovEeQ
-nXC98PKfybEFisPlOoNEpuvKnhR3fp+aplw9uypE5kNTgObRlnKXmdyJCXbg
-3DhDmSMpbamWdvq1wDl2yjJLWlRdkjQm0shpqfSmm2odaYePuw3dsEKEWurl
-eF3VJ6fvspd+gOy9H4C9TsQHtzQK6Vj0Y6c//lc6tEWzyj6UDc1DeCfYJSu0
-tHEnoqpEOoRdhdMNzpiom0Zi9rJv4nrPWUMnxp2/bWoy5N4U/DE0uldsMEI2
-kGZOW0vyD2qN2ogVZCYYCAktkWldocoSSbWOuDjpuhCZ+XwwX/odiJRWFKaV
-0xLsQWh/RIVE9lBLol+tiJ7BholTkxJlA7bC6WnQZXGdg/GX8atIOxdf3ODp
-Jd7IZlO6ItKwmxUYHN0y/zCzXGgrKojdZdWsSBFgAaKvIpo9U3aqupWKjhzM
-mvY71ouzwd7g5pNMxUVurujMMHViK3QsKz6WpT+WDBK6vAuqadjNqqaN6cUC
-m7dlWYfHXfS4P6c8PMWsgUQXdjlaZ1ZUrEzSSi95Wc4uH28WtmVNj4Jj8Fku
-ssTwolNsC29PYANIcSSVj4SGg+JABEbzs3XXenXlHuPKslKX9XcNaUfZqmHG
-Y1wgXMCuwpQLVgyWWzqGk4E95F/RN4tii7fQ3bxqNq23dWilpBqQJbGCIsgi
-E4LaefWPRV5HgwmTVEUebI5O7lItlCPnnh1kf/7zx+IuV2YUjNWDP/+ZWEvF
-xhI0VyiRpHdmtg+sEkcGJgxuHUTlEL0XxiaxetqkPYYmNouevcTemrVcLhy7
-gHFckAVfe14GtmbLSiHp+Vt8T4KJX5byxPOJbafxhIPwVLBTyszxyAoaBa0q
-Vcihp0PlaGkOOF81yMFAZbmRcU/neIjNfEcXyJQ0tvW8BS52QscbS3s5QRt8
-y9iqxfBBpnZw3xazRM7icLETc5jh6VemGHb0I6jDM4zGMj/+PTGeDdxrUEdB
-G7INYnfHm8ySSU/dZhY7PZSiIoWUdZZ6ivYjkc9UjcFqvAfyepleRiNw2tjn
-trEFMaOedzWYStjPXTfIzPmKJjUn+QUvKW/GcjmzT0w9KkbmV8avg8VbLZkQ
-Nit+N6l6/lVCB9fwJDbMU19grp/qyNifMDmYcM1a4ffSfk8sREZXblCxiCf1
-gI0DDFLBsqKNZ61oqz6KGx6UP7+hCdeeV2Kwy030pHkzuuaqvwP184QyWClg
-sRDIN8XyCrpOEVwWB/BVc6SCeYB5N8yRodcUHrB0MsEm83qcHni5mNloA9Oa
-lkyTB7umAaAX0sQ39ZeaeDe4BimwRFR0U8VEbXvxO9lg4TyNM5GpxZKB+Zhn
-srCivU0We2dgtTO58L6oy2Lkuhkvh5XboMfdwHRb8o49/i9Sa3OO6T35WVwz
-wSLaLJULEXn8/rtcsWbZXG/JJtBl/f67WJJ0jfPKXG+sf+7yaJKFM+PjU8kg
-iqY6djrcBBEtC1a9iDnTj1wqJ0Rw0vB8K9jObNaRRzDx77FWjOiSTJoVRQ5z
-TTz1/PkLnXvJkyDF0U9jixdiX2+2a7B4kJHR3pQ3jvV5It2Zg7iBnkJ8kfei
-6OjirkXTWxVbGbRZsrncbsRSVt+EP9PLsr8jVQOWlxE4WzFYvGoUYpPgZfTW
-TcEcAtq/7DBNHkY9GcrdDSwRdmtdQU5i36A42PoK8+WJ2WozWBGJsBl3U86/
-MFmq/bJqeFXNlRN3Au0fnXEi8cX6oufl2QPYoGXdmftAtAjcrzBFeORAGLpe
-EhQLma/MrwMPw225IXpmxkl08DOIK3gkOs/Twm65dLfGl8c7uXcYSaTcLFnZ
-0NXyMeM6LUVhuNqQrjDhLOblb6tyuRC3Q52LekuDEyc0N2KQlWxzm3Zb1ezQ
-uy1UhKvfg9mdzqJZwQc6wwk6pkZIiitblP8lb6Hapf5yMmvomEnmbB8MovDE
-b3X72Ie46fIBhRWY7FXVdqSQL4m8cbuJE4qfO+JkLr4kRizfwCC7BV/GhcCp
-vKI7V1fy79+/ifmOXM0v5Ta7Ywfko7efzi8ezeT/s3fv+e+Pp//26ezj6Sv8
-ff7L8Zs3/g974vyX95/e0PdO/wq/PHn/9u3pu1fyY/o0G3z09vhvj+RuPnr/
-4eLs/bvjN4/EWCdt129oIXGFy1L8Buu2VM5LN2JODF8M/JcnH7JnL4T1IGZP
-DEpM+Gc/EBtypCkop+PLKv+kI9+y37ZoWWgvIb3WCLbBnCDReQNRBJ7k2dhy
-2dyxIKR9FHYOnmbXksjV/NFQOvqYMI5ir8FHvQJH7oh9x8n9gAqbwXVL7AD6
-seinJNjpDQO5HYWLWIRM+hcy71+AC8h+Qdc40dPVqUOD+KCBucZVfwXXW60R
-gxa7Q8QubY2tJnuvygiWhf1ShYhfLIqKjjneCZNCfEvlRpBdlqVvBF9J5vSn
-LnGw0lxeemvRj3x8TYalHAHtdmZOa4SUwsuASCHOyRRn8gFvMv1Kg0wumw5c
-qYQZ7cRMbXeN1WB3LUqTR8GZsp9FEZrEhx55xaNnXBZHM0C26kubBd0/96pr
-rlZAN6flmBb1EE/9gRgz+zYVIxUtRw2IVfqPs1+K7kY5aa+qI8vuKMC38OEN
-0JAF77IPJkeMjBL1jc0WOClZYdPLUOzTLUmAAJ4x8QImabFnd6nXLROG96PQ
-QI0/2qbdoau0LZtYhYbAabTwyhAKx33FzZCIZsVGsLjvglqf7szxtVHxPhVf
-VBS1H7rR3kCehjFpEjwqtuL1xzPizW/+xuwRE/IHG4c3vZ2DmLvZP5koJ87M
-8F3hFVENXxw+I/4Mn+tv5WX2kvSkY9p7Bw34gRCTf/wDei9NfMMOnKCcy3UD
-v2x6GB44o/3HwOug23v67vStX3o3oc1UsGiLy44VNGL2kRkIW2ILJnudfDww
-FfgNdKJ7pyNMKmUB8zBZUgiAamN2wqAgQOYWO80xmjED9TrclIp5lJ7YLD5T
-M5NZs573FlmO3luRns1+IHWmD+7bDZ2hMIzje3abhD4888Y1FmIubznolpe0
-eUui/UUI/Afb0wLnMz6f8lYIsWi3LLNIotTiFTAHtN8EaKx+AjO50/xO+D1u
-i6VwsbAdebRusBAiywTlwmaN3JrXHiLwuimzx2evXz8hjSsCChgPG3hVoNgF
-bwjL8uE9B8X4G0lzZuoBSfvYz1XbrHSlZccKPAdSEtKh5VULBUkk15h5Bc7T
-rjP91jwq6hBipUPiwLP7bpFEgLIBSqKKHKhKOB/NYZK/1IO9giJvUVZFMEgY
-k8b7IOH2XzXcDqkCp2oa05M7k25xhBxpS9mgPtrtMSbHtpZ0ImbePRycjNCx
-oJ5sFU23FaNbxfeMpQCrIfCTIUSGsQrGBCCWCpIyPySLeg3RRSQcETApfXV1
-RYMB1HoyjM0lThPd0qCWYqdbcxqzCar+BxrqspwXoqCaVsM2waJhQxVbT0RF
-WmqWPTvYg8HMTug6MKJTg5lYo5xYSZu6xcZjKrwPAkTjC2lfN7KXq3J1CUdi
-gUB2lh0eZO9HX4iC3XnYyqeL1/mz7zOeGEmIXpR0dYZgN+R1Fsd7fnB48DzE
-8n748Ttc3Iw+pyuqUoJ4ULGVbeOtBZ2QPrfAcy8OsncbTEbmQUb2Qhwk6UuT
-902/8TuwRV2Y6C0SSMX2iTyhvxoh/VlGJ8Me9pui9lFgjfSKhzbL6g3ZKutl
-MS/h6yihJtC6+3LdZc94uw95yrwuso2BTGGOAvvnEiskmoSf88j8bnoqpro4
-8bElZ/Ho+JFSmpwGmXIvz96dvftL9hH/c/zy/a+n2eNP//L06YtnGf3f86fH
-T1TVfPTy0UxocSmXS21uhtzirgGLo3/rV/HTbOm7xGceB8c74/jqfA6PScD/
-F8bUKKQks7PTq+993/ZC+Zjtb97VC78POaYYqC+5XwwBmgy5M07nEjLK7hT/
-z7qp4LmMjnqCwDOFiHSJc59XReOxhi3ntx0eIP0gOjxEJxCc4UN9WcBX9JYD
-a/TkhpWED8uipkWcpSsov64BKmXJEvCKG/N7kQbA4Xl8j5DsBtu7IqbJXJet
-30KmbrguKO5NDV8qwL/Mv+7obdu8v2vEQybxNYkusr7FtNCL7Q+A5XUJfmpS
-vuoG57muag1+y16S9gUho0dpMBNzkdG/4Zdg1SL+3Ix69tWm+I0r9rV/Vpnw
-H4Lk+Bwmb84TOCxivMUVW++lxbR+JhouWeONX4yQE92CeV+T6sxqxgdvJF4U
-X6Hwb1VBDBDBGxJI7H+FPBxrFok5D7chMbzLUsWriTZ6bgimIml0uWTFS17M
-pijty1caoYd4qSNw4oHeFH12a3gFNgo/s65x9Dm7bIlWbryv3c/Lexl1Vqam
-VAaLjXyPSSgiKOmPsb+loCVwPvJK/73B2/OgAX1mEtIHg8aXmyT//ATbT9fe
-27zCTj74RZtuV9OlI64IKygoHaTlQBhursTlzdZdSdpA1Xv8KatYHxRAmSXQ
-ZLGiitjRsc8InwWlkFmNEvQeEKlhRAw86iGjCqb1igeUEF23UaL5wD2P8QBc
-P9kdXg6QyW8eg+uJpVgw5nQlfthCeISawjKtmeq5fh24ZjTYFaJ3MRed3zRE
-XDg5BYtGuzphWnEYWB3rCvVUnssyrpjyVLGeQZu2hudc6HAvmQhvmJgP7BbF
-yIpH1eLjBpRNAepQgtmdHRTmAmOY7zR75flsfvyVzoef+xmGvHfYhldAaETh
-fe/MC4NkGGTEbcTrumb2Lfrw1qyzCMCAQKY6FcVBzzxDrjbWMENO3V0tJkwR
-j09UEiFTzDrJV1XHQ0CzTuP4OXu1wgNZD58hTSL5TQD39Dd0dlCbop8EFArQ
-Qrl+6jHQsjm56GpsJ+CIA2nnm9p75uKvjQJy5RCAwW0bshcjp6VMnw0GDv4F
-lhV7Emb6bcyn/Gw0aujjpTzqBnKR9ckYnqqbFUnkx8Jy1QUNRZMfCQaNaogh
-fNzU3sROQxcYJv4VEZ5aF57BPxHBfYUjgIwDRIrdJ9mA7jxJykWccDmo43Wg
-QgWWCdR9NnyTIhPlgjGHEU3cBD7zJmCjutg/IVs0SBd5z+xiptrJkAEqT9Fb
-n0/eenbuTYyp5qyEAcwN4t29cGCOeUlnV0nBxSM/dXnLcgKQ9wjtUuwwsI3V
-HLdkdawQnzVh5x3i1+CMjFK5ae7A8HO/83rJO0OPCPCZxYrCSWh+v/4xTkBf
-/F1l1wxczP+DxZ1daXYUK7i/2bTECVkhyv9z07SbFS3slyg/4Dh40Ke8brGD
-nSTc5KabnI7SDtgbpc50k4NsEOuWRrF373dblOL6sOBvJvou2fjw4aaba0gj
-WguSG95ocsNwMfWD5l/VHmGWvsbfZTOxiAS97z7nNIXFTDR1/JF4borsLeeB
-wveprpBFVur3YsbaE23TaB7IJAVll/SdyE/5gfhobKcsRl9JqEtwRc1Vp05G
-UmFhSrHFnmD6We/W9FbRsseXYNIPG16t9Oy3JHEo5Zo8IfhP1heIH87HUf6R
-0h3ofXB9GT+S0Dojq1alAEs1hSOXFA6ftjGbcEFJhA+4dvaW6k7nhb/pdPGW
-pV40BuSy/Dh7/Vp9gSAaXs5MNc2RSy/4YL3S6tWjPA0RSfq1yqBRRhKo/DwA
-t94wcOsN580Ykd+XdrNssJcIogruySfZyD0bZMaMMm8CcJ3hBhoQK5FGbt5C
-Bc55FEXNTqPZpJuc3qyq7DiNaDbcBn8dusj1aB7E+HrndG43TaybzUQ19KlV
-0XWbhRgAnYbZRQI1SAZg7AyR8Go94wXSWps2l6XLfIGqW16lH4lr03RS7Ivw
-4XQnclW2w7oYvJBkyzPyJexxf1cub8WmZph6x867+lrudzFw/66rNVlbdSkw
-2GEOyFkNqx3C+PAgkG92Zr5wc01jNVOO/r8QUQO4eLzAARZwRsE+yi8kf44L
-PmQXNCgQg4lxEMyC7LVKMPfd4JnTmtkOvvr+YEqFYEYmD/xwEHP+7PEvSf5b
-FouIJ+7Hg4G4z9mHdE46AZx+Px1kOy5b9htxh9I9e4rd0qAyDdWSSuWePcOH
-Pg8tO/VJaO4Z7e5JEmb+4MPMnzTM/IH0N+f+Qh8xbFIIgk8qPbNZ+u0kz3Hh
-+2N/iT76S3QWLtE5LpF/2j2ETVnWywSXSudGpqcw4zfKjE2snMXxA83S8RNO
-D8bFz7JtxTQv3iW1ULPLqs9pVnSH+2RnEryRqJSKj49217tGZ0PFlmkCT09I
-RcfqcmcKLynoYgjzbdlFPOAPlXhgRclgXdQJR5VwTPQkB5ZP+Y9zY6nvlKUO
-ZnrhGZT7wMxJfuYXcA7uFH2GSC9S3NSbF3nGL7eJA1CSqNrYcVp5dPxKEAvf
-fLOHrbjj0ZeekxFLyrNzdbyFc6YPg4vlcaQUD5w5Y4/gE/rpsRlev7I989gO
-yE8C9Wc8Dfsx+KdBRfioUSo6SfriNIpPfQjxqbcan6InZGX+GLLHSEN7/vz5
-T9mni5Mn/gHe/Mfnvxznh999LwjydHKJP/+Jcxd3jSXKi7MwPCrODyVDxtN6
-mk4uhyWoueinCF/5TD34xcP0dseEupDt9LPTSYkz3isUVR1wB/GvGR+mHl1d
-j1yCaFvUICUmVn7NGrE1d10kmzswe1JkILDdJP1X8Wr3HKCpyXsj8U6ilPPg
-3il/9iQJaFor+ypp9Jrahy/pbZUPSi8aDrH0rlj2evoRBwqJod6NOUEkkjWv
-XIMLD8kt/Gflt3sZkJ/3CvJJdU5dEOyL9GjbydoEk+gjzE6x6xX7EAq3Izou
-VDP+MtJAxzqdE53uMZypSAcHoCkP6CVxC3mQPiNl+CPzO5WLJ6KSRsqnLmcS
-UK/gAQbwG+Q6SQTGWEncXdVWRvk699sfKM4gGQB+9y0mLhA0CJd7gRmStG/Q
-JwubEOUFzIUiRUkV9WAACV6NsVAWO1ajdOxjZhzGEZ1wCpj6A3ApNZxx9+mr
-ZnnLIGArf1AkUCoencfIPSZt4Xaiq6zSDqOqcBN6dgTeVoWgNf1gcpduSlLc
-2t3DjcFaSuqYNUcGZc4YGyt3Eyv3BYJwNTgAff/7/G/uRYc5oMMegA2LiESP
-F7euVpyenf7MiYvUUwMHSBCa6BK3wExo9bKMyc1AYRf7LG2bOCz9Mi7rwQMx
-bMdQjDyeS26QAumhzLTV9U0/i0qFMJFDliQoeiKCqqONdEP/BGqK+N8yRSb3
-NfdpM8x6QvJk54a8RVhafIcRnugqoLFoSoZCtRVFPKFvnN3RXXzRBOV4QwMr
-o+10Q8DRlMqb5JePs46qzlniEbME9n+ZLcpGgs2b90RE1v12owknCOS90SVh
-PRKymg1lmZscHMqn2hOC3tGqNMj7oIWp+ZKZ+aKce6DPWlQrfZau3Epx3lE0
-iBQT8c7J0yAGcT8PgnosMyJr1pdUUieRLJV5SuQqc6NACxwa+s6ZC1EaH47H
-k/a9D1nkrFPmlyhrUfbJEGOPTD6n69Zu83U1/yLGp5mLEmfgiENV67RoEql/
-zvw+9Pu69g6zYQCIDKvmCuT8mDPjgtzRNJ6ABS2m4Kq917o4I+qJMplw+CVH
-XQ0ATWfJVxaFcIQ1fizFAY2jOFaOIDi/He6KaGy+0VFWGAtBMAx2XaLwVAs4
-dR/TJmkU1XIwEaQkXQKMb/5jRt7yc3UUtHI+LIEflF/XHGmnV0KPbKvFwuD8
-m57uvCqO9zpm3GuACuDwmyyWdH+QnXeBKB2hOJeE1fUeJxdhOmYeTAuNRO0D
-AhxE4fXBu/7URaYjEmxYWnKcOQ3j78xQEMuRVxnboY44nNVRGq7PP+T1OwNO
-9aOQvt81VRS61FQ1tcFN41GOsrti+cVC0WMjmSTKHWrmmUk9qgsTfiL01eLg
-5XLdC31wu/AO0XFgejJoOQl1CC8phFbYQg2LhSEpAOcJKIQAIXC/3OeIHRar
-y+p6Q3rz5wmQRJznsto1U5cANThcY0ErS4ijFfyROUWxcoVNeaYdcKleUxrA
-h907i6S/xjmKM0Dpdj8IY3zjIzerY6/+fjlrMyrlZ153T3yCvkIIMDBcSSmH
-wr7Cha2kDEd8l/eCeg6YXZeBuw53p3pokIVhmH0Q13s8kyFUG+q9sX89zi+A
-QKw0soAw9UwoWDMSfBAPL0NurqC1aOlYiA+Zspy83/MKhn//tJ1o26qlJZPN
-w2S5jmQK/aY3rpU2xvHRyM/ujicfSJ16/gwTr94OFM9rpt3Hn5l7fZ5ln+sm
-939rqTv/AW3CZ7iIzIAtP8O7thP5w2PTA/fuLpyOE17ePHXbR7VHJ/wyhmHS
-awi19bqBXpZnrw19EXyEooRM7WWKhYI1oC6mBKtkxUz46qMsDbDzZV6tYEAO
-gGjKPTRTa6vsQjA49CB4oFdYFwfuYwnsekh/mYq82CSJoOMyhgFQk6N0ofm2
-1bkXSoNebjXejtjWspJSi5MVWohsumoBdG5Vmw8Fo5BB25ljcb5hlYRRqnBT
-5/qA1Kz6Jo4MmfgVEP5YnfEWZhZHkOK8QnDfWDn3gbiQ2kkT2YGv4IKvEuby
-CIPASAM0ovbFfWSRvgJk8BqkYAuv91n4dcHOqdYwotj+MZhlpFNN+8APpPC6
-wTDU6dyizng99vEEa9IrOyC6qb02vVyn8U/sOUsA3Xje9x1YEN14yLcpSKQA
-nXbAOqQWCgR1viyLKxdHSPZCPu4BfLh7AB/mG5vEfeXqMug0aEniNQaIBEQJ
-J/HFr7gfJeLSAucRRiSCQ+NMuTRGXnDSpTo0uMwR13Nw4UWh/MwlwmRfSnl1
-JlXtQkDM34lkG/iMZZvFComUC1/agHSwW+YTal/R61xUlZjB01bpL1ZOPAQN
-om9PUFjY9YRbJJ5d30ic/eMEaAUh9osJ0Ari5w8Q7C8OpgJUAcGC6Lle8Px4
-AsOCEPpeN5AqUSMnEkLrD4evTIWF79k71W7tTsF5pLqR1JtgQFwUvkpARcB6
-Vp1WN/RVact1g9pTqB0gJ7sjkqQK776AbQxvgZOQFZzJsGz2eEXWQS+z5GiY
-1TF6MtJ+9isd9wfts8eaDlbVkQayLL9Wc6+sMPfiwGaEkHkroYZXHuASq0/K
-Oj6CN+VjSshP2JsZfps9/meCKePNCEoRYr9pABsx4jR8Hc/4XEA1A9VSYv0J
-zsCiEqHyNR8up36AhkrN0SiLFj0zpkGuQshKHMFXyyUqvBmdW5ibcVOzoRLW
-zdwefarzOlpwZFWxUSI6J4mhlqOPwcGNEhCT0SiJJsZu7jjuMIBbSAgYq0wA
-ZVYfro+sP3bIL8zUwCZA5HLgE2XPHNdRkhCp7pj/TkaROnCK8a+z4w8fTt+9
-Csadh6C5Tx9eHV+cYmNenb45xV/eAJQxFlonS+4w6x3xQYl48xUTQxHDQdF5
-SKAYNec6EMGi4GTOBjqh8KVuW89pC2vE4dpyvfRhDRZOqoxEZrEb1AUM28lc
-EwIa1bMG5f0Gh+CQC3Yr9M3l8Gg7b+HcpkPJc7E5RallwmYv1wAKEvxTbogI
-UeZdrVTHW25VtHBZTEOj2OH79FBnG7kEdiHdLAtKD2BSTiIV6aexJz6yWbuk
-tIsv4/Gnzg3AjSEdIO4oEOp++PQJpBdXfCyoTuaQhtW0iRachDj3uxjPEPwQ
-Uwk1usku5AI4YvKwzg36DlVt4xVEpQk1z6ALUTl9/L4KJnZq41k6P8t9cllD
-TzyULcR0YcUfOE2P2tSKnl5znW4T/cHdh/zC4PPrDOsko0M1dsMNiI9wJryh
-E49qFE8LjxujW4hNKV5Flt66JVOesiIFxpLZsG5Igc05puaiyodGrJPwPfdp
-DQ4dCoJrKp7VjR8Gf7SEn33LHNb9akhkUbKmXjQMG5Rfy7lWno4xnahwr3Bm
-mwwfkVWxj9UjLk+klZMGBbhIPyzYD5SWyJ8UfN04X8KLzcUUatzcqEwgXRcp
-db2wNVVkA+268Q1jPPdEqwNl6PB21LdkTBi/j2FAUQsAL7J4O5M6HzREVLtf
-jYR7AgvHwYspebiieUZb6JM7zOAm1mmJNXAhknTneI+U0WdHY8P5DIIB9NFn
-tW0Ea8gJStF3YoNflmDQ6juTRE7vPnviWTbC3YybSkpv5e+aPjgAY6VgyJ5h
-0Nw2Ee3vL93CZSchANe8vHRzRgWKUMqw5NpFg309+gNXBVVqIR9LZjPF1ZVw
-kgmkEKuwUY2PaL8HU7sjQzgtzHmnUY+6ucsGocgQ356xxR+nTLrBXito8kGA
-4HvrTsn6zYFSuIcMm9T3qL2bw5eBIQ0N+X/uysJ+zGLohVFGD29k2R1pkl9w
-zyPI20YZxOqtMM9p6DgCi8J/LLJoNAMNHErN90Q0T3fMyPyUFRESJ1W5NJNK
-ml9lv/+uTbUkqZ2BRWXSOYt9ENxhyj+MWnp4uAsOYV9KBEVxohm1jar45mYR
-rg7vTlwi2xfWvillr0WBvrfhiGzcLvtWfHRSTq6qN1Ij0b/HT81qoqRA5eDV
-cD5VZLpwWRJV4+ZHsddcta9KdELxQtDHgXUMoNoBAzSAKybAtbTuYeK68ABI
-9xAAZFZcoglIWia01PVEF9s10wXWpD3Scsu9pLIQZWGFwzeo8W2w4nKrE6VC
-5WSiegTjV0phLtRkFBiTi5E5gq+kxx6xd/W+MsVcFcuKYnHBSZ7b//2Ia5Aq
-a76EB7eT8oPTtUw95Cvq/MAk4ZgkBKHBgnpUxNRHUnx5hBA61kIJvTRW6Xjd
-ihiPMgNEp9AtDbq8TSkuicAjDECBOYMCce37m83qEnujwI8IfOdf9kQgKjKX
-AdqcI+CjI/Wz023oDoKDJ9ovwaQLgFIBBSqs2jKpThWXIws/J1kfr5PZOvqE
-Cpac9Cu/GGACo/xpqWgmxoZ0iVBEYK2/HB8uUoqZyYpKZ9S4X2+6iNJefShC
-yKpz8YUzYpksPcepFs0ld71YsC9OlZ+jhAoePoZ616fT7n6ODi8pDMi+/DpL
-EG+hojZPy+th8nSUao7I2P5k9aNkI1C0Kp48inVi91CcOJnfNBDKI02yy2Yj
-5VGbPzDFUap9xpVf9mXpH0nioG2ypXGiawKaLei2Gjw7i4qLx+WkfXL9dRk5
-nibqCGo9m9CZqkB1pm7USYEE0zXz+9ry9/HWVYmnLOXAl5CLqq1EUh6l5ZtQ
-6z9PKEliGr2VmJ70xqVVCFG7K6A+xAMTEQSJAfGXKRJmwDlZQbA+UIwSY0TO
-pAVHF/tLGUIgR+4hCfCkI7cw72uLIO5MyOi8hkB29kxhzpqIwQBxtVHBL+RI
-kpqKGTMO+omZc98AldIwebCu/PL9x5yDUuFjLHuFJlzsIemb3DsAJZJlXZYg
-lFcCrO70lIncWy6BgHEFmcODS6Dr6XeHVjUZTY3pb0sCIc6N5/4DMIBn+D3D
-ifGSS9pVX8ImySw3KtY4UoAQhF52YqsImjxLNN4E5rYP1TIZXbF0b8Wph5CT
-p18QbYm2YlVRF+gp9qGsNes69OWZubSglxjgUBeXxSWi8FH9RXgoyxzfcUqq
-r6KDafwi0/gwnEa7/VlwM/iZcqqoNdZSQzjTuQGW4uIjzRMKmncdia7BA436
-Q4SECp+aoHW8UcDqDyYpzLwPyw0zENK8hez/z1uYzFswrjbVG1UM/S4A2/da
-CSDONNvGeHTg6nAHuHHJT/+CKGR6bwFQl9ZL8YWBL5vFVgj51+l+wGdC8tCQ
-pzm42o+pgRHqInLyN3pw529eharxWpsuQoH89vzk/pbEblTqNZD0VChzNhWz
-dGnMcvYAgB4eGyd/SeBxtpPRKbuUeu/hJMyIspIFF8qJlH8bVzd0UmhSgh2T
-8NrkRg26I+7O+JPcRJZ34hSBBBI/AXS5Ws7iJKP91Fx+Fn3chQ76NrqxI1oh
-bFcD2e0temJbYXVuPKdNQMwLOpWb57FJHnaoA3ngkFrMrKDo9ILLIa4QTyuS
-CaFzHRMF2wI+9mBTC5ktE+/x+twQG09M56a6rNjRD7kidToNcDIIplqwdE9E
-1XmYW7kPqZYQya69sTmHlA4J8wOptGRhp4iTHdN1FaeJSwM/Dv3Vgv8P1YSK
-GKU7QIX4NtTqIbkveSaTlsFNzYDvOMVAsxcGcQtbHpsJWtBtMIWTUPnlF+34
-u3XStNP8yJpANDW25SSTbVneDce2CMmoPED/oLXq5Ln9r3nY4qwCvNGqwkSt
-TtSFLx6Gkv3GhhnEIs8SdRyzSWWNP5Ls92+mmhY91Je1HyCJ0HHHMcaBI8h6
-Y6k2I3ZgmHJqCMqhp4Wp1Xl8VcB6oKNjk+pIqvGqETSV58lFJsqva5aUjVfc
-R2oLKTsQmAAl07fTipOLkzvTNMEHFK1nSe6zqjm7FCaepN0sl1IzN2TPpWVB
-p3PvGGeqTc9ROqVTDbcu+7um/UKzqq7Rje5Tx/KLDUSu9eyxG1wNxlvvSbls
-PmeUHeQuqBWpaEtJPJR6rlHvp2G6X9WF7AopRqepSKPiSb03CEEB00gWv1qu
-lDsRdfIdoyMLZtrHLPAADcMwV/ZWewT72Zkcqc5Lh5a1Haz7VRZ3gxNw4a7m
-ZQjSxE4Dubt79YxXNJ/+IYGVne08NO48Ye5F5V5HKd/DniAiiDXjv+doE7vi
-0KfDP7nAZKXtFWSkdeaDs4OYYafhOJ9zByM8tB/2vv4p8XgJxw8s2gF9GB9l
-X1S9iAofjvG7UpNisK5FeSsNN3yG0U3UAiVGDNGsJh3cXBbFIvLrZbFF8ybG
-OLp44xP8rqAwlZYn4PbWmXlX3QLhPKLzT/w8+Emcr6RIuk9NRPvHclnQhXhZ
-TkGQYwTD361kpe/zM8y+iVAObkInV5PBq+yfB/UfPw+dfYhrq5UrrNvslqjx
-uPJo4a2xFaL77uqGhUYLJRxy6VsREV1Au3Iin4UrCmC8pUqwvlpf6oJDsGUC
-KLULtsg7SBQsZ0A3huHt+vzfNC74trpuo5jSg2Kje0Uxic/1stkKsmbFo/P9
-no5G0q5KkDF/9vTwRRxppKsedwHzBWmGwdRhwPVAA5H599+5KBaZ7RhubySW
-s6FGgdhxiHdYDr1LQ8492nW7OVhBvWsfHpbmxfYN0jdOJH1jYP+QipUkd0hV
-as+Moqy74FJFPwEr9O8Z8ZiTuQQSOU7t3LEFkJ9wWvn3WX4zw7+Qsow+bQgn
-BXi6hfbU1JhI0BS3kwNk0XodhrQy5pxlr1As5aj+/Zxp062g+JS1LohEa5RY
-KJsh8VPLvjDcBZDzJSnCtQ8/skNvvpXO78fvjscnwo7DYWNOvcad/IYxSHpI
-/U3UpoPDN69BaZGbMkLGG9VE3sNswns4UzAMBzbYpOxC4gRmcETf5Nnnol3n
-3qLNU6H5OXssKJuLl6+ehMfT6oR7nxwktu95dGB57nhqR2nC9GmAu/0+gCZg
-LQyT4GR3DIiswFlFiZ3HTQO0O1jFlUyF2Wp3aCsbKRAkg393UdaYVPccNnQl
-ZitxPRZEIyF0IAtgzKkU5vocAdu+lW2YKJf4L/PLpv0cterj+IDlr0yKwn/6
-VX8nJSt+1Q7XmTre2HUkKIc5CgCR2XPNwmJ4RS7LurxC4NQ7z6XN7PGONrOz
-8Iz76DXL4w9nnTYLq8r+Ku/mxBDQQb5YV/hNWu01yeNhpQEtayfeyC1rZ+5B
-jm5TURL3Nf9Sgy4uFi3an/cPuJ5xcHlO6ur8C4eFJL4tzjD9xxHn1ZRBFJxb
-GfMJZAla3RkWgDjMcrmRO3ErBbpQ/sU7An8OjCsYcZ3nN9zsVd16kIRXALPS
-ezbqqqybyIMWQLMaPN5Ky7LQatdVUdxaAe1cIOYcKJKuHMUzPZsdIiquLJSp
-ouWzr+t+RO+NarsLYY/7OrnP6GNydPrvx28/vDk9evrs8PmL777/4cefPkc+
-FeDBAGVvxOZehOrxEcT4IYaWCLJOQ0he5Gp4TIW682URpFxHVDFyX7o6S2LI
-Q8FURdjnY/swE+j2dGFoPiwziUPA3BcqCgmG5384DzR7TBNzNgcDcphedTOZ
-C/lE9mUilZNLWfhy4DvwFkRio0VMmw7VCPPL+qnVxtmVNvLAVKrdWVRH2YvD
-6XSpo+z/eH5IMp129v+aTp0aPHF/GhU0g8//65HSef7x9C9n5xenH/NjtOUd
-ffpy8tOTR//7831JVkfZo+g48+icHj0o0Qq/TzKtHu1JojrKDp8efp8/fZEf
-/nDx7KejFz8cPXvx/06kVg22a5ATknzr3kVKnHp5DPsHSkHGx8Ki63LkBymL
-jnG8H+Majc6dCDjRQyBinuzxTMDoHZGd+JV01PJLp327Wb0d+r/GxwmVPwXW
-aRtWsEI45dbmi3DwE/cMO2MWhPbpIVt0ypFS1gtuYjXD8muUiQAqXV2YmhYS
-8lQ/D67ePeBmcftYi5qRz5xNuMFFCNDyWYDId9PcTbAybic8uzNbCWczsa0B
-0r8/HWAWZIta1wb19inv7IcPGdPdPw1WNyvPJ48AXQbxeW86jc9B6aLQwGJA
-XgfcOvluN9eUhJNQSs0jcUVp801i/IYxnFlBnfvyGeNwqlTDTG/Y/bja4zHi
-YZ8SsVttcB5IMZO6sLqo1Gn00GqOTqo5hoZqnDNwLx5iCiPg1KWnXme9814B
-fXxvJCaCEbq9bX+fMBZsCiLgvS/R/n12VglQ2+ztBA9qr6ChO14Zhi6v903+
-uEGflf2Mu4ztbfk1dISyljMuxcyeBnOaKLJygJMFAxqgYOMfjWGYn5v2+uj4
-5O3pkcmyo78vmvKzry5ntIRnBhjWCFUSiuuI/eF2IVqZbP3jByCpG9P4jBmz
-b3hXrggrQryiNLlZ9fipqITbuchRa9dp2B03qJRU3bJ26pGM1evk9EKSitaY
-2BXLOaDhF04L3Y1RvT6FcQgM5VIu93RX2jvDu2azXGQ3xW3JReycr8SJGiB3
-NXtfJeJsMS0u78lbM+By5t3o9d4di1HwPzP00BkB+R60hGXTizUn2ZvNleGW
-qpuc6LDJrY2Unjtr5XnSG5F7Gg4bJh5Ms9+qi6r3zaRzk3qvTo7fZZKGgrpi
-0L+KhWWyiOkYJbkhkw9kqj1mgdvU1GqO49PJLC6br+zyZKSo1EbIXm0QuHQS
-Ma9Uf/Mg6qSrVagQKbP87ZfjC5tf3CyOwxFhwLK+rdqmlu58cTfEZtML0MDi
-qvSeWh24mDMCzIqO4OxoKZaiC4v6eIalWb2H44GdTDofaxQM0tQZs10Ib9me
-9ANnfRrlVnU3HOUxDVI6Xk5U6lYIB49uckjg8vruP0UpCDMzceWOj9qPefdQ
-RA1u0HZs8GR8MAbF1bZj/JJVlPcLm5Hv01E8oJ44neK8LBfTM5s2MF1iYO6D
-le/ow3aAiq+hQfMO2Vp1huAeitXA+5S5uwjsUfj85ghFHl8/9m96BnMbjObi
-tqiWUnJUY7ubjtNS9X2gWbK/JBN/jMESGLdsJDYVwcObaqnZiroStDnuiU9J
-2IsZZNoE2Uwecbuo2WzC6+E2/CRUmKgkYL3dnnA/tizBevMZ7wjuu4HIVK9Y
-6OHVeg5i1qQ1ZhQU+EmE6vfBzLGnVCu67vWgZpr7zzEPBM9FUpCeiyyt5Var
-KhDHKOmwkHwcUgXZpiJmwuUbWvWnzqKPe8f51pq1LHeOve3c78Ma+DQoIiO6
-Fk+Vy1pv2uyu2HZSOEg+tzcY5JOt4honKrX/hXXBEpF/x7YFd8bWukxc3QDb
-rmvKHnOtCTtwLroWBwX0vU8y7jsY2IYvmBG8VL5jWwC89SnA315K53goW7Aj
-tVwXqafC6j8t0HbCdhE5BjSnaMuzeMt9Waq4JFUsBiph+RLm55Fwj7hTVlxi
-YgxEsCgUlyGlk8I/ttE4oaxUQkdzKQ79Md5foQss5xZtOhRFL3EFXfBDffu0
-q8/V4zai+j91oQPE26IurGXGmejFbQNBsCrWXEcGpUWyzLTRvX5a3/jiSBCf
-456wvB+QZcwlZWb6VjFrfOkTtgmSqrqmyGejlo1q9AwHNo8boyaZPJFPW0nj
-Y30tHNAvhPp2VoZTfzIoUeofxZ31xh3zslEYhSnDFzvL49Jm4WA3nfVOmuYl
-XeObVoZSagZY5Hpq/HLoMLs54yigo26mfXGewBfbctX0ZQwWwHek1cFq53Rn
-VXakgrhgH1BHZYrD8Tu5sXkT8beH4VbbDbdkZBWPaeaqMkx3lukkcK9Zf2Q3
-mGmm4njAu/dkEPyJd9KDNI0BeSl1uR1zDnU4MToaaFq8AqMkmQVXSDsTfnei
-OxVv5mAySrQ3cD80JCeRB55dnJ5m32YnJxjbitX4+pmsMkLhQ9Q2ANA17qtX
-mDfemtXwfglwhH2Zg18CHhGr0qGqTBSrnCa3xPo6TqwhM6aAD4htIPfHTals
-hWyEpLSVi20o38O7MFREsp0z7iekza1Ch+voUJzZA8KApEyH+v9Sk1DYU9XG
-mYbY1WinnIdUtKXWX+FO81iD5DxiLHkJ/76b6ZhduSrgvIve4+KMRq4g+D80
-S43Feh9l9VW4EmwCx/WHpEYJe5e4dicDTuLn2Y9ejex7X1NAelTJjipM0oyW
-VbGNUqnYhJT2URwChKE288kJ4QvzLrJQVWWzcPEPpQ5tRyxyVZj+zRwZFr7N
-k4smasdY3Cv654qXFjJlDBUkXDopO+W722nNjCqyk9WQoXFQaQH4XUXpeEOT
-7Ua7wkqxaQYJm46+/6wbWJhROaaD0AySOS3jgvyLQlUbWEOqkrG2KFMozEwH
-ENnJjinIOtlmYZ1+WPw0SgmAdGx8Bq3PX3OT5vEs2Mda2cB3P5PMQOAmQgn6
-6r80AIK5lcNduop3UCrfGOMn6fLf//3ftnP/oTv3f9rbHv/15Pyx/PDJE35S
-073oczsZzCTbORPByZRaZJiE548//Pid3in3WYb+zPy09lNsZCeiHK2GDTZE
-nv3u6lmGcnFwtdl1831yBk4GcPIi2iDW0KN3HrjP6VZ8ltTgvzc0fXhw9cL6
-WfC4wcUR7/vPpBrBrAfYrZBOh1oXJRooZbPeG2RYIQk2XWnm9cz5qq4YlNa3
-0QQ29DIjwxP6ic4/l/mLn4DVXvZdTMwTK4zTxxvuEaBpfJoAzqhTs/elEl6h
-BcjYIKIRyGQquRLzJY3K4E+pqicZykpvrTRE0n9YFDL3x9H5mgjKkAfEG9D3
-crDZ8LhcOGgdAccQo5wFCJisvxd18laaClXMqFGyiFjvF5VpejEiSpCsx9jL
-kJzx+HxdfKjW34xO/KpaqrxT9O71piDNri+t14XZUVwnkB4yMTZ90mlJmRuN
-dBy4SSAmzKjoVmYJffl2N3D8sqXmoiI2GtQ7q0XXm2+WBbHHeDAv1AEY22af
-6Ick0B07j8MARA9pmrTshT3FtbrYEWWHpvxZ4jhOCaFLhV8qCEJreEvpHLxR
-kPpbp74C0InkAGmTDniNwe8lXUVgTFnvi1rRCpdwMm+tGniyRG1v2PteSSRr
-rU0VooCwWdnD6jMdL6Vovbsrl8tcIxSyFLrGb8ui2yQFZaIAYCxZbb2cEAJY
-0qY7EjYZ1+FWOhR4No0QH6ARJ0OwFhr0Rh/lmlQksk8cug/xpZ8zqtEShOVl
-WokzpGTwReDYebLcmwJZik4KLqczmEXN5UOWaUgQkQJEckvhGadtuDZIeyKK
-oUMt6DwwGfxKI5C6UVYG1J5YaYBBbo+kyUN9kCIcrBdofQkA7GQsGr+Rkuzp
-a2QBwYHK0spFivTMF5HiUSImBaKbUntS/ZCMsphfknV5C8Vf4+Kq5sXxs8ut
-OrDYgs5NERQCc5cl2WIzrSUwYq8H0lr1atMyj1ECyfvi+trTKIqHqULMQiTW
-FWPeRF/+cVXcec0+DgxownCsWh9F/Z16IBeMZnSduh9RfrfJN1FUcUF4yo91
-cYn74S5qRTRQzoooVdpN+SxYc2yurpAit28g/DO6C26k1IHidRgd2o77SWif
-OXXI2WjxLkRYQEyhuHtMaawKLUIUlqt2dZzsOkb3SNd2SEqPb9ql6Zp8IxPv
-nzB0BbQOxWFfqpLHNaTxpAhjm5ZkYvdMJo7gKNTEv/YdbnZGvqwdm/aeUIQm
-yt7oTmqEpIuAQGNkovMJUr51eBy7Id7DSZoiqcQDNvOWCm1d3XAn+1FVTdFZ
-vSWiDZIhE0jYs0WXADlBoDV0uZBW0TcuFBqJenOl8S7RSDz1pMG33GJl9rV3
-mmP0EEuSaJv4C/ejMieDZm5v0OznJHCleZMapLpc+u5sEkNAJ0BVz0fhKyvN
-GOAJ90aBHKJAU0WYzOCNRfnYcdUnqVbIsPKtGJspI/wo2uDUc5YWpFNb3w0M
-G0M6c83VukwL6xo5z3wQSiLoUdkAFzY5FLLcX0SJ60RPV6RyHNW35dxJ4SgF
-BiCxNWT4oG9U498jdUjBeZAjyHLbrRpm8+CnZtFobe74FqBlq/iYxSIyUhCQ
-BXQN+Gs9ew36VZc28YZjL3yZ2+fI7RhlA3mf2q6R+Yxgfs+EQ/BzqgO79aZl
-X4cPEGx5JpKoTYcnKD2uOuZc6KV95I6yUaP1Yau7kSga5K/g6OAr1jkwSTfa
-orzQ2Jty/R33RA5fKJoGUtsheyeKtfoYXkOxPqEjSLWUySXEeu2UJLXDX3Mw
-ZohBwWyYN5y8f3dx+u5Cz+MIxCTCtPNqROLD4OBb8DaoYKi3/qDmZbDvvE+C
-wcPC3RPDhsZSQkAwfK0pEXV5TXpvJUiq5lLF5MG0LebtKsHVTJlewe4Tr4xJ
-HwnW+fojXbdZiSyw8hREybCAuRGTt4TVDkApg42488T4OVJYSUzRivoFXCUy
-fZ4f5g1ZBsGc02oBwpU1ABS1ZvWwAcEcxFZ5UvUga+bzTSuOPLtlek0LvWH+
-t6wpOem1yCc7QBhID4y2bVpVkWGmy92/I9OoNBcBiubFZ0/Ex4edWAHJamx3
-hfrevDk7P3v/buB4WJEMgAw8oIti+kS40skeo14TLJJgX8+kCg/jHuqpG/bK
-i24N2Mmjbuoyat0IvtnHb0/1yH7GIREf/vQvh88OX2bH7/5yfvHx/dvs/Owv
-71g6fPqXp09PvsveHF+cvctOjj+cXRy/yd6cXlycfsyOs9/OLn7JPp69+0t2
-/PL9r6fxKkf+n7THlKx1TPwztmQZQxCz59QbQZyAdCMSNObsj/fUimCPfc6+
-EtZdxZkywVMhtCSiwijMErp3+ia+lOUagQQSOwrCZNJyrJdJWuoOZ8DY/sed
-t+Zm3JHnzxPulyRDdw8laWv7bHQGfMfN78vXS6A9iF4S2/mzleqI/fRa+6uJ
-ygxK3NTfXd8ilNVbniW9W+HxW4/u8bPbeFxgHXeCUQdFzLLBVU3THjq44qxa
-UrjFH5Sjh1DGAmlTV6QYZlni8SHzWRobtfD8SYUTKQGaq0OJru1iafWVBVey
-vG5Y80cmax6n+tOikCzKOCffF1wqWfSVBg5TXoTnYQ/RUOcIdKQ7EPtQpUp1
-diUQgUtpNdbFua3GMnmNvVaIn5RXs9DonOh7WPpQDk7KloYUNBF0GmWJZ3nA
-Qtjbgs0X0ixuFcqh1qkhplBn8utaQ1CF3xiYFBuGNHi4S46A7YHzFCg0E6TD
-OG5k/v2Lv304fTUQ7Ww3IXcaSbG++6G//T5TQwpkTZBv5qvuCBGayhCusrjX
-QtjTe9j4neoXLc2UB4IpXk505rhLlWJF/Plzuf3GOyF0NhXnM3M7VAClwp7E
-IllNyK3OOYZ8YUCeY4MrhqG0rwt05O3aVwrsfo5mXo+aNbE7nBjQirv9iN+d
-BoPn3eqqWCCtjH/sef3VBjnYVuvcRIEYV7xR9UKL3g5Qr2gAXjeCWGo0kSgL
-RXYOgNbXjRqfFVbI/MQfmbxRsw5ClUR/dlJXDGbENxIDLSJIH++91CNHkN3W
-5sM1KO0wFQVwk3GsebNcstGaS2EstEDik9QXHiWSSeg70ZU7VV0y7amK6+uL
-kwX3u/oBYyXVTSupqr2Z+8pHS6NgoF80rrvTQISiMtbsgaAz04CNuoKJrNWA
-L+LgnbN+1UkMMcUgs9Iyig7S8ZwFvVGukQRrZtFZeN539u7VKXpykaHw5m/Z
-q9Pzk49nL5l/sB8LjnKnK/QXNq5gZZSdMJaGA0fET0SEgKHcNS7SG4y3dEb0
-PmNKHcnsBV+W10SXK2lVpacpspwDPPAppi/KpLJ6xzj0AOZI9R6m8VrH41o9
-cr5O/FvBHufOWz7u4AkyM4KclwlFQjtzoXC3JLDwFYoQo8E21wsDYu3Y26eo
-LwvqrTR2Iv5ttWAOpJRGwty7mQDPU8WsthleMYFGxYDjE+NMPOuvtO4N269c
-mzsyecuPsXYz3TfhnlwZ0a/fc02jA2ct/GYhWnyF+XvbZXAyYn7FbrH1umRd
-R4tjSybU8NSl1ONCQTm85ZJ7L3ixsAZixpt606HRMMfFpnRMH0kCYuwLRzks
-fj6OMfhWgzEmhgkhm7iw+8P5Q0OeVVNWiVxmkzpKUSdi0StMhBWTiBmlcZhk
-ab2kvCqefn8oOAr1s7BIg/3GGrygtjrro50qlhz4P+tNHdYUpbW6FMqvfO3l
-RBnnlQBmJhQer8RhfyZurYao2TpijSJS0kuOEAbFJyqLkMWukZSviXcBzFyc
-RQeRcjb1A+48OVJqh10cEMKQMF5kEqTPQyyIPmparjRIszpWLK+bS8QB1N9K
-DDfY6VXkSNBjxwEw5sGreZz8hmAg70zqdwr5FVvW7eVBK1YEcDGbptO8nLN1
-phR11Xe6sRoxcobgIlrHX3Z00juENsJ6o26G4tFgsAT7mRvupFj1EnuNrGZ4
-StQIKaB8q43ihfXIVPP7iES3uC4/jidyHE34ciyQPnDqMPTylTlSf+E07a1z
-H1+fZKek9qEwwBotkUrG7t6WHKYEwiI+mahxndXY4gBiW1z1+Q0Z96jBIiYJ
-yuA8faaChixdEWrsCu/GNmWxuqyuN9zYJ9CkwGc3da2tbgZWOR0JvSHko+Bo
-dlr6TesRfadvz96cHTtGrOdt06xQTaj5r7LOb599HuIF4CPwzp53TZEdn2kI
-zjQ0ecbBQu19ZAvAeKOZY4NgvRq6RshIo+2seutzoL5CJKyruUxDxNJdTpj9
-HJtaZTq0OsAde1G7yqgBnLWDdJaPQ0yQtuyAkQDEyLn0oKVvrEhAkxnN7Re1
-DRkITsNdqMYWhXIYh74quAuRQ1osF0WK3avW24zY9ce3xxdnv54GCXnAByeJ
-hwybq4dSia66QRDNnxHuIv1EIbACPnmEVz7yspnJXZeKkEaxXMJ2jlAiafmc
-gPQwwUUnf3iIDaT/TQEdLJs0KX8atTGECU9gOMx3TvsDlhajNEbwKaQBLySb
-LZc0uUHggfcuLZWFfV9XtSDHJv0z4EdZ9unidf7se3bwo1A4v//5weHBc4lf
-RPPFTnYF7e+jtC80RmUd7SoY68RDu0cjP2Nw07DfvF2ocncVA4o8hFyl48ui
-o5e8BdsDoSGf8MOygHwPhynRAK/K0RKeJSfnMjs77OC7gReK92rOHDvegV17
-MK+kh86j0CibsZ7y4OF3P2H3B6949HPytYWw6ka61egwE+4x5NEVWhD+agLq
-Y5c5zx6d00VYr3VDYWAI2ESKSz0SF+x6WcwNLe39P+bhYlccTchbUrwspWiy
-JgZjckQV7+Q9Le/4+u4K4v0jMEbFM0fu04K7CI3VuDhCmIb4eJQY8RmCMwwL
-YO3F4/NC1mprHheSE95JHMIHIssfjz34NN4rL2TEpS+DquvevhKH/RMciyKc
-0hAM+4+gqpl8jq86xOMlgt+2nTuQjLqTbNlP4nJBNBrS5cw7NshlPiDgZXnV
-a2lDrk3dwtibBvimutIRmxr7nSXeGFbXjnQ0L5KGrbiOkcGb6LNavCvc7iP2
-ld2WUyZnt9/mnI0NzizbZ3KqefdwqzPL/jm701QqcJ6uhDO9l4KTbHJ15VgZ
-9K3/SMdIYdYcfZsAMMP/7r17TA9Dq88bdDATLN2bX18N3Doui3OiTUTWZek7
-0i25khDXrlWMXWxf8RfscMKJg8eMraGdpo0iHsgCo/O/rBaJJ0e8uw/W6EmC
-RUqErLXLtMEsFFoRsCybBu0pVeH0fTmnpK4qPKEQBM1uMh4oSTD81penr99/
-PFXkimxZ02qDO46+MoBSrPwVMbgj8/TGDvdUgoJzghW9eIb/e/70mAn70ctH
-cUyGG1qxk4OBJyrFtQDMyHkZ2DUOBGzkmqwSJdloU0RYbWprAit6Yf7HMY2Z
-9RrdJfsOxoCEQNHeEZJmXVUBPsJckuuIQKAjKSEL5wZlHAhWQSDyDHzBXTZ0
-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
-KPG3x59enfnSxIG4/0iQYTqf1wCASOtVSOQge9yn9ip8RA8/JGgnEKJpWtib
-gz1qqCnsAqisBYeFgC5lvWUiNNJlj//62/ks++tvF08O3P8Hebrt+qv/AAA=
+H4sIAAAAAAAAA+y923LbSJY2ep9PgXBdlN1D0Lbsqu6S90mW5Cr12JLGkrum
+9x9/tCASlNAmAQ4ASuY4PM++1zFzJQ6UXH27Jya6ZBIEEnlYx299K01T1xbt
+Mt9PDto2b9qsLaoy+ZjPqnJWLAv+53ldtdWsWrrs+rrO7+Daj+duXs3KbAU/
+nNfZok1vi+WyyOu0mRVtm2b1On3xys2zFi7Ye7H3c/riL/D/bgYf3FT1dj9p
+2rlrNteromngEe12DReeHF++c3D7V65Y1/tJW2+adu/Fi19e7LmszrP95CKf
+beqi3brP+fa+quf7LknS5KRs87rM2/QIR0IfXRyeXF7SXx8PLi/ojyy8H/27
+jt6RPprVVdOk/4RHNPNihh9nS/piXS2L2Ta9y+tGr81u8rItZunBCf1zURd5
+OU+rOl1UuXPwoHL+j2xZlfBa27xx62I/+V8wiZOkqeq2zhcN/LVd4R//27ls
+095WNbxNCjdLkqJs9pO/TpOjafIbTyt9zNP91ypfJkfZXTGPvqzqm6ws/pte
+Zj85zOu2aLblBCZnNqUL8lVWLPeTf8pC/T8zuWQ6q1Z0wazalC0uzaeyaPN5
+cgGTlTdJtUgOVnldzDLnyqpewRPucpz4j+8O916+/EX+/MvLP7+WP3958dNe
++POV/vnq1ev9RP7vB1qX5KCe3cKzZu2mzuWq13svzVW/XV6eJx/ypoHpTi6K
+mzLDSxt55J//8pO59q8XZ6fJYVZWJYx1KVORXMxu81WePP3r4cUzecQvr1+Z
+n9FWiUaSPL3PmuQkPZoWebvwOzpcEG60Z250eHZxjCcnL9Zt07nHrGryFGbx
+8zJPYfXzdF1X1aLBG3We08zqDDcL3jFMd/L1K3+RXhflvChvvn1LitUa7tok
+Hz5dXMIylUkBj4VNuK6KssUp+nTwny9/2qe1lTP+BJZ2Vs1zXNtyntXz5KAs
+8y/JD3Bdot+d4lP9/L2DfzVP+CZZfZO3+8lt266b/efP7+/vpxv+0RS23/M6
+X8Pebp639cufntMv/L6m/0txk+4nl7e5f9ZhVeJ5KDa8Bb28eOVcUS46u+0v
+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
+F48BAA==
 
 -->
 

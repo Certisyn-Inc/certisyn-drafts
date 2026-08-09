@@ -51,6 +51,7 @@ normative:
 informative:
   RFC8259:        # JSON
   RFC6350:        # vCard 4.0
+  RFC8615:        # Well-Known URIs
   BODS:
     title: Beneficial Ownership Data Standard
     target: https://standard.openownership.org/
@@ -343,11 +344,23 @@ Partial Attestation:
   Timestamp, and the Source-Data Version Identifier of {{source-versioning}} --
   are enumerated in {{partial-attestation}}.
 
+Combined Verdict:
+: The single verdict value produced by aggregating the Reconciliation-Verdict
+  fields of the Per-Register Result Set of {{reconciliation-output}} under the
+  Verdict Arithmetic declared in the Applicable-Regimes Set. Its values are
+  match, no-match, partial-match and indeterminate. The decisive values are
+  match and no-match.
+
+Reconciliation Hash:
+: The SHA-256 digest over the deterministically encoded CBOR serialisation of a
+  Reconciliation Output excluding its Sealing Signature and Sealing-Key
+  Identifier, as specified in {{reconciliation-output}}.
+
 Divergence Axis:
-: A controlled descriptor identifying a structural qualification on a verdict or
-  on its evaluation. Most identify the reason for a non-match; those recorded by
-  the reconciliation server may qualify a verdict of any value. Drawn from a
-  controlled set including identity-mismatch,
+: A controlled descriptor identifying a structural qualification on a verdict.
+  Most identify the reason for a non-match; those recorded by the reconciliation
+  server may qualify a verdict of any value. The controlled set is the registry of {{iana}}, which at the time of writing
+  comprises identity-mismatch,
   jurisdictional-scope-mismatch, temporal-mismatch,
   ownership-threshold-mismatch, sanctions-list-match, register-record-absent,
   claim-predicate-unsupported,
@@ -355,15 +368,14 @@ Divergence Axis:
   agent-principal-unverifiable, agent-credential-absent,
   agent-impersonation-suspected, agent-action-scope-divergence (the
   authorised scope attested for an agent action and the actual conduct
-  attested for it do not reconcile), source-version-skew, attribution-indeterminate,
-  notarisation-incomplete, register-threshold-divergence (two
+  attested for it do not reconcile), source-version-skew, register-threshold-divergence (two
   registers answered the same predicate under different declared interest
   thresholds, per {{profile-bods}}), declared-not-determined (the register
   could answer only over a declared fact where the claim ranged over a
   determined one, per {{profile-customs}}), and freshness-stale. Divergence
   Axes recorded by the reconciliation server rather than by a register --
-  freshness-stale, source-version-skew, register-threshold-divergence,
-  declared-not-determined and attribution-indeterminate -- are carried in the Reconciliation Output, not
+  freshness-stale, source-version-skew, register-threshold-divergence and
+  declared-not-determined -- are carried in the Reconciliation Output, not
   in the register's signed Partial-Attestation payload.
 
 Source-Data Version Identifier:
@@ -375,12 +387,33 @@ Source-Data Version Identifier:
   rather than to a change in the underlying corpus. Requirements are in
   {{source-versioning}}.
 
-Notarisation Incomplete:
-: The condition, recorded as notarisation-incomplete, in which an attempt to
-  notarise a Reconciliation Output into a SCITT Transparency Service under
-  {{scrapi-binding}} neither completed nor was refused within the polling bound.
-  It qualifies the notarisation attempt and not the Reconciliation Output, which
-  remains valid under its Sealing Signature.
+Post-Seal Evaluation Qualifier:
+: A controlled descriptor identifying a condition arising after a Reconciliation
+  Output has been sealed, carried in a Post-Seal Evaluation Record per
+  {{post-seal}} rather than in the Output. The values are those of the registry in
+  {{iana}}, at the time of writing notarisation-incomplete and
+  attribution-indeterminate. A Post-Seal Evaluation
+  Qualifier is not a Divergence Axis: a Divergence Axis qualifies a verdict, and
+  a Post-Seal Evaluation Qualifier qualifies an operation on an Output whose
+  verdict is already fixed.
+
+Threshold-Sensitive Predicate:
+: A Predicate whose truth depends on an interest threshold, so that two
+  registers evaluating it under different declared thresholds are not answering
+  the same question. A profile registered under {{format-profiles}} MUST state
+  which of its predicates are threshold-sensitive.
+
+Source Class:
+: A partition of the Addressed-Registers Identifier Set declared in the
+  Applicable-Regimes Set, over which source-class-quorum is evaluated per
+  {{verdict-arithmetic}}.
+
+Sovereign Re-Notification:
+: A notification emitted through the Regulator Portal to each regulator whose
+  statutory scope covers a reconciliation whose historical Combined Verdict has
+  materially changed, and published as a Continuation entry on the
+  Settlement-Layer Ledger so that a relying party that acted on the superseded
+  Output can discover the change.
 
 Source-Version Skew:
 : The condition, recorded as source-version-skew, in which two Partial
@@ -390,11 +423,11 @@ Source-Version Skew:
   implementation MUST NOT treat it as one.
 
 Attribution Indeterminate:
-: The condition, recorded as attribution-indeterminate, in which a Retroactive
-  Evaluation cannot determine whether a material change in a historical
-  Combined Verdict arose from a change in policy state or from a change in
-  Source-Data Version. It is a statement about the evaluation, not about any
-  register's answer.
+: The Post-Seal Evaluation Qualifier, recorded as attribution-indeterminate, in
+  which a Retroactive Evaluation cannot determine whether a material change in a
+  historical Combined Verdict arose from a change in policy state or from a
+  change in Source-Data Version. It is a statement about the evaluation, not
+  about any register's answer.
 
 Reconciliation Output:
 : A data structure aggregating Partial Attestations from a single
@@ -402,8 +435,8 @@ Reconciliation Output:
 
 Verdict Arithmetic:
 : The operator governing how per-register verdicts combine into the Combined
-  Verdict, drawn from a controlled set including conjunction, disjunction,
-  threshold-count, and source-class-quorum.
+  Verdict, specified in {{verdict-arithmetic}}. The controlled set comprises
+  conjunction, disjunction, threshold-count and source-class-quorum.
 
 Homomorphic Aggregation:
 : A cryptographic aggregation of Partial Attestations under a homomorphic
@@ -434,22 +467,27 @@ Settlement-Layer Ledger:
   prior-entry hash, a self-entry hash, and an OPTIONAL
   source-reconciliation-output identifier.
 
-# Architecture
+# Architecture {#architecture}
 
-ARP comprises twelve subsystems arranged as a deterministic pipeline:
+ARP comprises sixteen subsystems arranged as a deterministic pipeline:
 
 1. Canonical Claim Ingestion
 2. Requester Identity Binding and Agent Friend-or-Foe Gate
 3. Adversarial Pre-Transmission Test
-4. Per-Register Projection Function
+4. Per-Register Projection Function, under the profile of {{format-profiles}}
+   declared in the Bilateral Register Agreement
 5. Per-Register Encryption
-6. Partial-Attestation Reception
-7. Aggregation (Homomorphic or Hash-Linkage)
-8. Policy-Version-Hash Sealing
-9. Settlement-Layer Ledger Write
-10. Regulator Portal
-11. Retroactive Evaluation
-12. Cryptographic-Primitive-Upgrade Path
+6. Partial-Attestation Reception, including Source-Data Version Binding
+7. Non-Answer Resolution
+8. Verdict Re-Typing
+9. Aggregation under the Verdict Arithmetic (Homomorphic or Hash-Linkage)
+10. Policy-Version-Hash Sealing
+11. Settlement-Layer Ledger Write
+12. Notarisation under {{scrapi-binding}}, where performed
+13. Regulator Portal
+14. Retroactive Evaluation
+15. Post-Seal Evaluation Recording
+16. Cryptographic-Primitive-Upgrade Path
 
 Given an identical Canonical Claim, an identical Requester-Binding, an
 identical Addressed-Registers Identifier Set, identical
@@ -530,10 +568,20 @@ addressed-register-cherry-picking, agreement-staleness-injection,
 pattern-library-version-pinning, and agent-principal-spoofing (an unverifiable
 agent asserting a principal binding it does not hold).
 
-The Subsystem emits either a Pass result or a Remediation Advisory. The
-Per-Register Encryption Subsystem MUST architecturally withhold external
+The Subsystem emits either a Pass result or a Remediation Advisory. A
+Remediation Advisory comprises the identifiers of the patterns that matched and
+the narrowing or substitution each concerns; it is returned to the requester, no
+projection is transmitted, and no Reconciliation Output is produced.
+
+The Per-Register Encryption Subsystem MUST architecturally withhold external
 transmission until a Pass result has been emitted or until an authorised
-operator has explicitly overridden the outcome.
+operator has explicitly overridden the outcome. An override MUST be recorded in
+the Reconciliation Output as an Override Record naming the patterns that matched
+and the authorising operator identity, and is thereby covered by the Sealing
+Signature. An override that left no artefact would be indistinguishable from a
+Pass to every external party, which would make the only manual bypass of the
+protocol's own adversarial gate invisible to the regulators that gate exists to
+serve.
 
 ## Per-Register Projection Function {#projection}
 
@@ -553,6 +601,38 @@ the taxonomy root without finding one, the projection MUST fail with
 `projection-unsupported`. The narrowing operation MUST be recorded in the
 Narrowed-From field of the Per-Register Claim Projection.
 
+A Per-Register Claim Projection comprises:
+
+- Reconciliation Identifier
+- Register Identifier
+- Projected Predicate
+- Subject Reference, in the form the addressed register's Bilateral Register
+  Agreement declares
+- Attested Value, where the Projected Predicate takes one
+- Narrowed-From, absent where the Projected Predicate equals the Canonical
+  Claim Predicate
+- Bilateral-Register-Agreement Hash
+- Policy-Version Hash
+- Freshness Window, as declared in the Bilateral Register Agreement
+- Reconciliation Nonce
+- Profile Parameter Set, being the values the Bilateral Register Agreement
+  declared under {{format-profiles}} that the register is to apply
+
+This is the only structure a sovereign register receives, and it is enumerated
+here so that two register operators can build interoperable endpoints. The
+register does not receive the Canonical Claim, the Addressed-Registers
+Identifier Set, or any other register's projection.
+
+The register echoes the Policy-Version Hash in its Partial Attestation; it does
+not compute it, and it is not required to be able to. The reconciliation server
+MUST send the same Policy-Version Hash to every addressed register in one
+reconciliation, and MUST verify on reception that each Partial Attestation
+echoes it. A mismatch MUST be treated as a refusal by that register and recorded
+under {{no-answer}}. Without this the per-register signatures over the
+Policy-Version Hash -- the only independent corroboration of it -- would be
+discarded at aggregation, and a server could address different registers under
+different policy versions undetectably.
+
 ## Register Data-Format Profiles {#format-profiles}
 
 A Bilateral Register Agreement MUST declare the data format in which the
@@ -562,9 +642,20 @@ records; a format profile is what lets an implementer determine which predicates
 a given register can actually answer, and what a narrowing means against that
 register's own structure.
 
-A profile MUST state, for the format it covers, how a permitted predicate is
-expressed and what the Predicate Taxonomy's parent relation corresponds to in
-that format. A profile MUST NOT introduce a means of transporting register records; profiles
+A profile is a property of a data format, not of a register. It states, for the
+format it covers, how a permitted predicate is expressed and what the Predicate
+Taxonomy's parent relation corresponds to in that format. Parameters that vary
+between registers using the same format -- interest thresholds, maximum chain
+depths, the set of named lists and the identifiers a register uses for their
+states -- are not properties of the profile and MUST be declared in the
+Bilateral Register Agreement. A profile MUST enumerate the parameters a Bilateral Register Agreement declaring
+it is required to supply, and MUST state which of its predicates are
+threshold-sensitive per {{terminology}}, on which the third re-typing ground of
+{{verdict-retyping}} turns.
+
+Without that split a single registered identifier would carry facts that differ
+between registers, and two registers using the same format under different
+thresholds could not both declare it. A profile MUST NOT introduce a means of transporting register records; profiles
 constrain predicate expression only.
 
 The vocabulary documents a profile names are informative to this document and
@@ -585,37 +676,49 @@ registered. A Bilateral Register Agreement MAY declare one.
 
 ### Beneficial ownership: BODS {#profile-bods}
 
-For registers expressing beneficial ownership as {{BODS}} statements, the
-permitted-predicate set is expressed over ownership-or-control relationships
-reachable from a declared subject entity.
+For registers expressing beneficial ownership as {{BODS}} records, the
+permitted-predicate set is expressed over relationship records -- termed
+ownership-or-control statements before BODS 0.4 -- reachable from a declared
+subject entity. This profile is written against BODS 0.4.
 
 Taxonomic narrowing corresponds to reducing the depth of the ownership chain a
 predicate ranges over. A relying party's question is characteristically about
 ultimate beneficial ownership -- the transitive closure -- while a register may
 be able to answer only a bounded-depth predicate over direct or
-once-removed interests. The parent of a predicate at depth n is the
-corresponding predicate at depth n-1, and the taxonomy root is the
-direct-interest predicate.
+once-removed interests. The parent of a predicate at depth n is the corresponding predicate at depth
+n-1. The direct-interest predicate is the root of this profile's branch of the
+Predicate Taxonomy, and the walk of {{projection}} fails as
+`projection-unsupported` on reaching it, as it does at the taxonomy root.
 
-A profile using BODS MUST declare the maximum chain depth over which the
-register's permitted predicates are evaluated. Where the Canonical Claim ranges
+A Bilateral Register Agreement declaring `arp-profile-bods` MUST supply the
+maximum chain depth over which the register's permitted predicates are
+evaluated. Where the Canonical Claim ranges
 over the transitive closure and the register's declared maximum depth is finite,
 the projection is a narrowing and MUST be recorded in Narrowed-From. An
 implementation MUST NOT treat a bounded-depth `no-match` as a
-transitive-closure `no-match`. Where the Canonical Claim ranged over the
-transitive closure and any addressed register answered at a bounded depth, the
-Combined Verdict MUST be `indeterminate`, and the Reconciliation Output MUST
-record the depth at which each register answered. Recording the depths does not
-make a bounded-depth answer into evidence about the closure; it records what was
-actually established.
+transitive-closure `no-match`. The rule is stated in {{verdict-retyping}} and
+applies to that register's contribution, not to the Combined Verdict: a
+`no-match` returned at bounded depth against a closure claim is re-typed to
+`indeterminate` before aggregation, and the Verdict Arithmetic then proceeds
+unchanged. A `match` found at any depth does establish the existential closure
+predicate and is not re-typed.
+
+The depth at which the register answered is reported in the Applied-Parameter
+Set of its Partial Attestation and MUST be carried into the Projection Record of
+{{reconciliation-output}}. A register MAY answer at a shallower depth than the
+declared maximum; the declared maximum is therefore not a substitute for the
+applied value, and re-typing under {{verdict-retyping}} turns on the applied
+value.
 
 Interest thresholds -- the percentage at which an interest becomes reportable --
-vary by jurisdiction and are properties of the register, not of the claim. A
-profile MUST declare the threshold its permitted predicates assume. Two
+vary by jurisdiction and are properties of the register, not of the claim or of
+the format. A Bilateral Register Agreement declaring `arp-profile-bods` MUST
+supply the threshold its permitted predicates assume. Two
 registers answering the same predicate under different thresholds are not
-answering the same question, and a Divergence Axis of
-`register-threshold-divergence` MUST be recorded where the Reconciliation
-Output combines them.
+answering the same question. The reconciliation server MUST add
+`register-threshold-divergence` to the Server-Recorded Divergence-Axis Set
+wherever the Reconciliation Output combines registers whose declared thresholds
+differ, irrespective of the verdicts they returned.
 
 ### Corporate registries: vCard and the Organization Ontology {#profile-corporate}
 
@@ -633,10 +736,13 @@ Where {{W3C-ORG}} is used, `org:subOrganizationOf` is the parent relation for
 the organisational-structure branch, and `org:hasSite` for the branch of
 predicates ranging over establishment or place of business.
 
-Neither vocabulary carries a notion of legal effect. A predicate expressed in
-these terms is a predicate about a register's recorded representation of an
-entity, not about the entity's status in law, and a profile MUST NOT be read as
-asserting the latter.
+Neither vocabulary asserts the legal effect of a recorded fact. {{W3C-ORG}} does
+carry a notion of legal recognition -- `org:FormalOrganization` denotes an
+organisation recognised in legal jurisdictions, and `org:identifier` a company
+registration number -- but recognition is not determination. A predicate
+expressed in these terms is a predicate about a register's recorded
+representation of an entity, not about the entity's status in law, and a profile
+MUST NOT be read as asserting the latter.
 
 ### Customs and transport: UN/CEFACT and the WCO Data Model {#profile-customs}
 
@@ -644,16 +750,24 @@ For customs declarations and transport registers, a profile MAY declare
 {{UNCEFACT}} core components or {{WCO-DM}} classes as the vocabulary for
 permitted predicates.
 
-Both are declaration-oriented: they describe what was declared to an authority,
-not what an authority has determined. A predicate over a declared consignor,
-declared origin or declared commodity code is a predicate about the declaration.
-Where a relying party's Canonical Claim ranges over a determined fact and the
-register can answer only over a declared one, that is a narrowing, MUST be
-recorded in Narrowed-From. The reconciliation server MUST derive the Divergence
-Axis `declared-not-determined` from the Narrowed-From field and record it in the
-Reconciliation Output where it affects the Combined Verdict. The register cannot
-record it: the register never sees the Canonical Claim, and the Combined Verdict
-does not exist until every Partial Attestation has been received.
+Both express declaration-side and authority-side facts, and telling them apart
+is the purpose of this profile rather than a property of the vocabularies. The
+WCO Data Model's Declaration Response and its Licence, Permit, Certificate and
+Other packages record authority determinations, as does UN/CEFACT's eCERT for
+sanitary and phytosanitary certification; the goods and cargo declaration
+classes in both record what was declared to an authority.
+
+A Bilateral Register Agreement declaring `arp-profile-customs-wco` MUST supply,
+for each permitted predicate, whether it ranges over a declared fact or over a
+determined one. Where a relying party's Canonical Claim ranges over a determined
+fact and the register can answer only over a declared one, that is a narrowing
+and MUST be recorded in Narrowed-From. The reconciliation server MUST derive the Divergence
+Axis `declared-not-determined` from the Narrowed-From field and add it to the
+Server-Recorded Divergence-Axis Set of {{reconciliation-output}} whenever the
+narrowing occurred, whether or not it changed the Combined Verdict; the
+corresponding contribution is re-typed under {{verdict-retyping}}. The register
+cannot record it: the register never sees the Canonical Claim, and the Combined
+Verdict does not exist until every Partial Attestation has been received.
 
 ### Sanctions: consolidated list formats {#profile-sanctions}
 
@@ -661,15 +775,20 @@ For registers expressing designation status by reference to a consolidated list
 -- {{OFAC-SDN}}, {{EU-CFSP}} or equivalent -- the permitted-predicate set is
 expressed over designation of a subject entity on a named list.
 
-Consolidated lists are republished on a cadence and are commonly distributed as
-delta updates against a prior state. A designation verdict is therefore
-meaningful only relative to the list state that produced it, and this has a
+Consolidated lists are republished on no fixed schedule -- OFAC states there is
+no predetermined timetable, and the EU list is updated as amending regulations
+are adopted -- and are distributed either as full republications or as delta
+updates against a prior state. That the cadence is event-driven strengthens the
+requirement below rather than weakening it: a relying party cannot infer list
+state from the clock. A designation verdict is meaningful only relative to the
+list state that produced it, and this has a
 consequence the rest of this document depends on: without it, a change in a
 historical Combined Verdict cannot be attributed to a policy change rather than
 to a list change. Accordingly the requirements of {{source-versioning}} apply.
 
-A profile MUST declare, for each named list, the identifier by which the
-register expresses that list's state. Where the register publishes both a full
+A Bilateral Register Agreement declaring `arp-profile-sanctions-consolidated`
+MUST supply the set of lists the register consults and, for each, the identifier
+by which the register expresses that list's state. Where the register publishes both a full
 list and deltas, the identifier MUST denote the resulting state and not the
 delta applied to reach it.
 
@@ -678,20 +797,32 @@ delta applied to reach it.
 Where a register's answer depends on a source data state that changes
 independently of the Bilateral Register Agreement and of the Policy Version --
 a consolidated sanctions list being the characteristic case -- the Partial
-Attestation MUST carry a Source-Data Version Identifier denoting the state
-against which the register evaluated the Projected Predicate. The identifier is
-a tuple of the list name as declared in the Bilateral Register Agreement and the
-state identifier the register uses for that list, so that identifiers issued by
-one register over different lists cannot collide.
+Attestation MUST carry a Source-Data Version Identifier Set: one identifier for each source consulted
+in evaluating the Projected Predicate. Each identifier is a tuple of the list name as declared in the Bilateral
+Register Agreement and the state identifier the LIST PUBLISHER assigns to that
+state -- a published version token, or a digest of the published corpus where
+the publisher assigns none -- rather than any value of the register's own
+devising. A register-chosen opaque string would be an arbitrary-bandwidth
+channel from register to relying party, carried under signature into a sealed
+and ledgered artefact, and the rule that differing identifiers MUST NOT be read
+as disagreement would normalise it. The reconciliation server MUST reject an
+identifier that is not drawn from the publisher's own state sequence, under
+{{no-answer}} with the reason `attestation-unverifiable`. The tuple form is what
+lets identifiers issued by one register over different lists be distinguished, so that identifiers issued by one register over
+different lists cannot collide and a register consulting several lists can
+denote the state of each.
 
-The Source-Data Version Identifier MUST be covered by the Partial-Attestation
-signature. It MUST be carried into the Reconciliation Output for each addressed
-register that supplied one, and MUST be covered by the Sealing Signature.
+The Source-Data Version Identifier Set MUST be carried in the
+`arp-source-data-version` COSE header parameter of the Partial Attestation's
+protected header, and is thereby covered by the Partial-Attestation signature.
+It MUST be carried into the Per-Register Result Set of
+{{reconciliation-output}} for each addressed register that supplied one, and is
+thereby covered by the Sealing Signature.
 
 A register MUST evaluate every Projected Predicate over a given list against the
-state its declared Source-Data Version Identifier denotes, and MUST use the same
-identifier for every Partial Attestation it issues over that list until it
-adopts a new state. Without this the identifier would vary per subject and become
+state the corresponding member of its declared Source-Data Version Identifier
+Set denotes, and MUST use the same identifier for every Partial Attestation it
+issues over that list until it adopts a new state. Without this the identifier would vary per subject and become
 a disclosure channel.
 
 Given that requirement this does not weaken minimum disclosure: a list-state
@@ -706,10 +837,12 @@ change in a historical Combined Verdict arising from the change in policy state
 from one arising from a change in Source-Data Version. Both MUST trigger
 Sovereign Re-Notification where material, and the notification MUST state which
 of the two occurred. Where an implementation cannot distinguish them, it MUST
-report `attribution-indeterminate` rather than attribute the change to policy.
+emit a Post-Seal Evaluation Record carrying `attribution-indeterminate` per
+{{post-seal}} rather than attribute the change to policy.
 
-An implementation MUST NOT infer that two Partial Attestations carrying
-different Source-Data Version Identifiers disagree. They may be answers to the
+An implementation MUST NOT infer that two Partial Attestations whose
+Source-Data Version Identifier Sets differ for a list they have in common
+disagree. They may be answers to the
 same predicate against different states of the same corpus. The reconciliation
 server MUST record this as `source-version-skew`, which is distinct from
 `freshness-stale`: a skewed attestation is within its freshness window and is
@@ -720,11 +853,27 @@ rejected under {{replay-defence}}.
 
 Each Per-Register Claim Projection MUST be encrypted under the addressed
 register's public-key material declared in the Bilateral Register Agreement.
-The encryption operation MUST bind the Bilateral-Register-Agreement Hash and
-the Pattern-Library Version Identifier into the ciphertext as authenticated
-additional data, such that a register attempting to decrypt under a stale
-Bilateral-Register-Agreement Hash or Pattern-Library Version Identifier
-fails at the authenticated-additional-data verification step.
+The encryption operation MUST bind the Bilateral-Register-Agreement Hash and the
+Reconciliation Nonce into the ciphertext as authenticated additional data, such
+that a register attempting to decrypt under a stale
+Bilateral-Register-Agreement Hash fails at the authenticated-additional-data
+verification step.
+
+These two are the only values so bound. Authenticated additional data detects a
+mismatch only against an expectation the receiver independently holds. A
+register independently holds its own agreement, and it holds the nonce because
+the nonce is inside the projection it is decrypting, which binds the ciphertext
+to a single reconciliation. It does not hold the Pattern-Library Version
+Identifier: the Pattern Library is the reconciliation server's internal
+adversarial-test corpus and is not published to registers, so binding it would
+either fail universally or be supplied alongside the ciphertext by the same
+party that chose it, detecting nothing.
+
+A register MUST NOT issue more than one Partial Attestation for a given
+Reconciliation Nonce, and MUST reject a projection whose nonce it has already
+answered. Without this a captured ciphertext could be replayed indefinitely,
+each replay yielding a freshly timestamped signed attestation and defeating the
+freshness window of {{replay-defence}}.
 
 ## Partial Attestation Reception {#partial-attestation}
 
@@ -735,10 +884,35 @@ A Partial Attestation comprises:
 - OPTIONAL Divergence-Axis Field
 - Bilateral-Register-Agreement Hash
 - Policy-Version Hash
-- OPTIONAL Source-Data Version Identifier, present where required by
-  {{source-versioning}}
-- Cryptographic Signature over the canonical payload of the foregoing
+- OPTIONAL Source-Data Version Identifier Set, present where required by
+  {{source-versioning}} and carried in the `arp-source-data-version` COSE header
+  parameter of {{iana}}
+- OPTIONAL Applied-Parameter Set, being the profile parameters the register
+  actually applied in evaluating the Projected Predicate, present wherever the
+  Profile Parameter Set of the Per-Register Claim Projection was non-empty
+- Query Binding, the SHA-256 digest over the deterministically encoded CBOR
+  concatenation of the Reconciliation Identifier, the Projected Predicate, the
+  Subject Reference and the Reconciliation Nonce of the Per-Register Claim
+  Projection it answers
 - Freshness Timestamp
+- Cryptographic Signature over the canonical payload of the foregoing
+
+The Query Binding is what makes an attestation an answer to a question rather
+than a free-standing assertion. Without it the signed payload says only that a
+register returned a verdict under some agreement and policy version at some
+time, and says nothing about what it was asked. Two consequences follow, and
+both are severe: an attestation harvested for one subject could be placed into
+the Per-Register Result Set of a reconciliation about another subject and would
+verify against every other check; and a register could answer the same question
+differently to two requesters and deny having done so, because its signature
+would not identify the question.
+
+The reconciliation server MUST recompute the Query Binding from the projection
+it transmitted and MUST reject an attestation whose Query Binding does not
+match, under {{no-answer}} with the reason `attestation-unverifiable`. The
+Reconciliation Nonce MUST be unique per Per-Register Claim Projection and MUST
+NOT be reused across reconciliations, so that an attestation is admissible only
+into the reconciliation that elicited it.
 
 The Partial Attestation payload SHALL NOT contain any register-record field,
 any pre-image of the register record, or any field beyond those enumerated.
@@ -748,8 +922,17 @@ inference channels are discussed in {{side-channel}}.
 
 ## Aggregation
 
-Where every addressed register declares Homomorphic capability, the
-aggregation subsystem operates in Homomorphic Aggregation Mode. Per-register
+Verdict Re-Typing under {{verdict-retyping}} operates on per-register verdicts
+in the clear and precedes aggregation. Homomorphic Aggregation Mode therefore
+applies only where no addressed register's contribution requires re-typing --
+that is, where no projection narrowed and no profile parameter differs between
+addressed registers. Where any contribution requires re-typing, the aggregation
+subsystem MUST operate in Hash-Linkage Aggregation Mode. An implementation MUST
+NOT skip re-typing in order to remain in Homomorphic Aggregation Mode.
+
+Where every addressed register declares Homomorphic capability and no
+contribution requires re-typing, the aggregation subsystem operates in
+Homomorphic Aggregation Mode. Per-register
 encrypted verdict contributions are aggregated through a homomorphic
 operator sequenced according to the Verdict Arithmetic declared in the
 Applicable-Regimes Set. Intermediate values remain cryptographically
@@ -766,7 +949,224 @@ inclusion without a bespoke proof format. The per-register
 verdict band MUST commit each register's verdict individually without
 disclosure of any other register's payload.
 
-## Policy-Version-Hash Sealing
+## Registers That Do Not Answer {#no-answer}
+
+A register may fail to produce a usable Partial Attestation. Every such state
+has a defined outcome, because dropping the register silently would produce
+exactly the addressed-register-cherry-picking pattern the Adversarial
+Pre-Transmission Test exists to detect.
+
+The Per-Register Result Set MUST carry an entry for every addressed register.
+Where no usable attestation was received, the entry's Attested Verdict is
+replaced by a Non-Answer Reason drawn from:
+
+- `projection-ambiguous` and `projection-unsupported`, where the projection
+  itself failed and no projection was transmitted
+- `agreement-drift-suspended`, where reconciliation against that register was
+  suspended for Bilateral-Register-Agreement drift
+- `attestation-stale`, where the Freshness Timestamp fell outside the declared
+  window and the attestation was rejected
+- `attestation-unverifiable`, where the signature did not verify or the echoed
+  Policy-Version Hash did not match the one sent
+- `register-unresponsive`, where no attestation was received within the window
+  declared in the Bilateral Register Agreement
+- `register-refused`, where the register declined to answer, whether under its
+  own statutory access regime or under the Agent-IFF policy
+- `query-budget-exhausted`, where the reconciliation would exceed the
+  per-subject query budget declared under {{containment}}
+
+A Non-Answer Reason is not a verdict, occupies its own field of the Per-Register
+Result Set per {{reconciliation-output}}, and MUST NOT be combined by the
+Verdict Arithmetic. Its effect is given in {{verdict-arithmetic}}: a reconciliation with
+any non-answering register cannot reach a decisive Combined Verdict.
+
+Where the reason is `attestation-stale`, `freshness-stale` MUST also be added to
+the Server-Recorded Divergence-Axis Set against that Register Identifier.
+
+## Verdict Re-Typing {#verdict-retyping}
+
+A register answers the Projected Predicate it was sent, which may be a narrowing
+of the Canonical Claim Predicate. Where the narrowing means the register's
+answer does not bear on the claim as asked, the reconciliation server MUST
+re-type that register's Reconciliation-Verdict Field before aggregation, and
+MUST record the attested value, the re-typed value and the ground on which it
+re-typed in the Per-Register Result Set, so that an auditor can reproduce the
+decision without the server's assurance.
+
+Re-typing is confined to these cases:
+
+- Any contribution other than `match`, attested against a bounded-depth
+  predicate where the Canonical Claim ranged over a transitive closure, is
+  re-typed to `indeterminate`. A bounded-depth answer that is not a `match` is
+  evidence about the bounded depth only, and that is as true of `partial-match`
+  and `indeterminate` as of `no-match`. A `match` is not re-typed: an interest
+  found at any depth establishes the existential closure predicate.
+- A `match` or `no-match` attested over a declared fact, where the Canonical
+  Claim ranged over a determined fact, is re-typed to `partial-match` under an
+  operator that admits that value and to `indeterminate` under one that does
+  not, per {{verdict-arithmetic}}.
+- A contribution from a register whose declared interest threshold differs from
+  that of any other addressed register, where the Canonical Claim's predicate is
+  threshold-sensitive, is re-typed to `partial-match` under an operator that
+  admits that value and to `indeterminate` under one that does not. Two
+  registers answering under different thresholds are not answering the same
+  question, and annotating that on the Reconciliation Output while allowing a
+  decisive Combined Verdict to be built from it would state a conclusion the
+  inputs do not support.
+
+Re-typing operates on a register's contribution. It does not override the
+Verdict Arithmetic declared in the Applicable-Regimes Set, which is applied
+afterwards to the re-typed set and is otherwise unaffected. An implementation
+MUST NOT re-type on any ground not enumerated here.
+
+## Verdict Arithmetic {#verdict-arithmetic}
+
+The Verdict Arithmetic combines the Reconciliation-Verdict Fields of the
+Per-Register Result Set, after any re-typing under {{verdict-retyping}}, into
+the Combined Verdict. It is declared in the Applicable-Regimes Set and carried
+into the Reconciliation Output so that a relying party can reproduce the
+combination.
+
+Two rules apply to every operator and take precedence over the operator's own
+table:
+
+- Where any addressed register has no decisive contribution because it did not
+  answer, was refused or was rejected under {{no-answer}}, the Combined Verdict
+  MUST be `indeterminate`. An operator MUST NOT reach a decisive verdict over an
+  incomplete register set, which would be indistinguishable from
+  addressed-register-cherry-picking.
+- Where any contribution is `indeterminate`, the Combined Verdict MUST be
+  `indeterminate` wherever the operator's table would otherwise yield
+  `no-match`. An `indeterminate` contribution is an absence of evidence and a
+  decisive negative may not be built on one, so the rule states the substitute
+  result rather than only a prohibition; a prohibition without a substitute
+  would leave the verdict undefined in exactly the cases it governs.
+
+Subject to those, the operators are:
+
+conjunction:
+: `match` where every contribution is `match`. `no-match` where any contribution
+  is `no-match`. `partial-match` where every contribution is `match` or
+  `partial-match` and at least one is `partial-match`. `indeterminate`
+  otherwise.
+
+disjunction:
+: `match` where any contribution is `match`. `no-match` where every contribution
+  is `no-match`. `partial-match` where at least one is `partial-match` and none
+  is `match`. `indeterminate` otherwise.
+
+threshold-count:
+: `match` where the count of `match` contributions meets or exceeds the
+  threshold declared in the Applicable-Regimes Set. `no-match` where the count
+  of `match` contributions cannot reach the threshold and no contribution is
+  `indeterminate`. `indeterminate` otherwise, which includes every case in which
+  an `indeterminate` contribution is present and the threshold is not met.
+  `partial-match` contributions do not count toward the threshold.
+
+source-class-quorum:
+: threshold-count evaluated per source class as declared in the
+  Applicable-Regimes Set, then combined across classes by conjunction.
+
+Every operator admits `partial-match` except threshold-count and
+source-class-quorum, which do not. Where {{verdict-retyping}} would re-type a
+contribution to `partial-match` under an operator that does not admit it, the
+contribution is re-typed to `indeterminate` instead.
+
+## Reconciliation Output {#reconciliation-output}
+
+A Reconciliation Output comprises:
+
+- Reconciliation Identifier
+- Claim Hash
+- Reconciliation Timestamp
+- Combined Verdict
+- Verdict Arithmetic, as declared in the Applicable-Regimes Set, together with
+  every parameter that operator takes -- the threshold for threshold-count, and
+  the source-class partition for source-class-quorum
+- Addressed-Registers Identifier Set
+- Bilateral-Register-Agreement Hash Set
+- Policy-Version Hash
+- Pattern-Library Version Identifier
+- Requester-Binding Class
+- Per-Register Result Set, one entry per addressed register
+- Server-Recorded Divergence-Axis Set, possibly empty
+- OPTIONAL Override Record, present exactly where an Adversarial
+  Pre-Transmission Test failure was overridden
+- Sealing-Key Identifier
+- Sealing Signature over the canonical serialisation of the foregoing
+
+The Reconciliation Identifier is the Claim Hash concatenated with the
+Policy-Version Hash. It is therefore reproducible from enumerated inputs and
+satisfies the determinism requirement of {{architecture}} without a separate
+construction rule.
+
+The Claim Hash binds the Output to the question it answers. Without it a relying
+party receives a Combined Verdict with nothing to attribute it to, and the
+Retroactive Evaluation Subsystem has no key to select on.
+
+The Verdict Arithmetic and its parameters are carried because a relying party
+cannot otherwise reproduce the combination from the Per-Register Result Set, and
+because {{verdict-retyping}} turns on which values the operator admits. The
+Applicable-Regimes Set is a Canonical Claim field and is not itself carried in
+the Output, so naming the operator without its parameters would leave
+threshold-count and source-class-quorum irreproducible.
+
+Each entry of the Per-Register Result Set comprises:
+
+- Register Identifier
+- Answer State, either `answered` or `not-answered`
+- Attested Verdict, present exactly where the Answer State is `answered`
+- Non-Answer Reason of {{no-answer}}, present exactly where the Answer State is
+  `not-answered`
+- Effective Verdict, present exactly where the Answer State is `answered`, being
+  the Attested Verdict or its re-typing under {{verdict-retyping}}
+- Re-Typing Ground, drawn from the registry of {{iana}}, present exactly where
+  the Attested and Effective Verdicts differ
+- Policy-Version Hash as echoed by that register, present exactly where the
+  Answer State is `answered`
+- OPTIONAL Divergence-Axis Field, as attested by that register
+- OPTIONAL Source-Data Version Identifier Set, as attested by that register
+- Projection Record, comprising the Narrowed-From field of the Per-Register
+  Claim Projection where a projection was transmitted, and the Applied-Parameter
+  Set the register reported where the Answer State is `answered`; required
+  wherever a projection was transmitted and either the projection narrowed or
+  the Profile Parameter Set was non-empty
+
+Each member of the Server-Recorded Divergence-Axis Set is a pair of a Divergence
+Axis and the Register Identifier it concerns, or the Divergence Axis alone where
+it concerns the reconciliation as a whole. Of the axes recorded by the server,
+`freshness-stale` and `declared-not-determined` are per-register and MUST carry
+a Register Identifier. `source-version-skew` is a relation between two or more
+registers, and one member MUST be added for each register involved, so that the
+set is a determinate function of the inputs rather than a choice between them; `register-threshold-divergence`
+concerns the reconciliation and MUST NOT. Recording a bare axis over five
+addressed registers would state that something was stale without stating what,
+which is not reproducible.
+
+The Set is a set rather than a single value: a reconciliation may be qualified
+on more than one axis, and an encoding admitting only one would force an
+implementation to choose between them silently.
+
+The Reconciliation Hash is the SHA-256 digest over the deterministically encoded
+CBOR serialisation of a Reconciliation Output excluding its Sealing Signature
+and its Sealing-Key Identifier, using the deterministic encoding requirements of
+{{RFC9052}}. It is the value recorded in the Settlement-Layer Ledger and the
+value a Post-Seal Evaluation Record references.
+
+CBOR rather than {{RFC8785}}: the mandatory-to-implement encoding for a
+Reconciliation Output is CBOR, and several of its fields are byte strings, for
+which JSON has no type. Digesting a JSON rendering of it would require a
+CBOR-to-JSON mapping this document does not define, and two implementations
+would produce different ledger indices. The Canonical Claim is JSON and is
+digested under {{RFC8785}}; the Reconciliation Output is CBOR and is digested
+under deterministic CBOR. These are two constructions over two encodings and
+{{construction-distinctness}} applies to both.
+
+A Reconciliation Output is immutable once sealed. Conditions arising after
+sealing are recorded under {{post-seal}} and MUST NOT be represented as fields
+of the Reconciliation Output.
+
+## Policy-Version-Hash Sealing {#sealing}
 
 The Policy-Version Hash MUST commit to:
 
@@ -778,14 +1178,81 @@ The Policy-Version Hash MUST commit to:
 6. Agent-IFF policy identifier and the Requester-Binding
 7. Bilateral-Register-Agreement Hashes of the addressed registers
 
-The Policy-Version Hash MUST be reconstructible under audit from a
-canonical policy state persisted in a policy-epoch store.
+The Policy-Version Hash MUST be reconstructible under audit from a canonical
+policy state persisted in a policy-epoch store.
 
-## Settlement-Layer Ledger
+The Claim Hash and the Policy-Version Hash MUST each be computed over a preimage
+that includes a Blinding Value of at least 128 bits drawn from a
+cryptographically secure random source, retained in the policy-epoch store
+alongside the canonical state and disclosed only under the audit path.
+
+Both digests are otherwise taken over low-entropy preimages: a subject
+identifier is typically a company number of ten or so digits, a predicate is
+drawn from a published taxonomy, and the accountable principal, agent-IFF policy
+identifier and verdict arithmetic are each drawn from small enumerable sets
+within one deployment. Both digests then appear where adversaries can reach
+them -- the Policy-Version Hash in the protected header of every notarised
+Signed Statement and in every Ledger entry, the Claim Hash in the Output and the
+Ledger. Without blinding, anyone holding either can recover by exhaustive search
+the subject that was investigated and the principal that commissioned the
+reconciliation, which is the disclosure this protocol exists to prevent.
+Blinding does not weaken reconstructibility under audit, since the Blinding
+Value is persisted with the state it blinds.
+
+A register receives the same Policy-Version Hash as every other addressed
+register, by {{projection}}. The Blinding Value prevents two colluding registers
+from recovering the Addressed-Registers Identifier Set from it by search; that
+they can observe they were addressed together is inherent and is discussed in
+{{side-channel}}.
+
+## Post-Seal Evaluation Records {#post-seal}
+
+Two conditions arise after a Reconciliation Output has been sealed and therefore
+cannot be fields of it, and are not Divergence Axes: a Divergence Axis qualifies
+a verdict, and these qualify an operation performed on an Output that is already
+immutable.
+
+- `notarisation-incomplete`, where notarisation under {{scrapi-binding}} neither
+  completed nor was refused within the polling bound.
+- `attribution-indeterminate`, where a Retroactive Evaluation could not
+  determine whether a material change arose from a change in policy state or
+  from a change in Source-Data Version.
+
+Each is recorded in a Post-Seal Evaluation Record comprising:
+
+- the Reconciliation Hash of the Output it concerns
+- the Post-Seal Evaluation Qualifier, drawn from the registry of {{iana}}
+- the Policy-Version Hash and Pattern-Library Version Identifier in force at
+  the time of the evaluation, which may differ from those the Output was sealed
+  under
+- a signature by the reconciliation-server sealing key
+
+A Post-Seal Evaluation Record MUST be retained by the reconciliation server for
+as long as the Reconciliation Output it references may be relied upon, and its
+hash MUST be appended to the Post-Seal Evaluation Record Hash Set of that
+reconciliation's Settlement-Layer Ledger entry. A relying party discovers a
+record through that Ledger entry and retrieves it under the media type
+registered in {{iana}}. A record emitted but not linked from the Ledger would be
+undiscoverable, which would make the attribution safety valve of
+{{source-versioning}} unreachable in exactly the case it exists for.
+
+A Post-Seal Evaluation Record MUST NOT alter the Reconciliation Output it
+references, and a relying party MUST NOT treat the existence of one as
+invalidating that Output. A Reconciliation Output whose notarisation is
+incomplete remains valid under its Sealing Signature.
+
+Where a Sovereign Re-Notification is emitted under {{retroactive}} for a
+material change, the notification MUST state whether the change arose from
+policy state or from Source-Data Version, and where it cannot, a Post-Seal
+Evaluation Record carrying `attribution-indeterminate` MUST be emitted and
+referenced by the notification.
+
+## Settlement-Layer Ledger {#settlement-ledger}
 
 Each Settlement-Layer Ledger entry comprises only:
 
 - Entry Sequence Number (monotonically increasing)
+- Claim Hash, the index of {{architecture}}
 - Reconciliation Hash
 - Policy-Version Hash
 - Addressed-Registers Identifier Set (sorted in canonical lexicographic order)
@@ -797,13 +1264,53 @@ Each Settlement-Layer Ledger entry comprises only:
 - Self-Entry Hash
 - OPTIONAL Source-Reconciliation-Output Identifier, present where the entry
   supersedes an earlier Reconciliation Output
+- Entry Signature by the reconciliation-server sealing key, covering every
+  preceding field including the Self-Entry Hash, and carrying the Sealing-Key
+  Identifier that resolves it
+
+Prior-Entry and Self-Entry Hashes establish that no entry has been removed from
+a chain; they do not establish that only one chain exists. Signing each entry
+makes a second chain attributable rather than merely possible.
+
+Facts that arise after an entry is written -- the outcome of notarisation, and
+any Post-Seal Evaluation Record -- are recorded as SUBSEQUENT entries of
+Continuation type, each carrying the Claim Hash and Reconciliation Hash of the
+reconciliation it concerns and one of:
+
+- a Notarisation Record, comprising the Transparency Service identifier and the
+  EntryID it returned, or the terminal failure reported by that service
+- a Post-Seal Evaluation Record Hash and a retrieval URI for that record
+
+A Reconciliation Output is sealed before it is notarised and so cannot itself
+carry the EntryID, and the Ledger exposes no UPDATE, so the join cannot be made
+by amending the original entry. It is made by appending. Without it a successful
+notarisation would be unlinkable to the reconciliation from every side, since
+retrieval is by EntryID and {{I-D.ietf-scitt-scrapi}} offers no query surface.
 
 The Ledger MUST NOT store Canonical-Claim content, register records,
 Partial-Attestation payloads, or any principal identifier in the clear; the
 requester's accountable principal is committed only through the Policy-Version
-Hash. The append-only constraint MUST be enforced at the storage interface
-layer; the Ledger interface MUST expose only an APPEND operation, with no
-UPDATE or DELETE operation exposed or implemented.
+Hash. The append-only constraint MUST be enforced at the storage interface layer. The
+Ledger interface MUST expose APPEND and READ operations only, with no UPDATE and
+no DELETE operation exposed or implemented. READ is required by the Regulator
+Portal, by Retroactive Evaluation and by the derivation-chain invariant check,
+and is constrained by the scope rules of {{regulator-portal}}.
+
+Where the Ledger is replicated per {{ledger-replication}}, each secondary store
+MUST be able to demonstrate that its chain and every other secondary store's
+chain share a common prefix.
+
+A common-prefix demonstration between stores under one operator is that operator
+attesting to itself. The reconciliation server MUST therefore publish the
+Self-Entry Hash of its current head, signed, at
+`/.well-known/arp-ledger-head` on its authority origin, and MUST notarise that
+head into a SCITT Transparency Service under {{scrapi-binding}} at an interval
+declared in the Bilateral Register Agreements. A fork is then detectable by any
+party that has seen two heads, rather than only by a party holding two
+jurisdictions' views -- which the scope rules of {{regulator-portal}} correctly
+prevent any single regulator from holding.
+
+### Replication {#ledger-replication}
 
 The Ledger MAY be distributed across a plurality of per-jurisdiction
 secondary stores under synchronous replication, each operated under the
@@ -812,33 +1319,47 @@ derivation-chain invariant -- that every entry's Prior-Entry Hash equals the
 Self-Entry Hash of the immediately preceding entry -- MUST be preserved
 across all secondary stores.
 
-## Regulator Portal
+## Regulator Portal {#regulator-portal}
 
 The Regulator Portal Subsystem authenticates a sovereign regulator's
 jurisdictional credentials against a regulator-identity-provider trust
-anchor declared in at least one Bilateral Register Agreement. It restricts
-returned fields to those within the regulator's statutory scope as declared
-in the statutory-regulator-access scope of the Bilateral Register
-Agreements of the addressed registers. The scope restriction is computed
-as the union of per-agreement permitted-read-predicates entries scoped to
-the regulator's jurisdiction, intersected with the regulator's requested
-field set. Each access MUST be recorded in an append-only subpoena-grade
-audit trail.
+anchor that MUST be declared in every Bilateral Register Agreement addressed by
+the reconciliation being read. It restricts returned fields to those within the
+regulator's statutory scope as declared in the statutory-regulator-access scope
+of those agreements. The scope restriction is computed as the INTERSECTION of
+the per-agreement permitted-read-predicates entries scoped to the regulator's
+jurisdiction, further intersected with the regulator's requested field set. Each
+access MUST be recorded in an append-only subpoena-grade audit trail.
 
-## Retroactive Evaluation
+Both intersections are load-bearing. Taking the union across agreements would
+let one register operator's permissive agreement widen what a regulator may read
+about a reconciliation that also addressed a restrictive register, inverting the
+data-residency property this protocol exists to preserve; and requiring the
+trust anchor in only one agreement would let a single register operator
+unilaterally introduce a regulator identity that authenticates against
+multi-register events. Intersecting with the requester's own requested set is
+not itself a restriction, since the requester chooses it.
 
-Upon publication of an updated Pattern Library or an updated Policy
-Version, the Retroactive Evaluation Subsystem MUST execute a deterministic
-re-application of the updated policy state to retained reconciliation
+## Retroactive Evaluation {#retroactive}
+
+Upon publication of an updated Pattern Library, an updated Policy Version, or a
+new Source-Data Version for any list a register consulted under
+{{source-versioning}}, the Retroactive Evaluation Subsystem MUST execute a
+deterministic re-application of the updated policy state to retained reconciliation
 metadata of historical Reconciliation Outputs sealed against a superseded
 Policy-Version Hash. Where permissible under the applicable Bilateral
 Register Agreements, partial attestations MAY be re-invoked.
 
 The retroactive evaluation MUST be executable without re-negotiation of any
-Bilateral Register Agreement. A material change in a historical Combined
-Verdict -- defined as any transition into or out of a decisive verdict
-value (the decisive values being `match` and `no-match`) -- MUST trigger a
-Sovereign Re-Notification through the Regulator Portal. Revocation of a
+Bilateral Register Agreement. A material change in a historical Combined Verdict -- defined as any change of
+verdict value into, out of, or between the decisive values, the decisive values
+being `match` and `no-match` -- MUST trigger a Sovereign Re-Notification through the Regulator Portal, and MUST
+additionally be published as a Continuation entry on the Settlement-Layer Ledger
+so that a relying party which acted on the superseded Output can discover that
+it was superseded. Notifying only the regulator would leave the party that acted
+on a verdict the last to learn it had changed. A transition from `no-match` to `match` is material: it is
+the case the protocol's motivating domain cares most about, and a definition
+that excluded transitions within the decisive class would omit it. Revocation of a
 Verified Principal Credential relied upon in a historical reconciliation is
 itself a material change: the Retroactive Evaluation Subsystem MUST re-derive
 the affected Requester-Binding class and, where a decisive reconciliation was
@@ -897,15 +1418,18 @@ the reconciliation layer. The result is a Reconciliation Output like any other:
 sealed against a Policy-Version Hash, written to the Settlement-Layer Ledger as
 hashes only, and re-evaluable if the underlying credential is later revoked.
 
-# Encoding
+# Encoding {#encoding}
 
 ## CBOR-COSE Encoding
 
 The mandatory-to-implement encoding for ARP messages on the wire is CBOR with
 COSE {{RFC9052}} {{RFC9053}} envelopes. COSE_Sign1 is used for both Partial
-Attestations and the Sealing Signature. The protected header MUST include the
-Bilateral-Register-Agreement Hash and Policy-Version Hash as COSE header
-parameters registered per {{iana}}. Pending registration,
+Attestations and the Sealing Signature. The protected header MUST include the Bilateral-Register-Agreement Hash and
+Policy-Version Hash as COSE header parameters registered per {{iana}}.
+`arp-bilateral-agreement-hash` always carries an array, sorted in lexicographic
+byte order: a Partial Attestation's array has exactly one member, and a Sealing
+Signature's has one per addressed register. A single encoding for both avoids a
+decoder having to infer the type from context. Pending registration,
 implementations MAY use labels from the private-use range of the COSE Header
 Parameters registry; such use is not interoperable.
 
@@ -937,30 +1461,61 @@ interchangeable results.
 The Reconciliation Output MUST be registered as a Signed Statement by
 `POST /entries` as defined in {{I-D.ietf-scitt-scrapi}}.
 
-The Signed Statement is a COSE_Sign1 whose payload is the CBOR-encoded
-Reconciliation Output. Its protected header MUST carry:
+The payload of the Signed Statement MUST be the sealed COSE_Sign1 -- the
+Reconciliation Output under its Sealing Signature, as produced by
+{{sealing}} -- and MUST NOT be the bare Reconciliation Output. Nesting is what
+makes the requirements below checkable: a relying party holding only the bare
+Output has neither the sealing key identity nor the Policy-Version Hash the seal
+committed to, and could not verify either.
 
-- the content type `application/arp-reconciliation-output+cbor`, registered
-  per {{iana}};
+The Signed Statement is therefore a COSE_Sign1 whose payload is itself a
+COSE_Sign1. Its protected header MUST carry:
+
+- the content type `application/arp-sealed-reconciliation-output+cose`,
+  registered per {{iana}}. The outer payload is a COSE_Sign1 wrapping a
+  Reconciliation Output, not a Reconciliation Output, and labelling it with the
+  latter's media type would have a conforming decoder parse a signature envelope
+  as an Output;
 - `arp-policy-version-hash`;
-- `arp-bilateral-agreement-hash`, carrying an array of the
-  Bilateral-Register-Agreement Hashes of the addressed registers sorted in
-  lexicographic byte order. A Reconciliation Output aggregates registers under
-  more than one agreement, and an unordered or singular encoding would make two
-  conforming implementations produce non-interchangeable Signed Statements.
+- `arp-bilateral-agreement-hash`, carrying the array of the
+  Bilateral-Register-Agreement Hashes of the addressed registers, sorted in
+  lexicographic byte order as required by {{encoding}}. A Reconciliation Output
+  aggregates registers under more than one agreement, and an unordered encoding
+  would make two conforming implementations produce non-interchangeable Signed
+  Statements.
 
-The Signed Statement MUST be signed by the entity that applied the Sealing
-Signature to the Reconciliation Output it carries, and the
-`arp-policy-version-hash` in its protected header MUST equal the Policy-Version
-Hash committed to by that Sealing Signature. A relying party MUST verify both
-and MUST reject the Signed Statement where either fails.
+The outer COSE_Sign1 MUST carry a `kid` in its protected header, MUST be signed
+under a key resolvable through {{sealing-key-discovery}}, and that key's
+Sealing-Key Identifier MUST equal the Sealing-Key Identifier of the nested
+Output in both components. A relying party MUST verify the outer signature and
+that equality. "Signed by the server that sealed it" is otherwise not a
+predicate a relying party can evaluate: any operator of a conforming server
+could wrap another server's sealed Output, sign it under its own resolvable key,
+and every other check here would pass. Without this any party holding a sealed Output could wrap
+it in an envelope of their own and register it: every other check here would
+pass, and the Receipt would attribute the statement to the Transparency Service
+and to nobody else. Fixing the nested payload closes a false-policy-version
+attack; fixing the outer signer closes a wrong-registrant one.
 
-Without these requirements the Signed Statement is a second and independent
-envelope: any party holding a valid Reconciliation Output could register it
-under a protected header asserting a policy version it was not sealed under, and
-a relying party following {{policy-version-determination}} would believe that
-assertion. A protected header cannot be altered after signing, but it can be
-false when signed, and integrity is not correctness.
+The `arp-bilateral-agreement-hash` in the outer protected header MUST equal the
+value carried in the nested sealed COSE_Sign1, and the
+`arp-policy-version-hash` in the outer protected header MUST equal the
+Policy-Version Hash carried in the nested sealed COSE_Sign1. A relying party
+MUST verify the Sealing Signature over the nested payload, MUST verify that
+equality, and MUST reject the Signed Statement where either fails.
+
+The verification key for the Sealing Signature is identified by the Sealing-Key
+Identifier of {{reconciliation-output}}, whose `kid` component MUST equal the
+`kid` in the protected header of the nested COSE_Sign1, and is resolved through
+{{sealing-key-discovery}}. A relying party that cannot resolve the Sealing-Key
+Identifier MUST NOT rely on the notarised statement.
+
+Without nesting and this equality the Signed Statement would be a second and
+independent envelope: any party holding a valid Reconciliation Output could
+register it under a protected header asserting a policy version it was not
+sealed under, and a relying party following {{policy-version-determination}}
+would believe that assertion. A protected header cannot be altered after
+signing, but it can be false when signed, and integrity is not correctness.
 
 The payload MUST NOT be the Verifiable Credentials serialisation of
 {{vc-interop}}. That form is an interop convenience for relying parties and is
@@ -990,11 +1545,63 @@ having polled a URL the Transparency Service did not issue.
 An implementation MUST honour a `Retry-After` header where one is present, MUST
 NOT poll more frequently than once per second in its absence, and MUST bound
 total polling; a bound of 300 seconds is RECOMMENDED where the Bilateral
-Register Agreement declares none. Exhaustion of the bound MUST be recorded as
-`notarisation-incomplete` rather than as either success or refusal. A
+Register Agreement declares none. Exhaustion of the bound MUST be recorded in a Post-Seal Evaluation Record
+carrying `notarisation-incomplete` per {{post-seal}}, rather than as either
+success or refusal. A
 Reconciliation Output whose notarisation is incomplete remains valid under its
 Sealing Signature; notarisation is an additional property, not a precondition of
 validity.
+
+### Sealing-key discovery {#sealing-key-discovery}
+
+A relying party is not a party to any Bilateral Register Agreement and holds
+only the hashes of those agreements. It therefore cannot resolve the sealing key
+from them, and a binding that assumed otherwise would oblige every conforming
+relying party to refuse every Reconciliation Output.
+
+A reconciliation server MUST publish its sealing keys as a COSE Key Set at
+`/.well-known/arp-sealing-keys` on the service-operator's authority origin, and
+a single key by identifier at `/.well-known/arp-sealing-keys/{kid_value}`. The
+Sealing-Key Identifier is the pair of that origin and the `kid`; where this
+document requires a `kid` to equal the Sealing-Key Identifier, it is the `kid`
+component that is compared.
+
+Resolving a key is not sufficient. Web PKI establishes that an origin is the
+origin it claims to be; it does not establish that the origin is entitled to
+seal Reconciliation Outputs naming a given register set. A relying party that
+accepted any well-formed key set would accept an Output minted by any party able
+to stand up a host, since the Bilateral-Register-Agreement Hashes can be copied
+from a genuine Output and are one-way.
+
+Each Bilateral Register Agreement MUST therefore declare the authority origin of
+the reconciliation server it authorises, and each register operator MUST publish
+the set of origins it has so authorised as a COSE Key Set at
+`/.well-known/arp-authorised-origins` on its own register origin, which is a
+member of the Addressed-Registers Identifier Set and so is known to the relying
+party from the Output. A relying party MUST verify that the origin component of
+the Sealing-Key Identifier appears in the authorised-origin set published by
+every register in that Set, and MUST reject the Output where it does not. The
+chain is then: register origins from the Output, authorised origins from each
+register, sealing key from the authorised origin.
+
+A key entry MUST carry a validity interval and a status of `active`, `retired`
+or `revoked`. A relying party MUST reject a Sealing Signature made under a
+`revoked` key irrespective of when the Output claims to have been sealed, MUST
+accept one made under a `retired` key only where the Reconciliation Timestamp
+falls within that key's validity interval, and MUST reject one whose
+Reconciliation Timestamp falls outside the interval of the key it resolves to. A
+key MUST NOT be removed from the set while any Reconciliation Output it sealed
+may still be relied upon: retirement is by status, not by deletion, so that a
+historical Output remains verifiable while a compromised key can still be
+refused.
+
+The key set MUST itself be signed by a key whose identifier is declared in the
+Bilateral Register Agreements, and a relying party MUST verify that signature. A
+key set fetched over TLS alone can be varied per audience, which would let a
+server present one key to one relying party and another to a second and seal two
+contradictory Outputs for the same reconciliation, each verifiable only by its
+intended audience -- reopening at the origin the equivocation that
+{{policy-version-determination}} closes at the Transparency Service.
 
 ### Receipt validation
 
@@ -1011,15 +1618,16 @@ header of the Signed Statement, and MUST NOT determine it from any retrieval
 path, query parameter or Transparency Service index entry.
 
 Because the parameter is in the protected header, it is covered by the Receipt;
-and because {{registration}} requires the Signed Statement to be signed by the
-sealing entity and its parameter to equal the sealed Policy-Version Hash, what
-the header asserts is what the seal committed to. The policy version is
+and because {{registration}} requires the sealed COSE_Sign1 to be the nested
+payload and the outer parameter to equal the Policy-Version Hash it carries,
+what the header asserts is verifiably what the seal committed to. The policy version is
 therefore established by verification rather than by lookup, and a Transparency
 Service that indexed an entry incorrectly, or presented different index results
 to different relying parties, cannot cause a relying party to attribute a
 Reconciliation Output to a policy version it was not sealed under.
 
-This holds only because of the binding in {{registration}}. A protected header
+This holds only because of the nesting and equality requirements in
+{{registration}}, both of which the relying party checks. A protected header
 alone establishes that a value was not altered after signing, not that it was
 true when signed.
 
@@ -1042,7 +1650,7 @@ parties operating in W3C VC ecosystems.
 
 # Security Considerations
 
-## Service-Operator Containment
+## Service-Operator Containment {#containment}
 
 The reconciliation server operates under a service-operator entity
 standing in bilateral contractual relationship with each Register
@@ -1051,6 +1659,27 @@ from observing any register record or any Partial-Attestation payload
 beyond the verdict and divergence-axis fields. The service-operator entity
 MUST be structurally incapable of disclosing any register record
 irrespective of internal operator action.
+
+That property is per-event and MUST NOT be read as a property of the system
+under repeated querying. A verdict is a function of an attested value the
+requester chooses, so a sequence of reconciliations varying that value recovers
+the underlying record field by search, and several Divergence Axis values --
+`ownership-threshold-mismatch`, `register-record-absent`, `temporal-mismatch` --
+disclose record content on their own. Each event conforms while the sequence
+does not.
+
+A deployment MUST therefore declare in each Bilateral Register Agreement a
+per-subject query budget and the interval over which it is measured, and the
+reconciliation server MUST refuse a reconciliation that would exceed it,
+recording `query-budget-exhausted` as the Non-Answer Reason for the affected
+register. The Pattern Library MUST include a repeated-narrowing pattern so that
+the Adversarial Pre-Transmission Test detects the sequence rather than only the
+event.
+
+A register cannot apply its own statutory access regime to a requester it cannot
+see. Where a Bilateral Register Agreement requires it, the Per-Register Claim
+Projection MUST carry the Requester-Binding Class, which discloses the class and
+not the principal.
 
 ## Pattern-Library Integrity
 
@@ -1088,9 +1717,10 @@ hash committed at the start of a reconciliation event.
 
 Each Partial Attestation MUST carry a Freshness Timestamp. The
 reconciliation server MUST verify the Freshness Timestamp against a
-freshness window declared in the Bilateral Register Agreement. Stale
-Partial Attestations MUST be rejected, and the rejection MUST be recorded in
-the Reconciliation Output with the `freshness-stale` divergence axis. A signed agent request under {{RFC9421}} MUST additionally carry a
+freshness window declared in the Bilateral Register Agreement. Stale Partial Attestations MUST be rejected, and the rejection MUST be recorded
+in the Reconciliation Output under {{no-answer}} with the Non-Answer Reason
+`attestation-stale` and a `freshness-stale` divergence axis attributed to that
+register. A signed agent request under {{RFC9421}} MUST additionally carry a
 nonce or created/expires parameter set so that a captured signed request
 cannot be replayed to initiate a fresh reconciliation.
 
@@ -1115,18 +1745,53 @@ narrowing observation does not materially weaken subject privacy.
 
 This document requests IANA to register the following:
 
-- Six COSE header parameters in the COSE Header Parameters registry, values
+- Three COSE header parameters in the COSE Header Parameters registry, values
   to be assigned by IANA:
   - `arp-bilateral-agreement-hash` (value TBD)
   - `arp-policy-version-hash` (value TBD)
-  - `arp-pattern-library-hash` (value TBD)
-  - `arp-divergence-axis` (value TBD)
-  - `arp-requester-binding-class` (value TBD)
   - `arp-source-data-version` (value TBD)
 
+  Each registration MUST state the parameter's value type and whether it may
+  appear in an unprotected header. A parameter that no encoding in
+  {{encoding}} uses MUST NOT be registered.
+
 - A registry of ARP Divergence-Axis values, registration policy Specification
-  Required, initially containing the descriptors enumerated in
-  {{terminology}}.
+  Required, initially containing the descriptors enumerated in the Divergence
+  Axis definition of {{terminology}}. Each entry MUST record whether the axis is
+  register-attestable or server-recorded, a distinction three normative sections
+  depend on and which is otherwise carried only in prose. The designated expert
+  MUST refuse a registration that does not state it. A reconciliation server
+  MUST reject a Partial Attestation that attests a server-recorded axis, under
+  {{no-answer}} with the reason `attestation-unverifiable`.
+
+- Three entries in the Well-Known URIs registry of {{RFC8615}}:
+  `arp-sealing-keys` ({{sealing-key-discovery}}), `arp-authorised-origins`
+  ({{sealing-key-discovery}}) and `arp-ledger-head` ({{settlement-ledger}}).
+
+- A registry of ARP Non-Answer Reasons, registration policy Specification
+  Required, initially containing the values enumerated in {{no-answer}}. A
+  Non-Answer Reason is not a verdict; the designated expert MUST refuse a
+  registration that could be combined by the Verdict Arithmetic.
+
+- A registry of ARP Re-Typing Grounds, registration policy Specification
+  Required, initially containing `bounded-depth-not-closure`,
+  `declared-not-determined` and `threshold-divergence`, corresponding to the
+  three grounds of {{verdict-retyping}}.
+
+- A registry of ARP Verdict-Arithmetic operators, registration policy
+  Specification Required, initially containing conjunction, disjunction,
+  threshold-count and source-class-quorum, defined in {{verdict-arithmetic}}. A
+  registration MUST state the operator's result as a total function of the
+  multiset of contribution values and the operator's declared parameters, and
+  MUST state whether it admits partial-match, on which {{verdict-retyping}}
+  turns.
+
+- A registry of ARP Post-Seal Evaluation Qualifiers, registration policy
+  Specification Required, initially containing `notarisation-incomplete` and
+  `attribution-indeterminate`, defined in {{post-seal}}. A registration MUST
+  identify a condition arising after a Reconciliation Output is sealed; the
+  designated expert MUST refuse a registration that qualifies a verdict, which
+  belongs in the Divergence-Axis registry.
 
 - A registry of ARP Register Data-Format Profile identifiers, registration
   policy Specification Required, initially containing `arp-profile-bods`,
@@ -1134,17 +1799,27 @@ This document requests IANA to register the following:
   `arp-profile-sanctions-consolidated`, defined in {{format-profiles}}.
   Identifiers beginning `x-` are reserved for bilateral use and are not
   registered. A registration MUST state the dated vocabulary in which permitted
-  predicates are expressed and the relation corresponding to taxonomic narrowing
-  for each branch of its predicate space. The designated expert MUST refuse a
-  registration that defines any means of transporting register records, that
-  declares more than one parent relation applicable to a single predicate, or
-  that names a vocabulary without pinning its version.
+  predicates are expressed, the relation corresponding to taxonomic narrowing
+  for each branch of its predicate space, and the parameters a Bilateral
+  Register Agreement declaring it must supply. The designated expert MUST refuse
+  a registration that defines any means of transporting register records, that
+  declares more than one parent relation applicable to a single predicate, that
+  names a vocabulary without pinning its version, or that fixes in the profile a
+  parameter that varies between registers using the same format.
 
 - A media type `application/arp-reconciliation-output+cbor` for the
   CBOR-encoded Reconciliation Output.
 
-- A media type `application/arp-reconciliation-output+json` for the
-  Verifiable Credentials JSON-LD form.
+- A media type `application/arp-sealed-reconciliation-output+cose` for the
+  sealed COSE_Sign1 registered as a SCITT Signed Statement per
+  {{scrapi-binding}}.
+
+- A media type `application/arp-post-seal-evaluation-record+cbor` for the record
+  of {{post-seal}}.
+
+- A media type `application/arp-reconciliation-output+ld+json` for the
+  Verifiable Credentials JSON-LD form. The `+ld+json` structured suffix is the
+  registered form for JSON-LD.
 
 # Acknowledgments
 
@@ -1539,14 +2214,109 @@ than attribute the change to policy. A list-state identifier is a property of a
 published corpus and not a register record, so this does not weaken minimum
 disclosure.
 
+Three structural gaps predating this revision are closed, because the new
+material could not be made testable without them. {{reconciliation-output}}
+enumerates the Reconciliation Output, which no earlier revision did although
+both the Partial Attestation and the Ledger entry were enumerated; Reconciliation
+Hash and Combined Verdict are now defined in {{terminology}}, the former having
+been used inside the bit-for-bit determinism requirement while undefined; and
+the Server-Recorded Divergence-Axis Set is a set, since a reconciliation may be
+qualified on more than one axis and a single-valued encoding would force a
+silent choice.
+
+{{verdict-retyping}} is new. Where a narrowing means a register's answer does
+not bear on the claim as asked, that register's contribution is re-typed before
+aggregation rather than the Combined Verdict being overridden after it, so the
+Verdict Arithmetic declared in the Applicable-Regimes Set is never displaced. A
+match found at any depth still establishes an existential closure predicate and
+is not re-typed.
+
+{{post-seal}} is new. Notarisation outcomes and retroactive attribution failures
+arise after a Reconciliation Output is sealed and so can be carried neither in a
+Partial Attestation nor in the Output; they are Post-Seal Evaluation Qualifiers
+recorded in a separate signed record referencing the Reconciliation Hash, and
+are expressly not Divergence Axes.
+
 New Divergence Axis values: register-threshold-divergence,
-declared-not-determined, attribution-indeterminate, source-version-skew and
-notarisation-incomplete. New COSE header parameter arp-source-data-version, and
-arp-bilateral-agreement-hash is now specified as a sorted array rather than a
-single value, which it should always have been on an object aggregating several
-agreements. New IANA registry for Register Data-Format Profile identifiers.
+declared-not-determined and source-version-skew. New COSE header parameter
+arp-source-data-version, carrying a set so that a register consulting several
+lists can denote the state of each. arp-bilateral-agreement-hash now always
+carries a sorted array, of one member on a Partial Attestation and one per
+addressed register on a Sealing Signature, so that a decoder never has to infer
+the type from context. New IANA registries for Register Data-Format Profile
+identifiers and for Post-Seal Evaluation Qualifiers.
 {{I-D.ietf-scitt-scrapi}} moves from informative to normative, because
 {{scrapi-binding}} imposes requirements that cannot be met without it.
+
+A role-by-role walkthrough of the whole pipeline -- requester, agent,
+reconciliation server, register operator, relying party, Transparency Service,
+regulator, retroactive subsystem and IANA expert -- was run against this
+revision and found a further class of defect that no earlier review had reached:
+requirements addressed to an actor that does not hold the inputs they name.
+Those are closed here, and most of them predate -02.
+
+{{projection}} now enumerates the Per-Register Claim Projection. It is the only
+structure a sovereign register receives and it was the sole major structure in
+the protocol without a field list, which made the register role unimplementable.
+The register echoes the Policy-Version Hash rather than computing it, and the
+server MUST now send one Policy-Version Hash to every addressed register and
+verify each echo -- without which the per-register signatures over it, the only
+independent corroboration the protocol has, were discarded at aggregation.
+
+{{sealing-key-discovery}} is new. -02 and the earlier -03 text told a relying
+party to verify a Sealing Signature whose key it had no way to obtain: it holds
+hashes of bilateral agreements it is not party to. Sealing keys are now
+published at a well-known location on a declared authority origin, mirroring how
+{{I-D.ietf-scitt-scrapi}} treats Transparency Service keys.
+
+{{verdict-arithmetic}} is new. Every operator is now given its result for every
+combination of contribution values, and whether it admits partial-match, on
+which {{verdict-retyping}} turns. -02 delegated combination to an operator it
+named but never defined, so two conforming implementations could produce
+different Combined Verdicts from identical inputs while the determinism
+requirement demanded they not.
+
+{{no-answer}} is new. A register may fail to answer in five distinct ways and no
+earlier revision defined an outcome for any of them; dropping the register
+silently produces exactly the addressed-register-cherry-picking the adversarial
+test exists to detect. A reconciliation with any non-answering register can no
+longer reach a decisive Combined Verdict.
+
+The Reconciliation Output gains the Claim Hash, a timestamp, the Verdict
+Arithmetic, the Sealing-Key Identifier, per-register attested and effective
+verdicts with the re-typing ground, per-register echoed Policy-Version Hashes,
+and register attribution on the server-recorded divergence axes. Without the
+Claim Hash a relying party received a verdict with nothing to attribute it to,
+and the retroactive subsystem had no key to select on although the Claim Hash
+was already declared its key. The Settlement-Layer Ledger gains the Claim Hash,
+a Notarisation Record and a link to Post-Seal Evaluation Records, and now
+exposes READ as well as APPEND -- the Regulator Portal, retroactive evaluation
+and the chain-invariant check all require reads that "only APPEND" forbade.
+Ledger entries are now signed, because prior-entry hashes prove that nothing was
+removed from a chain and not that only one chain exists.
+
+Retroactive Evaluation now triggers on a new Source-Data Version. It previously
+triggered only on a Pattern Library or Policy Version change, so a sanctions
+list republication -- the case {{source-versioning}} was written for -- fired
+nothing. A material change now includes a transition between decisive values: a
+no-match becoming a match is the case the motivating domain cares most about,
+and the earlier definition omitted it.
+
+Homomorphic Aggregation Mode is now available only where no contribution
+requires re-typing, since re-typing reads per-register verdicts in the clear.
+The Pattern-Library Version Identifier is no longer bound as authenticated
+additional data: registers are never told the pattern-library version, so
+binding it either failed universally or was supplied by the party that chose it.
+The Reconciliation Hash is taken over deterministic CBOR rather than
+{{RFC8785}}, because the Output is CBOR and several fields are byte strings for
+which JSON has no type. Regulator Portal scope is the intersection across
+agreements rather than the union, which had let one permissive agreement widen
+access to a stricter register's reconciliations.
+
+The Freshness Timestamp is now enumerated before the signature line in
+{{partial-attestation}} and is therefore covered by it. It was listed after the
+signature in earlier revisions, and both replay defence and the new
+freshness-versus-skew distinction depend on it being signed.
 
 Not adopted: a statement that a reference implementation is forthcoming. It does
 not exist yet, and a draft should not carry a claim about an artefact a reader

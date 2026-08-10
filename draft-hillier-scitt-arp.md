@@ -1267,6 +1267,19 @@ count, and the array of sibling hashes from the leaf's level upward. Domain
 separation between leaf and internal nodes is what stops a proof of an internal
 node being presented as a proof of a leaf.
 
+Three properties of that array are stated here because each is a place two
+implementations otherwise diverge while both believing they conform. The array
+carries one entry for each level at which the node being proved has a sibling,
+and no entry for a level at which it was carried up unchanged, so its length is
+not in general the base-two logarithm of the leaf count and a verifier MUST NOT
+derive the expected length that way. No direction bit is carried: at each level
+the verifier derives whether the sibling is the left or the right operand from
+the index and the leaf count, halving the index and the level width as it
+ascends, which is well defined because the shape of the tree is fixed by the
+leaf count alone. And the empty tree's root of thirty-two zero octets admits no
+inclusion proof; a verifier MUST reject any proof presented against it rather
+than treat a root it can reproduce as a root that commits to something.
+
 ## Aggregation {#aggregation}
 
 The aggregation subsystem operates in Hash-Linkage Aggregation. Each
@@ -2940,15 +2953,33 @@ server serving one party's response to another or replaying a year-old empty
 result; without those the same bytes verify forever and against everybody.
 
 A reader MUST check that the `request-binding` matches the request it sent, that
-the `response-time` is within its own freshness tolerance, and that the
+the `response-time` is within a declared freshness tolerance, and that the
 `as-of-sequence-number` is at least that of the most recent Ledger Head Statement
-it has seen. Without those checks a server may serve a cached response for a
+it has seen. A deployment MUST declare that tolerance in its Bilateral Register
+Agreements and it MUST NOT exceed the ledger-head notarisation interval of
+{{settlement-ledger}}: a tolerance left to each reader is not a property two
+implementations can be tested against, and one longer than the notarisation
+interval would admit a response naming a head the reader could already know to
+be superseded. Without those checks a server may serve a cached response for a
 repeated request tuple indefinitely, and the properties below do not hold.
 
 An empty result is therefore an assertion and not an absence: a signed statement
 that as of a named head, at a named time, in answer to this requester's request,
 there was nothing. A `continuation-supersession` entry later found at or below
 that head contradicts it, in one operator's own signature.
+
+That contradiction is conditional on the reader and the later observer having
+been served one chain, and the condition is load-bearing. {{settlement-ledger}}
+states that detection of a fork is opportunistic: an operator publishing to two
+audiences at disjoint sequence numbers never emits a colliding pair. Under such
+a fork the superseding entry lands on a branch the holder of the empty result
+never reads, the at-or-below test never fires, and the assertion stands
+uncontradicted for as long as the branches are kept apart. An empty result is
+therefore an assertion about a named head on the chain its reader was served,
+and it is falsifiable to the extent that the reader independently holds
+head-consistency evidence for that chain. This document does not close that gap
+and does not claim to; it states the boundary so that a relying party does not
+read an absence assertion as stronger than the head evidence behind it.
 
 The contradiction is only as tight as the operator's freedom to defer. A
 `continuation-supersession` entry MUST be appended within the ledger-head
@@ -2967,13 +2998,36 @@ ever arises.
 ### Error semantics {#read-errors}
 
 A request that is well-formed and signed but that names a resource the requester
-is not entitled to, and a request naming a resource that does not exist, MUST both be refused with `404`, and the two responses MUST be indistinguishable
-in every field a requester can compare across the two cases: the same status, the
-same empty result, and a `response-time` and As-Of pair produced by the same code
-path as any other response. Only an entitled requester receives `200`. Answering `403` for
-the first and `404` for the second would turn every endpoint into an existence
-oracle: a party could sweep Reconciliation Hashes, or sequence numbers, and learn
-what a deployment had done without being entitled to any of it.
+is not entitled to, and a request naming a resource that does not exist, MUST
+both be refused with `404`. Only an entitled requester receives `200`. Answering
+`403` for the first and `404` for the second would turn every endpoint into an
+existence oracle: a party could sweep Reconciliation Hashes, or sequence numbers,
+and learn what a deployment had done without being entitled to any of it.
+
+The two cases MUST be equivalent under the normalised observation this section
+defines, rather than byte-identical, which a conforming server cannot make them:
+{{read-responses}} requires every response to bind the request and the serving
+instant, so the `request-binding`, the `response-time`, the As-Of pair and the
+resulting signature differ between any two requests whether or not the resource
+exists. A requirement of byte equality would be unsatisfiable, and a test
+written against it would fail every conforming implementation.
+
+The normalised observation of a response is that response with exactly those
+four values removed. Two responses are equivalent when their normalised
+observations are equal. Across the two cases a server MUST therefore produce the
+same status, the same media type, the same set of HTTP header field names, the
+same set of protected COSE header parameters, the same empty-result
+representation, the same cache directives and the same rate-limit effects, and
+the signed payload MUST NOT carry any error discriminator whose value depends on
+whether the resource exists. Every value removed by normalisation MUST still be
+valid for its own request: normalisation is how two responses are compared, not
+a licence to omit a required field or to carry an existence-dependent
+discriminator inside one.
+
+A response to either case MUST carry `Cache-Control: no-store`. A response bound
+to a nonce and a serving instant is not reusable by another requester, and a
+cache that retained one case and not the other would reintroduce through
+intermediaries the distinction the rest of this section removes.
 
 Two channels survive that rule and MUST be closed with it. A server MUST charge
 the rate-limit counter before evaluating entitlement, so that an unentitled
@@ -2982,6 +3036,18 @@ the same sequence of statuses. And entitlement evaluation MUST NOT be
 short-circuited: a server MUST perform the same work for a Reconciliation Hash it
 does not hold as for one whose Audience Set does not name the requester, so that
 the two do not differ in response time.
+
+Response timing is a separate claim from the requirements above and MUST be
+stated separately. Serving both cases from one processing path is evidence about
+the design and is not evidence that the two latency distributions are
+indistinguishable to an observer. An implementation that claims resistance to
+timing-based existence inference MUST publish the measurement population, the
+sample count, the network placement of the measurement, the decision rule and
+the acceptance threshold under which the two response classes were compared. An
+implementation that makes no such claim is not for that reason non-conforming:
+the requirements above are met or not met independently of it, and conflating
+the two would let a deterministic conformance failure be excused as a
+measurement artefact, or a measurement result be read as protocol conformance.
 
 A server MUST rate-limit these operations, per authenticated principal, at the
 most permissive rate any of its Bilateral Register Agreements declares, and MUST answer `429` when the limit
@@ -3689,6 +3755,35 @@ Reference APIs {{I-D.ietf-scitt-scrapi}}, COSE Receipts
 HTTP Message Signatures {{RFC9421}}, and the Web Bot Auth HTTP message
 signature protocol {{I-D.meunier-webbotauth-httpsig-protocol}}.
 
+Named findings, because a specification improved by review should say by whom.
+
+Songbo Bu established that the indistinguishability requirement of
+{{read-errors}} could not be satisfied as -02 stated it: the response profile of
+{{read-responses}} binds each response to its request and its serving instant,
+so two responses cannot be byte-equal, and a conformance rule demanding that
+they be would fail every conforming implementation. The normalised observation
+in {{read-errors}}, its enumeration of HTTP metadata and cache behaviour, and
+the separation of the deterministic requirements from any statistical timing
+claim are his design, contributed as an executable vector class.
+
+Steven Mih established that the empty-result contradiction of {{read-responses}}
+is conditional on the reader and any later observer having been served one
+chain, and that under the fork {{settlement-ledger}} admits it may be
+opportunistic to detect, an absence assertion can stand uncontradicted
+indefinitely. The boundary now stated in {{read-responses}} is his finding.
+He also confirmed, against three independent drafts, that the deterministic
+encoding requirements relied on here are those of Section 4.2.1 of {{RFC8949}}
+and not those of Section 9 of {{RFC9052}}.
+
+Iman Schrock established, with Anton Sokolov, that a content digest cannot
+serve as a correlation key across independently produced descriptions of one
+act, and that an action type's own required typed field is the sound join. The
+designation rule and the three prohibitions in {{construction-distinctness}} are
+that finding, adopted.
+
+Tom Sato's leaf-construction work on Certificate Transparency logs informed
+the inclusion-proof requirements of {{merkle-construction}}.
+
 --- back
 
 # Examples
@@ -4129,12 +4224,39 @@ Accordingly:
 * A profile that requires correlation across independently produced
   descriptions of one act MUST NOT rely on `subject_digest` alone. It MUST
   either pin the exact member set over which the digest is computed, so that
-  permitted variation cannot enter it, or correlate on a material identifier
-  the action type declares for that purpose. Where the action type declares
-  such an identifier -- for example a payment instruction identifier -- joining
-  on that field is the more robust of the two, because it does not require
-  every producer to agree on a serialisation before they can agree that they
-  are describing the same act.
+  permitted variation cannot enter it, or designate a typed field that the
+  action type itself requires, and correlate on that. The second is the more
+  robust of the two, because it does not require every producer to agree on a
+  serialisation before they can agree that they are describing the same act.
+  The designated field is a property of the action type and not a general
+  category: for the registered type `payment.release.1`, which requires
+  `payment_instruction_id`, a profile designates that field by name. A profile
+  MUST state which field it has designated for each action type it admits;
+  "a material identifier" is not a designation an implementer can act on.
+
+Three substitutions are forbidden, because each is available to an implementer
+who has read only part of the foregoing and each fails silently.
+
+* The designated join key MUST NOT be treated as the action's identity. The
+  identity of an exact action is its content commitment; the join key is stable
+  across the variation that commitment is required to detect, which is what
+  makes it usable for correlation and useless for authorisation.
+* A Claim Hash MUST NOT be treated as a cross-deployment identifier. It is a
+  digest over a canonical serialisation preceded by the Deployment Blinding
+  Value of {{sealing}}, so two deployments reconciling the same claim
+  compute different Claim Hashes by construction, and equality of Claim Hashes
+  across deployments is not a comparison that can be made at all.
+* Equal join keys MUST NOT be taken to mean equal claims. Two reports sharing a
+  designated join key have been asserted to describe one act; whether they
+  agree about it is the question reconciliation exists to answer. Where their
+  Claim Hashes differ, the difference is the finding, and a profile that
+  collapsed them on the strength of the join key would report agreement it
+  never established.
+
+Stated positively, each object has one job: the designated field joins candidate
+reports across permitted variation, the Claim Hash commits to the exact claim
+under the deployment's blinding value, and the action type's own content
+commitment remains what authorisation and execution bind to.
 
 A specification that describes a content digest as a correlation key without
 stating which of the two preceding cases it relies on invites an implementer to

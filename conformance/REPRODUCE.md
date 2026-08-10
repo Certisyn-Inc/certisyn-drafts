@@ -186,6 +186,8 @@ No other fixture is used. Everything else is read from the pinned corpora.
       sha256 37c3921fb1ff16a455bb4f2fed0b76dac17433750c18f331cea1ac27cdae4ece
     runs/eatf_run_anchor.json
       sha256 3f81214a0131c48e63d6b585952ce842ab4675aca6dff7ece918929cd83d32d7
+    runs/existence_oracle_run.json  deterministic PASS, 7 controls, 5 declared gaps
+      sha256 64b5de521607d0d8ac976e5e1178e4a16ba4aeb6ded5eeed8c68a7de261deae4
 
 `runs/arp_run_v21.json` is unchanged from the v2.1 package Songbo reproduced
 on 29 July. `runs/arp_outcome_vectors_v02_run.json` DID change, by exactly the
@@ -206,11 +208,15 @@ two rows; see CHANGES-v2.1.md.
     4170baf34c273423d14a7468750033315c840d3433a08657c12000af0454a66d  runners/run_cpb_vectors.py
     583dc806ee49b50f27ef27c5270a5330657c63155e580cfb312b1c4d455db19d  runners/run_aac_vectors.py
     cb964d52a7c30cf00d4527766916773772ac3eb0d2524ec00b3d6b44d6ec9f65  runners/aac_go_shim/main.go
-    0ddb8394c8c40d73356e0fc5b3ac09a8d1317aeb177f009f13c518e6b5d692ae  runners/verify_manifest.py
+    dbed0ea02d38336a6ed7342797b9905aca6db206f462dfa08e10908073cec7b4  runners/verify_manifest.py
     2ce3ff85fbf7c10c8905c4392e56a6b33191704996911cc88bc3dc8887e634d7  runners/build_typed_ref_vectors.py
     b1056fa365900b196ad186e4a07fac2939d4c75843d0280629f21c0828e3b621  runners/run_typed_ref_vectors.py
     8726e9f178ea94bb2b255af808bd0761e3f2f46473fcd403413fce5ab1db1b35  vectors/arp-outcome-vectors-v0.2.json
     88153dd1c4b62cfd313cd890ae84fc65de1f67bcd6db7556fce00b7893ce673d  vectors/arp-typed-ref-cpb01-v0.1.json
+    feeb632d9e95d9dc798e28a66ecd060c31da25ac151654f8e18ab3580eb4613c  reference/arp_read_ref.py
+    8ce61405fc02755c4950c44bdacada84e3379356e20cd552ffd2d43d41393a36  reference/fixture-eo-v0.1.json
+    9c66c435f812f081e9fe4df683832abbbd00ed7a23ea055a9faa19b115ac0cab  runners/run_existence_oracle_vectors.py
+    e57cc42be4d126c760ff4556c9b136016c83583784b30a2594e4233e70b2d455  vectors/arp-existence-oracle-v0.1.json
     1e5d6a6b156f956e846ef3f4a5df6fa35efbe8197b5556106d2e060c70f59f2e  vectors/arp-aeb-adapter-v0.1.json   (EMILIA's, as received)
 
 The v1 harness that produced the first posted run remains byte-identical and

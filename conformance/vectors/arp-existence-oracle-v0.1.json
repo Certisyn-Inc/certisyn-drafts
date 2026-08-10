@@ -1,0 +1,110 @@
+{
+  "boundary": [
+    "Deterministic protocol conformance only.",
+    "Timing resistance is a separate claim; none is made and none is tested.",
+    "Absence assertions served by this endpoint are fork-conditional in the sense of Section 6.4.3: under a fork at disjoint sequence numbers the at-or-below contradiction test never fires."
+  ],
+  "class": "arp-existence-oracle",
+  "designed_by": "Songbo Bu, arp-03-existence-oracle-two-sided-review, 2026-08-10",
+  "endpoint": "conformance/reference/arp_read_ref.py",
+  "fixture": "conformance/reference/fixture-eo-v0.1.json",
+  "normalised_observation": {
+    "compared": [
+      "http status",
+      "media type",
+      "HTTP header field-name set",
+      "cache directives",
+      "protected COSE header parameters",
+      "unprotected COSE header parameters",
+      "signed payload tag",
+      "signed status",
+      "result",
+      "length class"
+    ],
+    "removed": [
+      "request-binding",
+      "response-time",
+      "as-of-sequence-number",
+      "as-of-self-entry-hash",
+      "signature"
+    ],
+    "rule": "Every removed value MUST independently be valid for its own request. Normalisation compares two responses; it does not license omitting a required field or hiding a discriminator."
+  },
+  "property": "No read endpoint is an existence oracle: a signed, well-formed read of an existing resource by a principal outside its Audience Set, and a read of a nonexistent resource by the same principal, are equivalent under the normalised observation of Section 6.4.4.",
+  "spec": "draft-hillier-scitt-arp-03 Section 6.4.4",
+  "vectors": [
+    {
+      "class": "PASS",
+      "expected": "200 with a valid signed result",
+      "id": "PV-ARP-EO-01",
+      "purpose": "an always-404 implementation cannot pass by refusing everything",
+      "request": "P_entitled reads R_present"
+    },
+    {
+      "class": "PASS",
+      "expected": "404 with a valid signed empty result",
+      "id": "PV-ARP-EO-02",
+      "purpose": "existing-but-unentitled arm",
+      "request": "P_other reads R_present"
+    },
+    {
+      "class": "PASS",
+      "expected": "404 with a valid signed empty result equivalent to PV-02",
+      "id": "PV-ARP-EO-03",
+      "purpose": "nonexistent arm",
+      "request": "P_other reads R_absent"
+    },
+    {
+      "class": "PASS",
+      "expected": "identical 404/429 transition index",
+      "id": "PV-ARP-EO-04",
+      "purpose": "the counter is charged before entitlement is evaluated",
+      "request": "interleaved bursts of the two P_other arms"
+    },
+    {
+      "channel": "403 unentitled vs 404 absent",
+      "class": "MUST-REFUSE",
+      "defect": "status-oracle",
+      "id": "NV-ARP-EO-01"
+    },
+    {
+      "channel": "existence-dependent discriminator inside the signed payload",
+      "class": "MUST-REFUSE",
+      "defect": "body-oracle",
+      "id": "NV-ARP-EO-02"
+    },
+    {
+      "channel": "an HTTP header present on one arm only",
+      "class": "MUST-REFUSE",
+      "defect": "header-oracle",
+      "id": "NV-ARP-EO-03"
+    },
+    {
+      "channel": "cache directives differ between the arms",
+      "class": "MUST-REFUSE",
+      "defect": "cache-oracle",
+      "id": "NV-ARP-EO-03b"
+    },
+    {
+      "channel": "entitlement evaluated before the counter is charged",
+      "class": "MUST-REFUSE",
+      "defect": "ratelimit-oracle",
+      "id": "NV-ARP-EO-04"
+    },
+    {
+      "channel": "the absent arm short-circuits the entitlement-equivalent work",
+      "class": "STRUCTURAL",
+      "closing_evidence": "source or trace inspection of the entitlement path, or a timing population with a stated network placement and acceptance threshold",
+      "decidable_from_wire": false,
+      "defect": "path-oracle",
+      "id": "NV-ARP-EO-05"
+    },
+    {
+      "channel": "every read refused, including the entitled one",
+      "class": "MUST-REFUSE",
+      "defect": "always-404",
+      "id": "NV-ARP-EO-07"
+    }
+  ],
+  "version": "v0.1"
+}

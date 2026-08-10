@@ -25,7 +25,7 @@ ROOT = os.path.abspath(os.path.join(HERE, ".."))
 
 # Files section 6 is expected to account for. Runs are not section 6's business;
 # their hashes live in section 5 and are checked separately below.
-TRACKED_DIRS = ("harness", "runners", "vectors")
+TRACKED_DIRS = ("harness", "runners", "vectors", "reference")
 TRACKED_SUFFIX = (".py", ".json", ".go")
 
 # Section 5 records run hashes in a two-line layout -- the path with its

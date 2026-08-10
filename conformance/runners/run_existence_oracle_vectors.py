@@ -1,0 +1,518 @@
+#!/usr/bin/env python3
+"""Existence-oracle vector class for ARP Section 6.4.4: positive vectors and
+negative controls by fault injection.
+
+Vector class designed by Songbo Bu, review of 2026-08-10 (attachment
+arp-03-existence-oracle-two-sided-review-2026-08-10.md, message-id
+<CAK08nYYoPp4t8L_vAoH9jZMvYDL7_AMFWgU=OFL=CFJ+-4rHoQ@mail.gmail.com>). This
+runner executes it against the reference endpoint in conformance/reference/, so
+the class reports a measured result for that endpoint rather than not-run.
+
+What the two sides are, stated precisely, because the weaker one is easy to
+oversell:
+
+  Positive   an entitled read of an existing resource MUST return 200, so an
+             implementation cannot pass by refusing everything.
+  Controls   each NV row re-runs the class against the reference endpoint with
+             exactly one existence channel deliberately reintroduced by the
+             author of both. This is fault injection into the implementation
+             the suite was written alongside. It demonstrates that each check
+             fires rather than being a no-op, and that is the weakest useful
+             form of negative evidence. It does NOT show that the suite
+             detects a channel not already enumerated here.
+
+This class is therefore NOT two-sided in the sense the conformance-method work
+uses that term. It becomes two-sided the first time it refuses an endpoint the
+author did not write. Until then the negative side is a self-test and is
+labelled as one.
+
+The comparison is the normalised observation of Section 6.4.4: the response
+with the request-binding, the response-time, the As-Of pair and the signature
+removed, compared alongside the HTTP metadata the section enumerates. Every
+removed value is independently checked to be valid for its own request, so
+normalisation cannot become a way to ignore a discriminator.
+
+Usage:
+    python3 run_existence_oracle_vectors.py
+    python3 run_existence_oracle_vectors.py --timing-samples 400
+"""
+
+import argparse
+import base64
+import hashlib
+import http.client
+import io
+import json
+import os
+import statistics
+import sys
+import threading
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, ".."))
+REF = os.path.join(ROOT, "reference")
+sys.path.insert(0, REF)
+
+# NOTE ON INDEPENDENCE: cbor, normalise_target and request_binding are imported
+# from the module under test, so the request-binding and deterministic-encoding
+# checks below compare an implementation against itself. An encoder defect --
+# for example a map-key ordering that violates RFC 8949 Section 4.2.1 -- would
+# be invisible to this class. That is a declared coverage gap, not an oversight;
+# closing it requires a second encoder written from the RFC.
+from arp_read_ref import (cbor, cose_sign1, normalise_target,  # noqa: E402
+                          request_binding, serve, sig_base)
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (  # noqa: E402
+    Ed25519PrivateKey, Ed25519PublicKey)
+
+FIXTURE = os.path.join(REF, "fixture-eo-v0.1.json")
+PORT = 8471
+SEAL_PK = None   # set in main() from the fixture's published sealing key
+
+
+def sha256_file(path):
+    return hashlib.sha256(open(path, "rb").read()).hexdigest()
+
+
+# ------------------------------------------------------------------ decoding
+def dec(b, i=0):
+    """Minimal CBOR decoder, enough for the response payload."""
+    ib = b[i]; mt, ai = ib >> 5, ib & 0x1F; i += 1
+    if ai < 24:
+        arg = ai
+    elif ai == 24:
+        arg = b[i]; i += 1
+    elif ai == 25:
+        arg = int.from_bytes(b[i:i + 2], "big"); i += 2
+    elif ai == 26:
+        arg = int.from_bytes(b[i:i + 4], "big"); i += 4
+    elif ai == 27:
+        arg = int.from_bytes(b[i:i + 8], "big"); i += 8
+    else:
+        raise ValueError("indefinite length is not deterministic CBOR")
+    if mt == 0: return arg, i
+    if mt == 1: return -arg - 1, i
+    if mt == 2: return b[i:i + arg], i + arg
+    if mt == 3: return b[i:i + arg].decode("utf-8"), i + arg
+    if mt == 4:
+        out = []
+        for _ in range(arg):
+            v, i = dec(b, i); out.append(v)
+        return out, i
+    if mt == 5:
+        out = {}
+        for _ in range(arg):
+            k, i = dec(b, i); v, i = dec(b, i); out[k] = v
+        return out, i
+    if mt == 7:
+        if ai == 20: return False, i
+        if ai == 21: return True, i
+        if ai == 22: return None, i
+    if mt == 6:
+        return dec(b, i)
+    raise ValueError("unsupported major type %d" % mt)
+
+
+def unwrap_sign1(body):
+    v, _ = dec(body)
+    protected, unprotected, payload, sig = v
+    params, _ = dec(protected)
+    return params, unprotected, dec(payload)[0], sig
+
+
+# ------------------------------------------------------------------- client
+class Client(object):
+    def __init__(self, fx, keyid, port=PORT):
+        p = next(x for x in fx["principals"] if x["keyid"] == keyid)
+        self.sk = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(p["seed"]))
+        self.keyid = keyid
+        self.port = port
+        self.n = 0
+
+    def get(self, rid):
+        self.n += 1
+        nonce = "%s-%d-%d" % (self.keyid, id(self), self.n)
+        path = "/arp/outputs/" + rid
+        target = "http://127.0.0.1:%d%s" % (self.port, path)
+        sig = base64.b64encode(self.sk.sign(
+            sig_base("GET", normalise_target(target), nonce, self.keyid))).decode()
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        t0 = time.perf_counter()
+        c.request("GET", path, headers={
+            "Host": "127.0.0.1:%d" % self.port,
+            "Keyid": self.keyid, "Nonce": nonce, "Signature": sig})
+        r = c.getresponse()
+        body = r.read()
+        dt = time.perf_counter() - t0
+        obs = {
+            "status": r.status,
+            "headers": {k.lower(): v for k, v in r.getheaders()},
+            "body": body,
+            "elapsed": dt,
+            "sent": {"method": "GET", "target": target,
+                     "nonce": nonce, "keyid": self.keyid},
+        }
+        c.close()
+        return obs
+
+
+# --------------------------------------------------- normalised observation
+REMOVED = ("request-binding", "response-time", "as-of-sequence-number",
+           "as-of-self-entry-hash", "signature")
+
+
+def normalise(obs, expect_head_seq):
+    """Section 6.4.4: the response with exactly the four bound values removed.
+
+    Returns (normalised, removed, problems). Every removed value is validated
+    against its own request here, so that normalisation cannot hide an
+    existence-dependent discriminator.
+    """
+    problems = []
+    params, unprot, payload, sig = unwrap_sign1(obs["body"])
+    tag, rb, status, rtime, seq, selfhash, result = payload
+
+    s = obs["sent"]
+    expect_rb = request_binding(s["method"], s["target"], s["nonce"], s["keyid"])
+    if rb != expect_rb:
+        problems.append("request-binding does not match the request as sent")
+    if status != obs["status"]:
+        problems.append("signed status %r differs from HTTP status %r"
+                        % (status, obs["status"]))
+    try:
+        time.strptime(rtime, "%Y-%m-%dT%H:%M:%SZ")
+    except Exception:
+        problems.append("response-time is not a valid timestamp")
+    if seq < expect_head_seq:
+        problems.append("as-of-sequence-number %r is below the published head %r"
+                        % (seq, expect_head_seq))
+    if not isinstance(selfhash, bytes) or len(selfhash) != 32:
+        problems.append("as-of-self-entry-hash is not a 32-octet digest")
+    if len(sig) != 64:
+        problems.append("signature is not 64 octets")
+    elif SEAL_PK is None:
+        problems.append("no sealing public key available to verify against")
+    else:
+        try:
+            SEAL_PK.verify(sig, cbor(["Signature1", cbor({1: -8}), b"",
+                                      cbor(payload)]))
+        except Exception:
+            problems.append("COSE_Sign1 signature does not verify under the "
+                            "published sealing key")
+
+    h = obs["headers"]
+    normalised = {
+        "http_status": obs["status"],
+        "media_type": h.get("content-type"),
+        "header_names": sorted(k for k in h if k not in ("date", "server")),
+        "cache_control": h.get("cache-control"),
+        "length_class": "empty" if len(obs["body"]) == 0 else "cose",
+        "protected_params": sorted(params.keys()),
+        "unprotected_params": sorted(unprot.keys()),
+        "payload_tag": tag,
+        "payload_status": status,
+        "result": result,
+    }
+    removed = {"request-binding": rb.hex(), "response-time": rtime,
+               "as-of": [seq, selfhash.hex()], "signature": sig.hex()}
+    return normalised, removed, problems
+
+
+# ------------------------------------------------------------------ harness
+class Server(object):
+    def __init__(self, defect=None, port=PORT):
+        self.httpd = serve(FIXTURE, port, defect)
+        self.t = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+
+    def __enter__(self):
+        self.t.start(); time.sleep(0.15); return self
+
+    def __exit__(self, *a):
+        self.httpd.shutdown(); self.httpd.server_close(); self.t.join(timeout=5)
+
+
+def evaluate(fx, defect, timing_samples=0):
+    """Run the deterministic class against one endpoint configuration.
+
+    Returns (verdict, findings) where verdict is ACCEPT or REFUSE. REFUSE means
+    the suite detected an existence channel or a trivially-refusing server.
+    """
+    head = int(fx["head"]["sequence_number"])
+    findings = []
+    with Server(defect) as _:
+        ent = Client(fx, "p-entitled")
+        oth = Client(fx, "p-other")
+
+        # PV-ARP-EO-01 -- an entitled read of an existing resource must succeed.
+        a = ent.get("R_present")
+        if a["status"] != 200:
+            findings.append("PV-01 entitled read of an existing resource "
+                            "returned %d, not 200" % a["status"])
+
+        # PV-ARP-EO-02 / 03 -- the two refused arms.
+        b = oth.get("R_present")
+        c = oth.get("R_absent")
+        for name, o in (("PV-02", b), ("PV-03", c)):
+            if o["status"] != 404:
+                findings.append("%s expected 404, got %d" % (name, o["status"]))
+        if b["status"] == 404 and c["status"] == 404:
+            nb, rb_, pb = normalise(b, head)
+            nc, rc_, pc = normalise(c, head)
+            findings += ["PV-02 " + x for x in pb]
+            findings += ["PV-03 " + x for x in pc]
+            if nb != nc:
+                diff = sorted(k for k in set(nb) | set(nc)
+                              if nb.get(k) != nc.get(k))
+                findings.append("normalised observations differ in %s "
+                                "-- existence is observable" % ", ".join(diff))
+            if rb_["request-binding"] == rc_["request-binding"]:
+                findings.append("two distinct requests share one "
+                                "request-binding")
+
+        # PV-ARP-EO-04 -- charge-before-entitlement, interleaved bursts.
+        seq_present, seq_absent = [], []
+        for i in range(int(fx["rate_limit_per_window"]) + 3):
+            seq_present.append(oth.get("R_present")["status"])
+            seq_absent.append(oth.get("R_absent")["status"])
+        if 429 not in seq_present or 429 not in seq_absent:
+            findings.append("PV-04 rate limit never reached on at least one "
+                            "arm, so this endpoint is refused -- but the "
+                            "designed discriminator (equal 404/429 transition "
+                            "index) did not execute. Refused for the wrong "
+                            "reason; the budget-ordering channel is untested "
+                            "by this run")
+        elif seq_present.index(429) != seq_absent.index(429):
+            findings.append("PV-04 the two arms reach 429 after different "
+                            "request counts -- the budget is an oracle")
+
+    verdict = "REFUSE" if findings else "ACCEPT"
+    return verdict, findings
+
+
+def timing_probe(fx, samples):
+    """Statistical, and reported separately from conformance.
+
+    Section 6.4.4 requires the measurement population, sample count, network
+    placement, decision rule and threshold to be published with any
+    timing-resistance claim. This is loopback with a tiny sample; it is
+    published as such and is not a conformance verdict.
+    """
+    head = int(fx["head"]["sequence_number"])
+    with Server(None) as _:
+        oth = Client(fx, "p-other")
+        pres, abst = [], []
+        for i in range(samples):
+            oth.n = i * 7
+            pres.append(oth.get("R_present")["elapsed"])
+            abst.append(oth.get("R_absent")["elapsed"])
+    mp, ma = statistics.median(pres), statistics.median(abst)
+    pooled = statistics.pstdev(pres + abst) or 1e-12
+    effect = abs(mp - ma) / pooled
+    return {
+        "population": "loopback, single host, no network placement",
+        "samples_per_arm": samples,
+        "median_present_s": round(mp, 6),
+        "median_absent_s": round(ma, 6),
+        "standardised_median_difference": round(effect, 4),
+        "decision_rule": "reported, not adjudicated",
+        "claim": "none made",
+        "note": "Loopback timing is not evidence about a deployed network "
+                "path. A timing-resistance claim requires the population and "
+                "threshold this run does not have.",
+    }
+
+
+DEFECTS = [
+    ("NV-ARP-EO-01", "status-oracle",
+     "403 for unentitled, 404 for absent -- a direct status oracle"),
+    ("NV-ARP-EO-02", "body-oracle",
+     "an error discriminator inside the signed payload"),
+    ("NV-ARP-EO-03", "header-oracle",
+     "an extra HTTP header on the unentitled arm only"),
+    ("NV-ARP-EO-03b", "cache-oracle",
+     "cache directives differ between the two arms"),
+    ("NV-ARP-EO-04", "ratelimit-oracle",
+     "entitlement evaluated before the counter is charged"),
+    ("NV-ARP-EO-08", "bad-signature",
+     "responses sealed with a key the fixture does not publish"),
+    ("NV-ARP-EO-07", "always-404",
+     "every read refused, including the entitled one"),
+]
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--timing-samples", type=int, default=120)
+    ap.add_argument("--out", default=os.path.join(ROOT, "runs",
+                                                  "existence_oracle_run.json"))
+    a = ap.parse_args()
+    fx = json.load(io.open(FIXTURE, encoding="utf-8"))
+    global SEAL_PK
+    SEAL_PK = Ed25519PublicKey.from_public_bytes(
+        bytes.fromhex(fx["sealing_public_key"]))
+    invocation = "python3 " + " ".join(
+        [os.path.basename(__file__)] + sys.argv[1:])
+
+    rows = []
+    ok = True
+
+    verdict, findings = evaluate(fx, None)
+    rows.append({"vector": "PV-ARP-EO-01..04", "endpoint": "conforming",
+                 "expected": "ACCEPT", "verdict": verdict,
+                 "findings": findings,
+                 "requirement_source": "draft-hillier-scitt-arp-03 S6.4.4"})
+    if verdict != "ACCEPT":
+        ok = False
+
+    # NV-ARP-EO-05 is a structural requirement, not a wire-observable one. A
+    # server that short-circuits the absent arm emits a byte-equivalent
+    # response; only source inspection, or a timing population this loopback
+    # harness cannot supply, decides it. Running it and reporting ACCEPT would
+    # be the suite claiming coverage it does not have, so it is carried as a
+    # declared gap with the evidence that would close it named.
+    v, f = evaluate(fx, "path-oracle")
+    rows.append({
+        "vector": "NV-ARP-EO-05", "endpoint": "defect:path-oracle",
+        "channel": "the absent arm short-circuits the "
+                   "entitlement-equivalent work",
+        "expected": "REFUSE-BY-INSPECTION",
+        "verdict": "NOT-DECIDABLE-FROM-WIRE",
+        "findings": ["the defective endpoint is byte-equivalent under the "
+                     "normalised observation, which is the finding: Section "
+                     "6.4.4's same-work requirement is structural and no "
+                     "response-comparison suite can decide it",
+                     "closing evidence: source or trace inspection of the "
+                     "entitlement path, or a timing population with a stated "
+                     "network placement and threshold -- neither is available "
+                     "on loopback"],
+        "wire_comparison_verdict": v,
+        "requirement_source": "draft-hillier-scitt-arp-03 S6.4.4"})
+
+    for vid, defect, why in DEFECTS:
+        v, f = evaluate(fx, defect)
+        rows.append({"vector": vid, "endpoint": "defect:" + defect,
+                     "channel": why, "expected": "REFUSE", "verdict": v,
+                     "findings": f,
+                     "requirement_source": "draft-hillier-scitt-arp-03 S6.4.4"})
+        if v != "REFUSE":
+            ok = False
+
+    timing = timing_probe(fx, a.timing_samples)
+
+    vectors_path = os.path.join(ROOT, "vectors",
+                                "arp-existence-oracle-v0.1.json")
+    spec_path = os.path.abspath(os.path.join(ROOT, "..",
+                                             "draft-hillier-scitt-arp.md"))
+    out = {
+        "class": "arp-existence-oracle",
+        "version": "v0.1",
+        "designed_by": "Songbo Bu, review of 2026-08-10, message-id "
+                       "<CAK08nYYoPp4t8L_vAoH9jZMvYDL7_AMFWgU=OFL="
+                       "CFJ+-4rHoQ@mail.gmail.com>",
+        "author_added_rows": ["NV-ARP-EO-03b (cache-directive control) was "
+                              "added by J. Hillier and is not part of the "
+                              "class as designed"],
+        "spec": "draft-hillier-scitt-arp Section 6.4.4, working copy",
+        "spec_note": "The normalised-observation rule this class tests is NOT "
+                     "present in -03 as circulated on 2026-08-09 (text sha256 "
+                     "715513d49b10d0e8ad1379db28a073b24cccb295153a210b3b8abe1f"
+                     "9fe6ac28). It was written into the working draft in "
+                     "response to this class. These rows test the post-review "
+                     "text.",
+        "spec_source_sha256": sha256_file(spec_path),
+        "fixture_sha256": sha256_file(FIXTURE),
+        "reference_sha256": sha256_file(os.path.join(REF, "arp_read_ref.py")),
+        "runner_sha256": sha256_file(os.path.abspath(__file__)),
+        "vectors_sha256": sha256_file(vectors_path),
+        "invocation_note": "the invocation and interpreter are recorded in "
+                           "runs/existence_oracle_timing.json; they are "
+                           "excluded here to keep this record byte-stable",
+        "environment": {
+            "python": sys.version.split()[0],
+            "platform": sys.platform,
+        },
+        "result_subject": "conformance/reference/arp_read_ref.py at "
+                          "reference_sha256, under this class only",
+        "establishes": "that Section 6.4.4 as its author reads it is "
+                       "implementable, and that each check in this class "
+                       "fires against a deliberately injected defect",
+        "does_not_establish": "anything about the specification. The endpoint "
+                              "was written by the specification's author from "
+                              "his own reading of his own text, so it is the "
+                              "one configuration that cannot surface a "
+                              "specification defect. Specification adequacy is "
+                              "untested until an implementer working only from "
+                              "the text passes this class.",
+        "evidence_status": "measured for the deterministic rows; declared gaps "
+                           "listed below",
+        "deterministic_result": "PASS" if ok else "FAIL",
+        "declared_coverage_gaps": [
+            "NV-ARP-EO-05: the same-work requirement of S6.4.4 is structural "
+            "and is not decidable by response comparison.",
+            "NV-ARP-EO-04: refused, but by the fallback branch. The designed "
+            "discriminator -- equal 404/429 transition index -- has never "
+            "executed, because the defective endpoint answers 404 before "
+            "charging and so never reaches 429. The budget-ordering channel "
+            "is untested.",
+            "NV-ARP-EO-06: the statistical timing row of the class as designed "
+            "is not carried as a conformance row. It is reported separately "
+            "as timing_observation and is not adjudicated.",
+            "Encoder independence: request-binding and deterministic CBOR are "
+            "computed with functions imported from the implementation under "
+            "test, so an encoder defect -- including an RFC 8949 S4.2.1 "
+            "map-ordering violation -- is invisible to this class.",
+            "Negative side: the NV rows are fault injection into the author's "
+            "own endpoint. No independently written implementation has been "
+            "refused, so the class is not two-sided in the conformance-method "
+            "sense.",
+            "Timing resistance: no claim is made and none is tested; the "
+            "loopback observation below is not evidence about a deployed path."
+        ],
+        "rows": rows,
+        "timing_observation": "recorded separately in "
+                              "runs/existence_oracle_timing.json; excluded "
+                              "here so that this record is byte-stable across "
+                              "runs and can be pinned in REPRODUCE.md",
+        "boundary": "Deterministic protocol conformance only. The timing "
+                    "observation is reported and is not part of the verdict. "
+                    "Absence assertions served by this endpoint are "
+                    "fork-conditional in the sense of Section 6.4.3.",
+    }
+    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    io.open(a.out, "w", encoding="utf-8", newline="\n").write(
+        json.dumps(out, indent=2, sort_keys=True) + "\n")
+    timing_out = dict(timing)
+    timing_out["invocation"] = invocation
+    timing_out["environment"] = out["environment"]
+    timing_out["run_of"] = os.path.basename(a.out)
+    io.open(os.path.join(os.path.dirname(a.out),
+                         "existence_oracle_timing.json"), "w",
+            encoding="utf-8", newline="\n").write(
+        json.dumps(timing_out, indent=2, sort_keys=True) + "\n")
+
+    w = sys.stdout.write
+    w("ARP existence-oracle class v0.1 -- %s\n" % out["evidence_status"])
+    w("fixture   %s\n" % out["fixture_sha256"])
+    w("reference %s\n\n" % out["reference_sha256"])
+    for r in rows:
+        if r["verdict"] == r["expected"]:
+            mark = "ok  "
+        elif r["verdict"] == "NOT-DECIDABLE-FROM-WIRE":
+            mark = "gap "
+        else:
+            mark = "FAIL"
+        w("  %s %-18s %-24s expected %-7s got %s\n"
+          % (mark, r["vector"], r["endpoint"], r["expected"], r["verdict"]))
+        for f in r["findings"]:
+            w("        - %s\n" % f)
+    w("\ntiming (reported, not adjudicated): median present %.6fs, "
+      "absent %.6fs, standardised difference %.4f over %d samples/arm\n"
+      % (timing["median_present_s"], timing["median_absent_s"],
+         timing["standardised_median_difference"], timing["samples_per_arm"]))
+    w("\nDETERMINISTIC RESULT: %s\n" % out["deterministic_result"])
+    w("written %s\n" % a.out)
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

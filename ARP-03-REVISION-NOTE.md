@@ -71,6 +71,19 @@ the designated field joins candidate reports across permitted variation, the
 Claim Hash commits to the exact claim under the deployment's blinding value, and
 the action type's own content commitment remains what authorisation binds to.
 
+**Iman Schrock, second reading.** Having read Steven's and Songbo's follow-ups
+he endorsed both boundaries, closed his own point, and asked for one further
+thing: a direct citation to the registry rather than a description of it. -03
+now carries an informative reference to the EMILIA Protocol's Canonical Action
+Identifier and registered action types, cited at the designation rule. The
+reference asserts title and organisation only; no target or date is claimed,
+because neither has been confirmed by its maintainer, and confirming them
+before Thursday is the one open item on that thread.
+
+His framing is also now the draft's: joining on the designated field forms a
+**candidate correlation set**, which the Claim Hash comparison then resolves.
+The join proposes; it does not decide.
+
 **Anticipating Tom Sato.** The Merkle section now pins three things an
 inclusion-proof implementer otherwise gets wrong: the sibling array carries one
 entry per level at which the node **has** a sibling and none for a level where
@@ -135,6 +148,12 @@ Stated plainly, because the distinction is the whole value of the exercise.
 **It establishes** that §6.4.4 as I read it is implementable, that the class
 executes end to end, and that every check in it fires against an injected defect
 rather than being a no-op.
+
+Iman's position before the endpoint existed was that these vectors should
+remain explicitly not-run until the required server-state fixture existed. That
+was right, and it is the same discipline as recording the run honestly now that
+the fixture does exist. The disposition moves from `not-run` to measured **for
+that endpoint**, and no further — which is the next paragraph.
 
 **It does not establish anything about the specification.** The endpoint was
 written by the specification's author from his own reading of his own text,
@@ -225,10 +244,10 @@ assume the protocol supplies it.
 
 | | |
 |---|---|
-| Source | `draft-hillier-scitt-arp.md`, 4,813 lines |
-| Source SHA-256 | `0a9671bbba1d6b542f4b9e9f3f913d55c640d7ff3f7fecb509f922ac8bcd12aa` |
-| Text | `draft-hillier-scitt-arp-03.txt`, 7,000 lines, 334,797 bytes |
-| Text SHA-256 | `e3c0c8db292794066a29360b756cf4478cd44877efbd447f2b5d3714fbb296e2` |
+| Source | `draft-hillier-scitt-arp.md`, 4,827 lines |
+| Source SHA-256 | `c874c7a656cba36d5fa8c144e381a03b5e3fd6ebb002f2077ede9d14ad6297bb` |
+| Text | `draft-hillier-scitt-arp-03.txt`, 7,000 lines, 335,414 bytes |
+| Text SHA-256 | `bfa2c679e81c2af71e3757745ee7af15d925acd2a05ae5f73f3f543a21db722a` |
 | Build | kramdown-rfc 1.7.39 + xml2rfc, byte-identical on Linux and Windows |
 | idnits | 3.1.0 — 1 error, 11 warnings |
 | Manifest | `MANIFEST: PASS`, 18 of 18 in §6, 9 of 9 in §5 |

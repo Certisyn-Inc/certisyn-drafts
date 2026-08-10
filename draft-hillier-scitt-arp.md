@@ -58,6 +58,11 @@ normative:
 
 informative:
   RFC6350:        # vCard 4.0
+  CAID:
+    title: "Canonical Action Identifier and registered action types"
+    author:
+      - org: EMILIA Protocol
+    date: false
   BODS:
     title: Beneficial Ownership Data Standard
     target: https://standard.openownership.org/
@@ -3777,9 +3782,12 @@ and not those of Section 9 of {{RFC9052}}.
 
 Iman Schrock established, with Anton Sokolov, that a content digest cannot
 serve as a correlation key across independently produced descriptions of one
-act, and that an action type's own required typed field is the sound join. The
-designation rule and the three prohibitions in {{construction-distinctness}} are
-that finding, adopted.
+act, and that an action type's own required typed field is the sound join.
+{{CAID}} defines typed material fields rather than a general material
+identifier, so a profile designates a field by name and the join forms a
+candidate correlation set that Claim Hash comparison then resolves. The
+designation rule and the three prohibitions in {{construction-distinctness}}
+are that finding, adopted.
 
 Tom Sato's leaf-construction work on Certificate Transparency logs informed
 the inclusion-proof requirements of {{merkle-construction}}.
@@ -4229,10 +4237,16 @@ Accordingly:
   robust of the two, because it does not require every producer to agree on a
   serialisation before they can agree that they are describing the same act.
   The designated field is a property of the action type and not a general
-  category: for the registered type `payment.release.1`, which requires
-  `payment_instruction_id`, a profile designates that field by name. A profile
-  MUST state which field it has designated for each action type it admits;
-  "a material identifier" is not a designation an implementer can act on.
+  category: for the type `payment.release.1` registered in {{CAID}}, which
+  requires `payment_instruction_id`, a profile designates that field by name.
+  A profile MUST state which field it has designated for each action type it
+  admits; "a material identifier" is not a designation an implementer can act
+  on, because no registry defines one.
+
+  Joining on the designated field forms a candidate correlation set. It does
+  not resolve the set: what the members assert about the act is established by
+  comparing their Claim Hashes, which is the step the following prohibitions
+  protect.
 
 Three substitutions are forbidden, because each is available to an implementer
 who has read only part of the foregoing and each fails silently.

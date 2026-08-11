@@ -2,6 +2,13 @@
 
 Joel David Hillier, Certisyn, Inc. — 9 August 2026
 
+> **Superseded on 11 August 2026.** This is the document as circulated for
+> comment on 9 August, kept unchanged as the record of what was sent. The
+> digests and the review claims in section 5 describe the 9 August bytes, not
+> the bytes that will be filed on 13 August. `ARP-03-REVISION-NOTE.md` carries
+> the current pins, the changes made in response to review, and corrections to
+> two of the claims below.
+
 **-02 was filed on 8 August and is what is published.** This describes the
 revision I propose to file on **Thursday 13 August**. It is written, it builds,
 and it lints. I am circulating it first rather than filing it, because a

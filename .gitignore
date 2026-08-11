@@ -29,3 +29,19 @@ _send/
 #   npm install --prefix .tools @ietf-tools/idnits@3.1.0
 # and the idnits transcript verify-03.ps1 leaves there.
 .tools/
+
+# Working notes, handoffs, session records and internal reviews.
+# This repository is public. It carries the draft, the build and the
+# conformance evidence -- not the internal record of how they were made.
+ARP-03-BLOCKERS.md
+ARP-03-CONTINUATION-REVIEW.md
+ARP-03-FILING-STATUS.md
+ARP-03-adoption-plan.md
+ARP-HANDOFF.md
+ARP-HANDOFF-2.md
+SESSION-NOTE-*.md
+REBUTTAL-*.md
+REVISION-PLAN-*.md
+RECOVERY.md
+_notes-local/
+tracker.log

@@ -12,6 +12,33 @@ Filing remains **Thursday 13 August**. Comments remain open until end of
 
 ---
 
+## 0. The pin Songbo asked for
+
+His 9 August message asked two things: apply the one-line correction, and
+**publish a replacement exact pin or archive hash**. Until that existed he
+described the record as six of seven documented output hashes matching, with
+the seventh reproduced byte-identically but its README hash stale. Both are
+now done, so the caveat comes off.
+
+```
+correction   61c6916 and 6034be6 on feat/revision-02-canonicalization,
+             follow-up commits on top of ae54748, not folded into it
+
+cpb_run.json at that branch, from the committed blob:
+             c39d204c9685c78d39c66b46f89dcf406116ecde9f3c416b5f98fcf4878e6b9d
+
+exact pin    git tree object for conformance/
+             090f6ac91e6b6cbaaed0529e4dec1344dd7d62b8   (-02 branch)
+             c42330dccc7d74d3373963b7c90e62a2360718bb   (wip/revision-03)
+```
+
+The git tree object is the durable pin and an archive hash is not: a zip moves
+on timestamps and compression settings even when every content byte is
+identical. His patch and the applied change are the same one line; his arrived
+first.
+
+---
+
 ## 1. Three findings, three changes
 
 **Songbo Bu — the indistinguishability requirement was unsatisfiable.**
@@ -102,6 +129,14 @@ it was carried up, so its length is not the base-two logarithm of the leaf count
 no direction bit is carried, and the verifier derives left-or-right from the
 index and leaf count; and the empty tree's root of thirty-two zero octets admits
 no inclusion proof.
+
+**Songbo Bu, again, on how a result is described.** His contributor wording to
+Steven — reproduction established for *the exercised paths and recorded
+outputs*, and not general conformance, unexercised requirements, or
+independence beyond the specifically identified implementations and source
+boundaries — is the discipline now written into the existence-oracle run
+record's own `establishes` and `does_not_establish` fields, in his formulation
+rather than a paraphrase of it.
 
 The Acknowledgments section now names these findings and who established them.
 

@@ -71,18 +71,29 @@ the designated field joins candidate reports across permitted variation, the
 Claim Hash commits to the exact claim under the deployment's blinding value, and
 the action type's own content commitment remains what authorisation binds to.
 
-**Iman Schrock, second reading.** Having read Steven's and Songbo's follow-ups
-he endorsed both boundaries, closed his own point, and asked for one further
-thing: a direct citation to the registry rather than a description of it. -03
-now carries an informative reference to the EMILIA Protocol's Canonical Action
-Identifier and registered action types, cited at the designation rule. The
-reference asserts title and organisation only; no target or date is claimed,
-because neither has been confirmed by its maintainer, and confirming them
-before Thursday is the one open item on that thread.
+**Iman Schrock, in full.** His 9 August message — which I under-read on the
+first pass — carried both the citation and a replacement paragraph, and both
+are now in. -03 cites `draft-schrock-canonical-action-identifier-02`, *The
+Canonical Action Identifier (CAID)*, resolved from the datatracker, at the
+designation rule, at the measurement in Appendix D, and in the references. The
+measurement paragraph now states that the action types, their members and the
+reference issuer that minted the five instances are all his, and that the
+measurement is not reproducible without that document.
 
-His framing is also now the draft's: joining on the designated field forms a
-**candidate correlation set**, which the Claim Hash comparison then resolves.
-The join proposes; it does not decide.
+The substantive correction is that my first repair still attributed a semantic
+to CAID that CAID does not carry. Its type schema declares required and
+optional fields and marks **none** of them as a correlation key, so the
+selection belongs to the profile. A profile MUST therefore pin the action type
+and its version, the field selected for correlation, and that field's
+normalisation and comparison rules; and — the requirement I did not have — the
+**selected field MUST be present in the Canonical Claim so that the Claim Hash
+commits to it**, closing a join made on a value the reconciliation does not
+cover. Equality of the selected value identifies candidates only. Where the
+selected values match and the exact-action digests differ, that is a conflict
+to surface and not a failed join.
+
+His second reading, after Steven's and Songbo's, endorsed both other boundaries
+and closed his own point.
 
 **Anticipating Tom Sato.** The Merkle section now pins three things an
 inclusion-proof implementer otherwise gets wrong: the sibling array carries one
@@ -244,10 +255,10 @@ assume the protocol supplies it.
 
 | | |
 |---|---|
-| Source | `draft-hillier-scitt-arp.md`, 4,827 lines |
-| Source SHA-256 | `c874c7a656cba36d5fa8c144e381a03b5e3fd6ebb002f2077ede9d14ad6297bb` |
-| Text | `draft-hillier-scitt-arp-03.txt`, 7,000 lines, 335,414 bytes |
-| Text SHA-256 | `bfa2c679e81c2af71e3757745ee7af15d925acd2a05ae5f73f3f543a21db722a` |
+| Source | `draft-hillier-scitt-arp.md`, 4,835 lines |
+| Source SHA-256 | `9a086e8832489f456ae5066848c208ceccbab9e00adadd29bc003c3a142c86c9` |
+| Text | `draft-hillier-scitt-arp-03.txt`, 7,056 lines, 336,811 bytes |
+| Text SHA-256 | `8fab5b82a67f56e0735a859ecfa0a7bb78ccb44fb85a9d87a6efea3342f07c27` |
 | Build | kramdown-rfc 1.7.39 + xml2rfc, byte-identical on Linux and Windows |
 | idnits | 3.1.0 — 1 error, 11 warnings |
 | Manifest | `MANIFEST: PASS`, 18 of 18 in §6, 9 of 9 in §5 |

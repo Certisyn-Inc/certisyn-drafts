@@ -58,11 +58,7 @@ normative:
 
 informative:
   RFC6350:        # vCard 4.0
-  CAID:
-    title: "Canonical Action Identifier and registered action types"
-    author:
-      - org: EMILIA Protocol
-    date: false
+  I-D.schrock-canonical-action-identifier:
   BODS:
     title: Beneficial Ownership Data Standard
     target: https://standard.openownership.org/
@@ -3782,12 +3778,14 @@ and not those of Section 9 of {{RFC9052}}.
 
 Iman Schrock established, with Anton Sokolov, that a content digest cannot
 serve as a correlation key across independently produced descriptions of one
-act, and that an action type's own required typed field is the sound join.
-{{CAID}} defines typed material fields rather than a general material
-identifier, so a profile designates a field by name and the join forms a
-candidate correlation set that Claim Hash comparison then resolves. The
-designation rule and the three prohibitions in {{construction-distinctness}}
-are that finding, adopted.
+act. He then established that the earlier repair was itself imprecise:
+{{I-D.schrock-canonical-action-identifier}} declares required and optional
+fields per action type and marks no field as a correlation key, so the
+selection belongs to the profile. The requirements in
+{{construction-distinctness}} to pin the action type and version, the selected
+field and its normalisation and comparison rules, and to require that the
+selected field be present in the Canonical Claim so that the Claim Hash commits
+to it, are his, substantially as he drafted them.
 
 Tom Sato's leaf-construction work on Certificate Transparency logs informed
 the inclusion-proof requirements of {{merkle-construction}}.
@@ -4211,7 +4209,10 @@ another. That property is what makes it usable as a join key
 between capsules computed over the SAME serialised action.
 
 It does not, and cannot, establish that two INDEPENDENTLY DESCRIBED accounts of
-one act correlate. Where an action type declares optional members, two
+one act correlate. The action types, their required and optional members and
+the reference issuer that minted the instances measured below are those of
+{{I-D.schrock-canonical-action-identifier}}; the measurement is not
+reproducible without it. Where an action type declares optional members, two
 conforming producers describing the same act may legitimately differ on whether
 an optional member is present, and their subject digests then differ. Stability
 under permitted variation and collision resistance over content are
@@ -4236,17 +4237,24 @@ Accordingly:
   action type itself requires, and correlate on that. The second is the more
   robust of the two, because it does not require every producer to agree on a
   serialisation before they can agree that they are describing the same act.
-  The designated field is a property of the action type and not a general
-  category: for the type `payment.release.1` registered in {{CAID}}, which
-  requires `payment_instruction_id`, a profile designates that field by name.
-  A profile MUST state which field it has designated for each action type it
-  admits; "a material identifier" is not a designation an implementer can act
-  on, because no registry defines one.
+  The selection is the profile's and not the registry's.
+  {{I-D.schrock-canonical-action-identifier}} declares required and optional
+  fields per action type; it does not mark any field as a correlation key, and
+  a specification that says an action type "declares a material identifier"
+  attributes to that registry a semantic it does not carry. A profile
+  therefore MUST pin the action type and its version, the field it has
+  selected for correlation, and that field's normalisation and comparison
+  rules. The selected field MUST be present in the Canonical Claim, so that
+  the Claim Hash commits to it and the join cannot be made on a value the
+  reconciliation does not cover.
 
-  Joining on the designated field forms a candidate correlation set. It does
-  not resolve the set: what the members assert about the act is established by
-  comparing their Claim Hashes, which is the step the following prohibitions
-  protect.
+  Equality of the selected value identifies candidate descriptions only. It
+  MUST NOT establish action equivalence, authorisation or execution.
+  Exact-action agreement remains a separate comparison, under the
+  subject-digest construction of {{composition}} or under the profile of
+  {{I-D.schrock-canonical-action-identifier}}. Where the selected values match
+  and the exact-action digests differ, that is a conflict to surface and not a
+  failed join, and surfacing it is what reconciliation is for.
 
 Three substitutions are forbidden, because each is available to an implementer
 who has read only part of the foregoing and each fails silently.

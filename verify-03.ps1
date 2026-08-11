@@ -45,8 +45,14 @@ function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan
 function Ok($m)   { Write-Host "  PASS  $m" -ForegroundColor Green }
 function Bad($m)  { Write-Host "  FAIL  $m" -ForegroundColor Red }
 
-$expectMd  = "89059b9823ee3c3ae85d45bcae1da7bb5d2fe600dcaa1f84b159a916fcabb109"
-$expectTxt = "715513d49b10d0e8ad1379db28a073b24cccb295153a210b3b8abe1f9fe6ac28"
+# The bytes to be filed on 13 August. These are NOT the 9 August for-comment
+# digests (89059b98 / 715513d4) -- those describe the document as circulated,
+# before the edits made in response to Songbo Bu, Iman Schrock, Steven Mih and
+# Tom Sato. ARP-03-REVISION-NOTE.md section 0 publishes the same two values.
+# Anyone changing the source must change these in the same commit, or this
+# script reports the change as tampering.
+$expectMd  = "9a086e8832489f456ae5066848c208ceccbab9e00adadd29bc003c3a142c86c9"
+$expectTxt = "8fab5b82a67f56e0735a859ecfa0a7bb78ccb44fb85a9d87a6efea3342f07c27"
 $fail = 0
 
 Write-Host ""
@@ -128,19 +134,34 @@ if (-not (Test-Path $sendTxt)) {
     }
 }
 
-Head "Attachments for the emails"
+Head "Filing package"
 $send = Join-Path $RepoPath "_send"
 if (Test-Path $send) {
-    Get-ChildItem $send | Select-Object Name, @{n='KB';e={[math]::Round($_.Length/1KB)}} | Format-Table -AutoSize
+    $files = @(Get-ChildItem $send -File)
+    $files | Select-Object Name, @{n='KB';e={[math]::Round($_.Length/1KB)}} | Format-Table -AutoSize
+    Write-Host "  $($files.Count) file(s)" -ForegroundColor DarkGray
+
+    # The file that gets uploaded is the copy in _send, not the one at the repo
+    # root, and only the root copy was hashed above. A stale copy here would be
+    # filed without anything noticing, so compare the two directly.
+    $sendCopy = Join-Path $send "draft-hillier-scitt-arp-03.txt"
+    if (Test-Path $sendCopy) {
+        $sh = (Get-FileHash $sendCopy -Algorithm SHA256).Hash.ToLower()
+        if ($sh -eq $expectTxt) { Ok "_send copy is the same bytes as the verified text" }
+        else { Bad "_send\draft-hillier-scitt-arp-03.txt differs from the verified text`n        expected $expectTxt`n        actual   $sh`n        re-copy it from the repo root before filing"; $fail++ }
+    } else { Bad "_send\draft-hillier-scitt-arp-03.txt missing -- that is the file to upload"; $fail++ }
+
     if (-not $NoOpen) { explorer.exe $send }
 } else { Bad "_send folder missing"; $fail++ }
 
 Head "Result"
 if ($fail -eq 0) {
-    Write-Host "  Everything checks out. The four files in _send are the attachments." -ForegroundColor Green
-    Write-Host "  Attach all four to the typed-reference mail before sending it." -ForegroundColor Green
+    Write-Host "  Everything checks out against the bytes proposed as -03." -ForegroundColor Green
+    Write-Host "  To file: upload _send\draft-hillier-scitt-arp-03.txt at" -ForegroundColor Green
+    Write-Host "    https://datatracker.ietf.org/submit/" -ForegroundColor Green
+    Write-Host "  Comments closed end of Wednesday 12 August; anything later goes into -04." -ForegroundColor DarkGray
 } else {
-    Write-Host "  $fail check(s) failed -- do not send until these are understood." -ForegroundColor Red
+    Write-Host "  $fail check(s) failed -- do not file until these are understood." -ForegroundColor Red
 }
 Write-Host ""
 exit $fail

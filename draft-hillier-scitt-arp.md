@@ -2,7 +2,7 @@
 title: Attestation Reconciliation Protocol
 abbrev: ARP
 docname: draft-hillier-scitt-arp-03
-date: 2026-08-08
+date: 2026-08-13
 category: std
 submissiontype: IETF
 v: 3
@@ -2977,10 +2977,21 @@ a fork the superseding entry lands on a branch the holder of the empty result
 never reads, the at-or-below test never fires, and the assertion stands
 uncontradicted for as long as the branches are kept apart. An empty result is
 therefore an assertion about a named head on the chain its reader was served,
-and it is falsifiable to the extent that the reader independently holds
-head-consistency evidence for that chain. This document does not close that gap
-and does not claim to; it states the boundary so that a relying party does not
-read an absence assertion as stronger than the head evidence behind it.
+and it is falsifiable to the extent that the reader holds head-consistency
+evidence for that chain from an observer independent of the responding service.
+
+Head evidence obtained only from that service does not bound this. A fork at
+disjoint sequence numbers is invisible from a single vantage by construction,
+and the vantage is what is in question: equivocation is precisely the condition
+that no single consistent chain explains two observations, so it becomes
+observable when two independent observers compare heads and not before. A
+relying party acting on an empty result SHOULD hold head-consistency evidence
+for the served chain from at least one observer independent of the responding
+service -- a witness countersignature over the head, or, where no witness set is
+available, an independently anchored head digest, in decreasing order of
+strength. This document does not specify a witness quorum and does not claim to
+close the gap; it names the evidence that bounds it, so that a relying party can
+tell whether it holds any.
 
 The contradiction is only as tight as the operator's freedom to defer. A
 `continuation-supersession` entry MUST be appended within the ledger-head
@@ -3787,6 +3798,20 @@ field and its normalisation and comparison rules, and to require that the
 selected field be present in the Canonical Claim so that the Claim Hash commits
 to it, are his, substantially as he drafted them.
 
+Walter Hawkins established that the falsifiability condition of
+{{read-responses}} is bounded by observer diversity rather than by any stronger
+single-log property: head evidence obtained from the responding service cannot
+bound a fork, because a fork at disjoint sequence numbers is invisible from a
+single vantage by construction and the vantage is what is in question. Naming
+the independent observer, and the ordering of witness countersignature over
+independently anchored head digest, is his.
+
+Tiago Pinto established that the obligation to answer with a signed response
+carrying a log position belongs on the party making the claim rather than on
+the party relying on it, and that an unsigned or position-less answer is to be
+treated as the log not having answered. {{read-responses}} takes that shape at
+his argument.
+
 Tom Sato's leaf-construction work on Certificate Transparency logs informed
 the inclusion-proof requirements of {{merkle-construction}}.
 
@@ -4294,6 +4319,19 @@ RFC Editor: please remove this section before publication.
 This revision answers a review of -02 on the SCITT list. Of its five asks, three
 are adopted as put, one is adopted in its goal and not in its mechanism, and one
 is declined for now with a reason.
+
+{{read-responses}} now names the evidence that bounds the empty-result
+falsifiability condition. -02, and this revision as circulated for comment,
+said that an empty result is falsifiable to the extent that the reader
+"independently holds head-consistency evidence" for the served chain, without
+saying independent of whom. Head evidence obtained from the responding service
+bounds nothing, because a fork at disjoint sequence numbers is invisible from a
+single vantage by construction and the vantage is what is in question. The
+condition now names an observer independent of the responding service and
+carries a `SHOULD` on the relying party, with witness countersignature over the
+head preferred to an independently anchored head digest. The gap is not closed
+and is not claimed to be; it is bounded by evidence an implementation can be
+said to hold or not hold. The finding is Walter Hawkins's.
 
 {{scrapi-binding}} is new and normative. -02 composed with the SCITT Reference
 APIs permissively -- Reconciliation Outputs MAY be notarised, registration MAY

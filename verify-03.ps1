@@ -51,8 +51,8 @@ function Bad($m)  { Write-Host "  FAIL  $m" -ForegroundColor Red }
 # Tom Sato. ARP-03-REVISION-NOTE.md section 0 publishes the same two values.
 # Anyone changing the source must change these in the same commit, or this
 # script reports the change as tampering.
-$expectMd  = "9a086e8832489f456ae5066848c208ceccbab9e00adadd29bc003c3a142c86c9"
-$expectTxt = "8fab5b82a67f56e0735a859ecfa0a7bb78ccb44fb85a9d87a6efea3342f07c27"
+$expectMd  = "e8cb3b93dcea2f0b1e0a35da03f95d04ce425bb6717e15e8eafad9ecf85641d1"
+$expectTxt = "fe7ba656ef07842c365ce93938610cd874668c29f0fa06031d37d0e4e72b395d"
 $fail = 0
 
 Write-Host ""

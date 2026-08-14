@@ -4,29 +4,39 @@
   ],
   "boundary": "Deterministic protocol conformance only. The timing observation is reported and is not part of the verdict. Absence assertions served by this endpoint are fork-conditional in the sense of Section 6.4.3.",
   "class": "arp-existence-oracle",
+  "controls_exercised": [
+    "NV-ARP-EO-01",
+    "NV-ARP-EO-02",
+    "NV-ARP-EO-03",
+    "NV-ARP-EO-03b",
+    "NV-ARP-EO-08",
+    "NV-ARP-EO-07"
+  ],
+  "controls_not_exercised": [
+    "NV-ARP-EO-05",
+    "NV-ARP-EO-04"
+  ],
   "declared_coverage_gaps": [
     "NV-ARP-EO-05: the same-work requirement of S6.4.4 is structural and is not decidable by response comparison.",
-    "NV-ARP-EO-04: refused, but by the fallback branch. The designed discriminator -- equal 404/429 transition index -- has never executed, because the defective endpoint answers 404 before charging and so never reaches 429. The budget-ordering channel is untested.",
+    "NV-ARP-EO-04: refused, but by the fallback branch. The designed discriminator -- equal 404/429 transition index -- has never executed, because the defective endpoint answers 404 before charging and so never reaches 429. The budget-ordering channel is untested. The row is recorded with control_exercised false and does not contribute to a complete-pass claim.",
     "NV-ARP-EO-06: the statistical timing row of the class as designed is not carried as a conformance row. It is reported separately as timing_observation and is not adjudicated.",
     "Encoder independence: request-binding and deterministic CBOR are computed with functions imported from the implementation under test, so an encoder defect -- including an RFC 8949 S4.2.1 map-ordering violation -- is invisible to this class.",
     "Negative side: the NV rows are fault injection into the author's own endpoint. No independently written implementation has been refused, so the class is not two-sided in the conformance-method sense.",
     "Timing resistance: no claim is made and none is tested; the loopback observation below is not evidence about a deployed path."
   ],
   "designed_by": "Songbo Bu, review of 2026-08-10, message-id <CAK08nYYoPp4t8L_vAoH9jZMvYDL7_AMFWgU=OFL=CFJ+-4rHoQ@mail.gmail.com>",
-  "deterministic_result": "PASS",
+  "deterministic_result": "PASS_WITH_DECLARED_GAPS",
+  "deterministic_result_note": "PASS requires every row to reach its expected verdict AND every negative control to have fired its own designed discriminator. PASS_WITH_DECLARED_GAPS means no row failed but at least one channel in controls_not_exercised was never exercised. FAIL means a row did not reach its expected verdict. The process exit status is 0 for PASS and for PASS_WITH_DECLARED_GAPS, and 1 for FAIL: a disclosed gap is not a failure, and the distinction is carried here and in the printed result rather than in the exit code.",
   "does_not_establish": "anything about the specification. The endpoint was written by the specification's author from his own reading of his own text, so it is the one configuration that cannot surface a specification defect. Specification adequacy is untested until an implementer working only from the text passes this class.",
-  "environment": {
-    "platform": "win32",
-    "python": "3.13.14"
-  },
-  "establishes": "that Section 6.4.4 as its author reads it is implementable, and that each check in this class fires against a deliberately injected defect",
+  "establishes": "that Section 6.4.4 as its author reads it is implementable, and that each control listed in controls_exercised fires against the defect it injects. It establishes nothing about the channels listed in controls_not_exercised: those rows either are not decidable from the wire or were refused through a check other than the one they inject.",
   "evidence_status": "measured for the deterministic rows; declared gaps listed below",
   "fixture_sha256": "8ce61405fc02755c4950c44bdacada84e3379356e20cd552ffd2d43d41393a36",
-  "invocation_note": "the invocation and interpreter are recorded in runs/existence_oracle_timing.json; they are excluded here to keep this record byte-stable",
+  "invocation_note": "the invocation, interpreter and platform are recorded in runs/existence_oracle_timing.json; they are excluded here so that this record is byte-identical across platforms and interpreters and can be pinned in REPRODUCE.md",
   "reference_sha256": "feeb632d9e95d9dc798e28a66ecd060c31da25ac151654f8e18ab3580eb4613c",
   "result_subject": "conformance/reference/arp_read_ref.py at reference_sha256, under this class only",
   "rows": [
     {
+      "discriminators_fired": [],
       "endpoint": "conforming",
       "expected": "ACCEPT",
       "findings": [],
@@ -36,6 +46,9 @@
     },
     {
       "channel": "the absent arm short-circuits the entitlement-equivalent work",
+      "control_exercised": false,
+      "designed_discriminator": null,
+      "discriminators_fired": [],
       "endpoint": "defect:path-oracle",
       "expected": "REFUSE-BY-INSPECTION",
       "findings": [
@@ -49,6 +62,11 @@
     },
     {
       "channel": "403 for unentitled, 404 for absent -- a direct status oracle",
+      "control_exercised": true,
+      "designed_discriminator": "refused-arm-status",
+      "discriminators_fired": [
+        "refused-arm-status"
+      ],
       "endpoint": "defect:status-oracle",
       "expected": "REFUSE",
       "findings": [
@@ -60,6 +78,11 @@
     },
     {
       "channel": "an error discriminator inside the signed payload",
+      "control_exercised": true,
+      "designed_discriminator": "normalised-observation-differs",
+      "discriminators_fired": [
+        "normalised-observation-differs"
+      ],
       "endpoint": "defect:body-oracle",
       "expected": "REFUSE",
       "findings": [
@@ -71,6 +94,11 @@
     },
     {
       "channel": "an extra HTTP header on the unentitled arm only",
+      "control_exercised": true,
+      "designed_discriminator": "normalised-observation-differs",
+      "discriminators_fired": [
+        "normalised-observation-differs"
+      ],
       "endpoint": "defect:header-oracle",
       "expected": "REFUSE",
       "findings": [
@@ -82,6 +110,11 @@
     },
     {
       "channel": "cache directives differ between the two arms",
+      "control_exercised": true,
+      "designed_discriminator": "normalised-observation-differs",
+      "discriminators_fired": [
+        "normalised-observation-differs"
+      ],
       "endpoint": "defect:cache-oracle",
       "expected": "REFUSE",
       "findings": [
@@ -93,6 +126,11 @@
     },
     {
       "channel": "entitlement evaluated before the counter is charged",
+      "control_exercised": false,
+      "designed_discriminator": "budget-ordering",
+      "discriminators_fired": [
+        "budget-not-reached"
+      ],
       "endpoint": "defect:ratelimit-oracle",
       "expected": "REFUSE",
       "findings": [
@@ -104,6 +142,11 @@
     },
     {
       "channel": "responses sealed with a key the fixture does not publish",
+      "control_exercised": true,
+      "designed_discriminator": "signature-unverifiable",
+      "discriminators_fired": [
+        "signature-unverifiable"
+      ],
       "endpoint": "defect:bad-signature",
       "expected": "REFUSE",
       "findings": [
@@ -116,6 +159,11 @@
     },
     {
       "channel": "every read refused, including the entitled one",
+      "control_exercised": true,
+      "designed_discriminator": "entitled-read-refused",
+      "discriminators_fired": [
+        "entitled-read-refused"
+      ],
       "endpoint": "defect:always-404",
       "expected": "REFUSE",
       "findings": [
@@ -126,10 +174,10 @@
       "verdict": "REFUSE"
     }
   ],
-  "runner_sha256": "9c66c435f812f081e9fe4df683832abbbd00ed7a23ea055a9faa19b115ac0cab",
+  "runner_sha256": "1b2ff11dcb46f42bdab4e2eba34a996d91f7bbe174e768ec9d55c8e04cc888f6",
   "spec": "draft-hillier-scitt-arp Section 6.4.4, working copy",
   "spec_note": "The normalised-observation rule this class tests is NOT present in -03 as circulated on 2026-08-09 (text sha256 715513d49b10d0e8ad1379db28a073b24cccb295153a210b3b8abe1f9fe6ac28). It was written into the working draft in response to this class. These rows test the post-review text.",
-  "spec_source_sha256": "0a9671bbba1d6b542f4b9e9f3f913d55c640d7ff3f7fecb509f922ac8bcd12aa",
+  "spec_source_sha256": "e8cb3b93dcea2f0b1e0a35da03f95d04ce425bb6717e15e8eafad9ecf85641d1",
   "timing_observation": "recorded separately in runs/existence_oracle_timing.json; excluded here so that this record is byte-stable across runs and can be pinned in REPRODUCE.md",
   "vectors_sha256": "e57cc42be4d126c760ff4556c9b136016c83583784b30a2594e4233e70b2d455",
   "version": "v0.1"

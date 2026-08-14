@@ -35,6 +35,13 @@ normalisation cannot become a way to ignore a discriminator.
 Usage:
     python3 run_existence_oracle_vectors.py
     python3 run_existence_oracle_vectors.py --timing-samples 400
+    python3 run_existence_oracle_vectors.py --spec-source ../draft-hillier-scitt-arp.md
+
+The runner needs the draft source, because the run record binds its result to
+one revision of the draft by recording spec_source_sha256 over it. The default
+path assumes this tree sits inside the draft repository. Unpacked on its own it
+does not, so --spec-source exists and the absence is reported as an instruction
+rather than a traceback.
 """
 
 import argparse
@@ -167,6 +174,11 @@ def normalise(obs, expect_head_seq):
     Returns (normalised, removed, problems). Every removed value is validated
     against its own request here, so that normalisation cannot hide an
     existence-dependent discriminator.
+
+    Each problem is (code, text). The code names the check that fired, so a
+    caller can tell which discriminator produced a refusal rather than only
+    that some discriminator did. A row refused by a check other than the one
+    it was designed to exercise is not evidence about the designed channel.
     """
     problems = []
     params, unprot, payload, sig = unwrap_sign1(obs["body"])
@@ -175,30 +187,38 @@ def normalise(obs, expect_head_seq):
     s = obs["sent"]
     expect_rb = request_binding(s["method"], s["target"], s["nonce"], s["keyid"])
     if rb != expect_rb:
-        problems.append("request-binding does not match the request as sent")
+        problems.append(("request-binding-mismatch",
+                         "request-binding does not match the request as sent"))
     if status != obs["status"]:
-        problems.append("signed status %r differs from HTTP status %r"
-                        % (status, obs["status"]))
+        problems.append(("signed-status-mismatch",
+                         "signed status %r differs from HTTP status %r"
+                         % (status, obs["status"])))
     try:
         time.strptime(rtime, "%Y-%m-%dT%H:%M:%SZ")
     except Exception:
-        problems.append("response-time is not a valid timestamp")
+        problems.append(("response-time-invalid",
+                         "response-time is not a valid timestamp"))
     if seq < expect_head_seq:
-        problems.append("as-of-sequence-number %r is below the published head %r"
-                        % (seq, expect_head_seq))
+        problems.append(("as-of-below-head",
+                         "as-of-sequence-number %r is below the published "
+                         "head %r" % (seq, expect_head_seq)))
     if not isinstance(selfhash, bytes) or len(selfhash) != 32:
-        problems.append("as-of-self-entry-hash is not a 32-octet digest")
+        problems.append(("as-of-hash-invalid",
+                         "as-of-self-entry-hash is not a 32-octet digest"))
     if len(sig) != 64:
-        problems.append("signature is not 64 octets")
+        problems.append(("signature-length",
+                         "signature is not 64 octets"))
     elif SEAL_PK is None:
-        problems.append("no sealing public key available to verify against")
+        problems.append(("no-sealing-key",
+                         "no sealing public key available to verify against"))
     else:
         try:
             SEAL_PK.verify(sig, cbor(["Signature1", cbor({1: -8}), b"",
                                       cbor(payload)]))
         except Exception:
-            problems.append("COSE_Sign1 signature does not verify under the "
-                            "published sealing key")
+            problems.append(("signature-unverifiable",
+                             "COSE_Sign1 signature does not verify under the "
+                             "published sealing key"))
 
     h = obs["headers"]
     normalised = {
@@ -234,11 +254,18 @@ class Server(object):
 def evaluate(fx, defect, timing_samples=0):
     """Run the deterministic class against one endpoint configuration.
 
-    Returns (verdict, findings) where verdict is ACCEPT or REFUSE. REFUSE means
-    the suite detected an existence channel or a trivially-refusing server.
+    Returns (verdict, findings, codes). verdict is ACCEPT or REFUSE; REFUSE
+    means the suite detected an existence channel or a trivially-refusing
+    server. codes is the sorted set of checks that fired.
+
+    The codes exist because REFUSE alone does not say which check produced the
+    refusal. A negative control that refuses through a check other than the one
+    it injects has not exercised the channel it is named for, and counting it
+    as a passing control would be the suite claiming coverage it does not have.
     """
     head = int(fx["head"]["sequence_number"])
     findings = []
+    codes = set()
     with Server(defect) as _:
         ent = Client(fx, "p-entitled")
         oth = Client(fx, "p-other")
@@ -248,6 +275,7 @@ def evaluate(fx, defect, timing_samples=0):
         if a["status"] != 200:
             findings.append("PV-01 entitled read of an existing resource "
                             "returned %d, not 200" % a["status"])
+            codes.add("entitled-read-refused")
 
         # PV-ARP-EO-02 / 03 -- the two refused arms.
         b = oth.get("R_present")
@@ -255,19 +283,24 @@ def evaluate(fx, defect, timing_samples=0):
         for name, o in (("PV-02", b), ("PV-03", c)):
             if o["status"] != 404:
                 findings.append("%s expected 404, got %d" % (name, o["status"]))
+                codes.add("refused-arm-status")
         if b["status"] == 404 and c["status"] == 404:
             nb, rb_, pb = normalise(b, head)
             nc, rc_, pc = normalise(c, head)
-            findings += ["PV-02 " + x for x in pb]
-            findings += ["PV-03 " + x for x in pc]
+            for tag_, probs in (("PV-02", pb), ("PV-03", pc)):
+                for code, text in probs:
+                    findings.append("%s %s" % (tag_, text))
+                    codes.add(code)
             if nb != nc:
                 diff = sorted(k for k in set(nb) | set(nc)
                               if nb.get(k) != nc.get(k))
                 findings.append("normalised observations differ in %s "
                                 "-- existence is observable" % ", ".join(diff))
+                codes.add("normalised-observation-differs")
             if rb_["request-binding"] == rc_["request-binding"]:
                 findings.append("two distinct requests share one "
                                 "request-binding")
+                codes.add("request-binding-collision")
 
         # PV-ARP-EO-04 -- charge-before-entitlement, interleaved bursts.
         seq_present, seq_absent = [], []
@@ -281,12 +314,14 @@ def evaluate(fx, defect, timing_samples=0):
                             "index) did not execute. Refused for the wrong "
                             "reason; the budget-ordering channel is untested "
                             "by this run")
+            codes.add("budget-not-reached")
         elif seq_present.index(429) != seq_absent.index(429):
             findings.append("PV-04 the two arms reach 429 after different "
                             "request counts -- the budget is an oracle")
+            codes.add("budget-ordering")
 
     verdict = "REFUSE" if findings else "ACCEPT"
-    return verdict, findings
+    return verdict, findings, sorted(codes)
 
 
 def timing_probe(fx, samples):
@@ -322,30 +357,78 @@ def timing_probe(fx, samples):
     }
 
 
+# Each entry names the check the row is designed to trip. A row that refuses
+# without firing its own discriminator is recorded with control_exercised
+# false: the endpoint was rejected, but not by the channel the row injects, so
+# the row is not evidence that that channel is detectable.
 DEFECTS = [
     ("NV-ARP-EO-01", "status-oracle",
-     "403 for unentitled, 404 for absent -- a direct status oracle"),
+     "403 for unentitled, 404 for absent -- a direct status oracle",
+     "refused-arm-status"),
     ("NV-ARP-EO-02", "body-oracle",
-     "an error discriminator inside the signed payload"),
+     "an error discriminator inside the signed payload",
+     "normalised-observation-differs"),
     ("NV-ARP-EO-03", "header-oracle",
-     "an extra HTTP header on the unentitled arm only"),
+     "an extra HTTP header on the unentitled arm only",
+     "normalised-observation-differs"),
     ("NV-ARP-EO-03b", "cache-oracle",
-     "cache directives differ between the two arms"),
+     "cache directives differ between the two arms",
+     "normalised-observation-differs"),
     ("NV-ARP-EO-04", "ratelimit-oracle",
-     "entitlement evaluated before the counter is charged"),
+     "entitlement evaluated before the counter is charged",
+     "budget-ordering"),
     ("NV-ARP-EO-08", "bad-signature",
-     "responses sealed with a key the fixture does not publish"),
+     "responses sealed with a key the fixture does not publish",
+     "signature-unverifiable"),
     ("NV-ARP-EO-07", "always-404",
-     "every read refused, including the entitled one"),
+     "every read refused, including the entitled one",
+     "entitled-read-refused"),
 ]
+
+
+DEFAULT_SPEC = os.path.abspath(os.path.join(ROOT, "..",
+                                            "draft-hillier-scitt-arp.md"))
+
+SPEC_MISSING = """\
+  The draft source is not where this runner expects it:
+
+      %s
+
+  The run record binds its result to one revision of the draft by recording
+  spec_source_sha256 over that file, so the run cannot be produced without it.
+  It is NOT recorded as absent: a record that pins a source it never read would
+  pass this runner and then fail the manifest, which moves the failure without
+  removing it.
+
+  This is what happens when the conformance tree is unpacked on its own -- the
+  tree is a subdirectory of the draft repository and the draft sits one level
+  above it. Two ways out:
+
+      python3 runners/run_existence_oracle_vectors.py --spec-source /path/to/draft-hillier-scitt-arp.md
+
+  or fetch the draft source alongside the tree, from the branch and commit
+  named in REPRODUCE.md section 2. Reported by Walter Hawkins and by Songbo Bu
+  on 2026-08-12, both of whom hit it on the packaged tree."""
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--timing-samples", type=int, default=120)
+    ap.add_argument("--spec-source", default=DEFAULT_SPEC,
+                    help="path to draft-hillier-scitt-arp.md. The run records "
+                         "its sha256, so the result is evidence about that "
+                         "revision and no other.")
     ap.add_argument("--out", default=os.path.join(ROOT, "runs",
                                                   "existence_oracle_run.json"))
     a = ap.parse_args()
+
+    spec_path = os.path.abspath(a.spec_source)
+    if not os.path.isfile(spec_path):
+        sys.stderr.write("\nARP existence-oracle class: cannot run.\n\n")
+        sys.stderr.write(SPEC_MISSING % spec_path)
+        sys.stderr.write("\n\n")
+        return 2
+
     fx = json.load(io.open(FIXTURE, encoding="utf-8"))
     global SEAL_PK
     SEAL_PK = Ed25519PublicKey.from_public_bytes(
@@ -354,15 +437,17 @@ def main():
         [os.path.basename(__file__)] + sys.argv[1:])
 
     rows = []
-    ok = True
+    failed = False           # a row did not reach its expected verdict
+    unexercised = []         # a row refused, but not through its own channel
 
-    verdict, findings = evaluate(fx, None)
+    verdict, findings, codes = evaluate(fx, None)
     rows.append({"vector": "PV-ARP-EO-01..04", "endpoint": "conforming",
                  "expected": "ACCEPT", "verdict": verdict,
                  "findings": findings,
+                 "discriminators_fired": codes,
                  "requirement_source": "draft-hillier-scitt-arp-03 S6.4.4"})
     if verdict != "ACCEPT":
-        ok = False
+        failed = True
 
     # NV-ARP-EO-05 is a structural requirement, not a wire-observable one. A
     # server that short-circuits the absent arm emits a byte-equivalent
@@ -370,7 +455,7 @@ def main():
     # harness cannot supply, decides it. Running it and reporting ACCEPT would
     # be the suite claiming coverage it does not have, so it is carried as a
     # declared gap with the evidence that would close it named.
-    v, f = evaluate(fx, "path-oracle")
+    v, f, c = evaluate(fx, "path-oracle")
     rows.append({
         "vector": "NV-ARP-EO-05", "endpoint": "defect:path-oracle",
         "channel": "the absent arm short-circuits the "
@@ -386,23 +471,40 @@ def main():
                      "network placement and threshold -- neither is available "
                      "on loopback"],
         "wire_comparison_verdict": v,
+        "discriminators_fired": c,
+        "designed_discriminator": None,
+        "control_exercised": False,
         "requirement_source": "draft-hillier-scitt-arp-03 S6.4.4"})
+    unexercised.append("NV-ARP-EO-05")
 
-    for vid, defect, why in DEFECTS:
-        v, f = evaluate(fx, defect)
+    for vid, defect, why, designed in DEFECTS:
+        v, f, c = evaluate(fx, defect)
+        exercised = (v == "REFUSE" and designed in c)
         rows.append({"vector": vid, "endpoint": "defect:" + defect,
                      "channel": why, "expected": "REFUSE", "verdict": v,
                      "findings": f,
+                     "discriminators_fired": c,
+                     "designed_discriminator": designed,
+                     "control_exercised": exercised,
                      "requirement_source": "draft-hillier-scitt-arp-03 S6.4.4"})
         if v != "REFUSE":
-            ok = False
+            failed = True
+        elif not exercised:
+            unexercised.append(vid)
 
     timing = timing_probe(fx, a.timing_samples)
 
+    exercised_ids = [r["vector"] for r in rows
+                     if r.get("control_exercised") is True]
+    if failed:
+        aggregate = "FAIL"
+    elif unexercised:
+        aggregate = "PASS_WITH_DECLARED_GAPS"
+    else:
+        aggregate = "PASS"
+
     vectors_path = os.path.join(ROOT, "vectors",
                                 "arp-existence-oracle-v0.1.json")
-    spec_path = os.path.abspath(os.path.join(ROOT, "..",
-                                             "draft-hillier-scitt-arp.md"))
     out = {
         "class": "arp-existence-oracle",
         "version": "v0.1",
@@ -424,18 +526,22 @@ def main():
         "reference_sha256": sha256_file(os.path.join(REF, "arp_read_ref.py")),
         "runner_sha256": sha256_file(os.path.abspath(__file__)),
         "vectors_sha256": sha256_file(vectors_path),
-        "invocation_note": "the invocation and interpreter are recorded in "
-                           "runs/existence_oracle_timing.json; they are "
-                           "excluded here to keep this record byte-stable",
-        "environment": {
-            "python": sys.version.split()[0],
-            "platform": sys.platform,
-        },
+        "invocation_note": "the invocation, interpreter and platform are "
+                           "recorded in runs/existence_oracle_timing.json; "
+                           "they are excluded here so that this record is "
+                           "byte-identical across platforms and interpreters "
+                           "and can be pinned in REPRODUCE.md",
         "result_subject": "conformance/reference/arp_read_ref.py at "
                           "reference_sha256, under this class only",
+        "controls_exercised": exercised_ids,
+        "controls_not_exercised": unexercised,
         "establishes": "that Section 6.4.4 as its author reads it is "
-                       "implementable, and that each check in this class "
-                       "fires against a deliberately injected defect",
+                       "implementable, and that each control listed in "
+                       "controls_exercised fires against the defect it "
+                       "injects. It establishes nothing about the channels "
+                       "listed in controls_not_exercised: those rows either "
+                       "are not decidable from the wire or were refused "
+                       "through a check other than the one they inject.",
         "does_not_establish": "anything about the specification. The endpoint "
                               "was written by the specification's author from "
                               "his own reading of his own text, so it is the "
@@ -445,7 +551,22 @@ def main():
                               "the text passes this class.",
         "evidence_status": "measured for the deterministic rows; declared gaps "
                            "listed below",
-        "deterministic_result": "PASS" if ok else "FAIL",
+        "deterministic_result": aggregate,
+        "deterministic_result_note": "PASS requires every row to reach its "
+                                     "expected verdict AND every negative "
+                                     "control to have fired its own designed "
+                                     "discriminator. "
+                                     "PASS_WITH_DECLARED_GAPS means no row "
+                                     "failed but at least one channel in "
+                                     "controls_not_exercised was never "
+                                     "exercised. FAIL means a row did not "
+                                     "reach its expected verdict. The process "
+                                     "exit status is 0 for PASS and for "
+                                     "PASS_WITH_DECLARED_GAPS, and 1 for "
+                                     "FAIL: a disclosed gap is not a failure, "
+                                     "and the distinction is carried here and "
+                                     "in the printed result rather than in "
+                                     "the exit code.",
         "declared_coverage_gaps": [
             "NV-ARP-EO-05: the same-work requirement of S6.4.4 is structural "
             "and is not decidable by response comparison.",
@@ -453,7 +574,8 @@ def main():
             "discriminator -- equal 404/429 transition index -- has never "
             "executed, because the defective endpoint answers 404 before "
             "charging and so never reaches 429. The budget-ordering channel "
-            "is untested.",
+            "is untested. The row is recorded with control_exercised false "
+            "and does not contribute to a complete-pass claim.",
             "NV-ARP-EO-06: the statistical timing row of the class as designed "
             "is not carried as a conformance row. It is reported separately "
             "as timing_observation and is not adjudicated.",
@@ -483,7 +605,13 @@ def main():
         json.dumps(out, indent=2, sort_keys=True) + "\n")
     timing_out = dict(timing)
     timing_out["invocation"] = invocation
-    timing_out["environment"] = out["environment"]
+    timing_out["environment"] = {
+        "python": sys.version.split()[0],
+        "platform": sys.platform,
+    }
+    timing_out["environment_note"] = (
+        "This record is environment-dependent by design and is NOT pinned in "
+        "REPRODUCE.md. The deterministic record is.")
     timing_out["run_of"] = os.path.basename(a.out)
     io.open(os.path.join(os.path.dirname(a.out),
                          "existence_oracle_timing.json"), "w",
@@ -495,23 +623,45 @@ def main():
     w("fixture   %s\n" % out["fixture_sha256"])
     w("reference %s\n\n" % out["reference_sha256"])
     for r in rows:
-        if r["verdict"] == r["expected"]:
-            mark = "ok  "
-        elif r["verdict"] == "NOT-DECIDABLE-FROM-WIRE":
+        if r["verdict"] == "NOT-DECIDABLE-FROM-WIRE":
+            mark = "gap "
+        elif r["verdict"] != r["expected"]:
+            mark = "FAIL"
+        elif r.get("control_exercised") is False:
             mark = "gap "
         else:
-            mark = "FAIL"
+            mark = "ok  "
         w("  %s %-18s %-24s expected %-7s got %s\n"
           % (mark, r["vector"], r["endpoint"], r["expected"], r["verdict"]))
+        if r.get("control_exercised") is False:
+            if r.get("designed_discriminator") is None:
+                w("        ! no wire-observable discriminator exists for this "
+                  "row; carried as a declared gap\n")
+            else:
+                w("        ! designed discriminator %s did not fire; "
+                  "fired instead: %s\n"
+                  % (r["designed_discriminator"],
+                     ", ".join(r["discriminators_fired"]) or "none"))
         for f in r["findings"]:
             w("        - %s\n" % f)
     w("\ntiming (reported, not adjudicated): median present %.6fs, "
       "absent %.6fs, standardised difference %.4f over %d samples/arm\n"
       % (timing["median_present_s"], timing["median_absent_s"],
          timing["standardised_median_difference"], timing["samples_per_arm"]))
+    w("\ncontrols exercised     %d of %d  (%s)\n"
+      % (len(exercised_ids), len(exercised_ids) + len(unexercised),
+         ", ".join(exercised_ids) or "none"))
+    if unexercised:
+        w("controls NOT exercised %d        (%s)\n"
+          % (len(unexercised), ", ".join(unexercised)))
     w("\nDETERMINISTIC RESULT: %s\n" % out["deterministic_result"])
+    if unexercised and not failed:
+        w("  No row failed. The channels above were never exercised, so this "
+          "run is not\n  a complete pass and does not claim to be. Exit "
+          "status is 0; the gaps are in\n  controls_not_exercised and in "
+          "declared_coverage_gaps.\n")
     w("written %s\n" % a.out)
-    return 0 if ok else 1
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

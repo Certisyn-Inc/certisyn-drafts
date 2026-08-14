@@ -45,3 +45,12 @@ REVISION-PLAN-*.md
 RECOVERY.md
 _notes-local/
 tracker.log
+
+# Built draft text is never tracked here. The IETF archive serves it and
+# README.md carries its digest. Added 2026-08-14 after _rt.txt was found tracked
+# in this public repository holding a whole revision of the draft: it evaded the
+# draft-hillier-scitt-arp-*.txt rule above purely because of its filename. An
+# ignore rule that can be defeated by naming a file something else is not an
+# ignore rule, so this catches the archive by location as well as by name.
+archive/**/*.txt
+_rt.txt

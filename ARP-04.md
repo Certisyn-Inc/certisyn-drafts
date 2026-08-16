@@ -3,8 +3,11 @@
 **Read this file first. Everything else in this folder is derived from it or superseded by it.**
 
 Working document for `draft-hillier-scitt-arp-04`. Owner: Joel Hillier.
-Opened 2026-08-14, the day `-03` posted. Supersedes every `-03`-era note in
-`archive/arp-03/`.
+Opened 2026-08-14, the day `-03` posted. Last updated 2026-08-16. Supersedes
+every `-03`-era note in `archive/arp-03/`.
+
+**Sections 10 to 12 are the live edge.** Two commitments to other authors closed
+on 16 August and are verified from the remote; two remain open with dates.
 
 ---
 
@@ -333,3 +336,136 @@ Standards-adjacent, carried so a new session does not have to rediscover them:
 Programme, legal and repository-hygiene items are held in the private copy of this
 file in the OneDrive `IETF-Drafts` folder, not here, because this repository is
 public.
+
+---
+
+## 10. Open commitments to others, with dates
+
+### 10.1 CPB out-of-scope wording. CLOSED 2026-08-16
+
+The out-of-scope reasons in `cpb_run.json` described ARP in language ARP does
+not use. "Correlation digest" appears nowhere in `-01`, "by design" asserted an
+intent the draft does not state, and the typed-refs reason made a normative
+claim about another document's obligations that ARP is not entitled to make.
+Replacement wording was agreed with Steven Mih on 9 August. It reached the
+runner and the record on 16 August, before his
+`draft-mih-agent-accountability-conformance-01` filed.
+
+The strings are emitted by `run_cpb_vectors.py` rather than stored, so the fix
+went into the runner and the record was regenerated from it. Editing the record
+directly would have produced a run record no run produced.
+
+    branch feat/revision-02-canonicalization   commit ec354e5
+    branch wip/revision-03                     commit 5930f5c
+
+| artefact | was | now |
+|---|---|---|
+| `runs/cpb_run.json` | `c39d204c...` 10,470 B | `ddf063bb23ade16a729bc6ba8baada5c30a4f4ef3ec0f5b52a103f45fbe0208e` 11,972 B |
+| `runs/cpb_run.txt` | `0ae0ea71...` 4,550 B | `186cc728e8661505f16f1449f865bdad143b96ae199e229b991665481a705e41` 4,886 B |
+| `runners/run_cpb_vectors.py` | `4170baf3...` | `ecaee0cc29127d61abb27ebbf190a07226abff48c2b910d55c8bf1ec3655d774` |
+
+Regenerated against the pinned CPB corpus,
+`github.com/action-state-group/scitt-payload-binding` at
+`bc08d78a210f8e77d4abfd8c04c10ea9b57d4390`. That repository was not on the
+machine and was cloned fresh from the pin in REPRODUCE.md section 2.
+
+**Controls run before committing anything.** The unmodified runner was executed
+first and confirmed to reproduce `c39d204c...` and `0ae0ea71...` exactly, so the
+delta is attributable. A structural comparison of old against new shows eight
+changed leaves, every one a `reason` string under `out_of_scope`. Every row,
+digest, verdict and count is identical: ten positive vectors, three agreeing,
+seven diverging with five absent-field-normalization and two exclusion-set, one
+must-fail refused by both, zero unattributed, SELF-CHECK PASS. REPRODUCE.md
+sections 5 and 6 re-pinned, MANIFEST PASS on both branches. The pushed bytes
+were fetched back out of GitHub and hashed, and the withdrawn strings return
+zero occurrences on the remote.
+
+### 10.2 Stale record at the commit Steven cited. CLOSED 2026-08-16
+
+Steven's draft pointed at `ae54748`, where REPRODUCE.md section 5 recorded
+`cpb_run.json` as `cc94f74e...`, contradicting both the file and the digest his
+own draft states. A reader following the citation would have found a flat
+contradiction with no way to tell which side was wrong.
+
+Superseded by `ec354e5`, where the record and the file agree and the manifest
+passes. Three lines had differed between `ae54748` and `6034be6` and nothing
+else. One of them, `runs/arp_adapter_run.json`, had been carrying
+`typed_ref_cpb01_run.json`'s digest: a transposition between adjacent rows,
+which is the failure a checker reading only one layout cannot see. All eight
+outputs named in section 5 were fetched at both commits and every one matched
+the `6034be6` record, so the artefacts had never changed. Only the record was
+wrong.
+
+### 10.3 Two wording problems in Steven's draft text. OPEN, with him
+
+Both checked against `cpb_run.json` rather than against any summary of it.
+
+**The three-conjunct sentence misreads.** It attributes every divergence to
+three declared canonicalization steps including the digest-bearing guard. No
+positive row carries that cause; it appears on kat-10 alone. The seven positive
+divergences are explained by two steps. Split so the seven attach to the
+exclusion set and the absent-field-normalization rule and the must-fail row
+attaches to the digest-bearing guard.
+
+**"Exactly as an unattributed divergence did" should read "would have".** The
+`unattributed` array is empty, so the past tense claims an event that did not
+happen.
+
+Sent 16 August. He files Wednesday 19 August.
+
+### 10.4 Iman Schrock's Gap 6 reproduction receipt. OPEN, action is ours
+
+Run it and send back the generated `reproduction-receipt.json`.
+
+    https://github.com/emiliaprotocol/emilia-protocol
+    commit 14eee68e64a4f8b0b5950e2ddfab753c48d202a9
+    node conformance/composition/gap6-execution-evidence-v0.1/run.mjs
+
+Run from the repository root. It writes `report.json` and
+`reproduction-receipt.json`. Committed 14-case reference digest is
+`sha256:d79e68656441dcf231a4802c1b5c973fa798ca7d48d7e6acacd2c5683148b239`.
+
+`run.mjs` was read before recommending it: 41,882 bytes, no network calls, one
+`execFileSync` running `git rev-parse HEAD` to stamp the receipt. The runner's
+header states the boundary correctly, that running it externally is a
+reproduction of pinned checks and not an independent implementation result.
+Keep that framing when reporting.
+
+### 10.5 Anton Sokolov. No action
+
+His 16 August message to Tora, with ARP copied, asks nothing. One idea worth
+taking: a multi-implementation gap register should say which implementation each
+row was measured against and on what commit, because the common failure is a fix
+landing in the reference implementation while the others keep accepting the
+input and the register records the row as closed. That is rule 9 seen from the
+register side rather than the control side.
+
+---
+
+## 11. New tree finding, closed the same day
+
+**A run record that pins its own digest must pin its own line endings.**
+
+`run_cpb_vectors.py` wrote with the platform default newline. The record was LF
+as committed and CRLF when regenerated on Windows: identical content, different
+digest, and nothing in the record to tell a reader whether they were looking at
+a line-ending artefact or a tampered artefact. Measured: 197 lines, 10,470 bytes
+as committed against 10,667 regenerated, and LF-normalising the fresh output
+reproduced the committed digest exactly.
+
+This is the same class as the environment block that used to sit inside
+`existence_oracle_run.json`, and it is the general form of standing rule four:
+a reproduction manifest is a claim about bytes, and the checkout and the writer
+are both part of the measurement. The writer now pins LF.
+
+Worth applying to every other writer in the tree that emits a pinned record.
+That check has not been done yet.
+
+---
+
+## 12. Update log
+
+| date | what changed |
+|---|---|
+| 2026-08-14 | Opened, the day `-03` posted. Sections 1 to 9. |
+| 2026-08-16 | Added sections 10 to 12. Closed the 9 August CPB wording commitment in the runner and the record, and the stale-record citation, both verified from the remote. Recorded the line-ending finding. Sections 10.3 and 10.4 remain open. |

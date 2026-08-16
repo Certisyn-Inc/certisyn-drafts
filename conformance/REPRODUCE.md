@@ -225,7 +225,7 @@ No other fixture is used. Everything else is read from the pinned corpora.
     runs/arp_outcome_vectors_v02_run.json   5 passed, 0 failed
       sha256 a2ad66d4f7acb573f3b63dd5874fae127261984348413d5c1a03e98d6f55aa28
     runs/cpb_run.json                       SELF-CHECK PASS, 0 unattributed
-      sha256 c39d204c9685c78d39c66b46f89dcf406116ecde9f3c416b5f98fcf4878e6b9d
+      sha256 ddf063bb23ade16a729bc6ba8baada5c30a4f4ef3ec0f5b52a103f45fbe0208e
     runs/aac_run.json                       SELF-CHECK PASS, 0 unattributed
       sha256 421a8bef08d33a47ad302b281a66c0773fd025ab55d7996c2964f335294982d4
     runs/arp_adapter_run.json               5 of 5
@@ -276,7 +276,7 @@ two rows; see CHANGES-v2.1.md.
     c54bd187a9abe9b55103a9faff8b31bd01f049856b35bef2575095b83febdf44  harness/arp_adapter.py
     0ee49465873bb9f9c18330517a9830aa3ad9e100886c76e9ec3c61db234eec3c  runners/run_outcome_vectors.py
     f924e69ccfc7d91e9295415b6aaa455976601f967fc7b337c0aa246c801a484d  runners/build_outcome_vectors_v02.py
-    4170baf34c273423d14a7468750033315c840d3433a08657c12000af0454a66d  runners/run_cpb_vectors.py
+    ecaee0cc29127d61abb27ebbf190a07226abff48c2b910d55c8bf1ec3655d774  runners/run_cpb_vectors.py
     583dc806ee49b50f27ef27c5270a5330657c63155e580cfb312b1c4d455db19d  runners/run_aac_vectors.py
     cb964d52a7c30cf00d4527766916773772ac3eb0d2524ec00b3d6b44d6ec9f65  runners/aac_go_shim/main.go
     dbed0ea02d38336a6ed7342797b9905aca6db206f462dfa08e10908073cec7b4  runners/verify_manifest.py

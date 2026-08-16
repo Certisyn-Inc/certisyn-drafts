@@ -233,16 +233,22 @@ def main():
     out_of_scope = []
     for label, paths, why in (
         ("jcs-n/derived-id", derived,
-         "derived identifiers are computed over a payload MINUS a declared "
-         "exclusion set. ARP has no exclusion-set mechanism: its subject digest "
-         "covers the whole action object by design, because an ARP correlation "
-         "digest that omitted fields could correlate two different actions."),
+         "Derived identifiers are computed over a payload minus a declared "
+         "exclusion set. ARP-01 defines no exclusion-set mechanism; its "
+         "subject_digest is computed over the action as a whole, though the "
+         "draft does not use that phrase. These vectors are therefore outside "
+         "ARP's scope rather than failed by it."),
         ("typed-refs", typed,
-         "typed digest references carry a declared artifact type, digest context "
-         "and representation. ARP-02 REQUIRES a correlation digest to identify "
-         "its construction and defers the mechanism to this draft rather than "
-         "defining one, so ARP has nothing of its own to run here. This is the "
-         "gap the deferral creates, and it is deliberate."),
+         "Typed digest references carry a declared artifact type, digest context "
+         "and representation. ARP-01 defines no general typed-reference "
+         "mechanism; the only construction tagging it carries is the "
+         "two-valued profile tag on the authority-reference digest in "
+         "Appendix D, which distinguishes a digest over a COSE_Sign1 "
+         "transparency receipt from one over the canonical JSON of an "
+         "offline receipt payload. That is not a registry and does not cover "
+         "the artifact types these vectors exercise, so ARP has nothing of "
+         "its own to run against them. Whether ARP should define a general "
+         "mechanism or cite this draft's is open."),
         ("profile-independence", prof,
          "these test that one payload profile does not reach inside another. "
          "ARP has a single profile and no cross-profile surface, so the "
@@ -300,7 +306,7 @@ def main():
     # Print the basename. This transcript is committed, so an absolute path in
     # it would make the committed file depend on where the author's checkout
     # sat -- the same defect Songbo found in the result JSON, one layer out.
-    with open(out, "w") as f:
+    with open(out, "w", newline="\n") as f:
         json.dump({
             "suite": "draft-mih-sokolov-scitt-payload-binding conformance vectors",
             "harness": "arp_reconcile.py v2.1",

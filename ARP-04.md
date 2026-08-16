@@ -191,10 +191,16 @@ Open family items, none of them blocking:
   match `ai-governance` Section 9. The family should read symmetrically.
 - **Author name** renders "Hillier, J." in reference blocks and "J. D. Hillier" on
   the title page. Cosmetic. Fix in the datatracker author record.
-- **`chorale-protocol-03` is unfiled.** Two things to settle before it goes: it
-  carries no `date:`, so a build stamps it with whatever day it ran, and the
-  author email is `joel@certisyn.com` where the other three use
-  `jhillier@certisyn.com`. There is no `joel@certisyn.com`.
+- **`chorale-protocol` is unfiled, and its docname is wrong for a first
+  filing.** Checked against the datatracker on 2026-08-16: zero documents and
+  zero submissions under `draft-hillier-chorale-protocol`. The local source
+  carries `docname: draft-hillier-chorale-protocol-03`, but a name with no
+  filing history must enter at `-00`. Set it to `-00` before submitting. It also
+  carries no `date:`, so a build stamps it with whatever day it ran. The author
+  email is already `jhillier@certisyn.com`; the earlier note that it read
+  `joel@certisyn.com` is stale and is corrected here. `category: exp`,
+  `submissionType: IETF`, `ipr: trust200902`, and `country: US` with no street
+  or postal detail.
 ---
 
 ## 4. How to reproduce anything in section 1
@@ -316,6 +322,7 @@ Written down because it is the reason the reviews above produced what they did.
 | filing register | `certisyn-app/drafts/ietf/STANDARDS-REGISTER.md`, mirrored to OneDrive |
 | register self-check | `drafts/ietf/verify-filings.py` |
 | immutable filed text, every revision | OneDrive `IETF-Drafts/*.FILED.txt`, with `PROVENANCE.md` |
+| externally cited conformance evidence | OneDrive `IETF-Drafts/cpb-interop-evidence/`, with its own README |
 | superseded `-03` working notes | `scitt-arp-f39/archive/arp-03/` |
 
 Repositories. `scitt-arp-f39` is its own repository at

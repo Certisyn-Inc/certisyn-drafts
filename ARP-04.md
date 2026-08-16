@@ -413,7 +413,7 @@ happen.
 
 Sent 16 August. He files Wednesday 19 August.
 
-### 10.4 Iman Schrock's Gap 6 reproduction receipt. OPEN, action is ours
+### 10.4 Iman Schrock's Gap 6 reproduction receipt. CLOSED
 
 Run it and send back the generated `reproduction-receipt.json`.
 
@@ -430,6 +430,20 @@ Run from the repository root. It writes `report.json` and
 header states the boundary correctly, that running it externally is a
 reproduction of pinned checks and not an independent implementation result.
 Keep that framing when reporting.
+
+**CLOSED 2026-08-16.** Reproduced on win32-arm64, Node v24.14.1.
+`results_digest` sha256:d79e68656441dcf231a4802c1b5c973fa798ca7d48d7e6acacd2c5683148b239
+matches the committed reference, `matches_committed_reference: true`, runner
+exit 0, fourteen of fourteen cases at their stated verdict.
+`reproduction-receipt.json` is
+`3e6e5aee1c37e2926f323e77638bd8452082495d28da680390dd2ddb72f8d9be`, 535 B, and
+is staged at `_send/gap6-reproduction-receipt.json`.
+
+Finding returned to Iman: the published instruction does not run on a clean
+clone. `@emilia-protocol/require-receipt` is a `file:` dependency resolved
+through the lockfile and the root `package.json` declares no `workspaces`, so
+`node run.mjs` terminates in ERR_MODULE_NOT_FOUND until `npm ci --ignore-scripts`
+runs first. Standing rule 10 applied to somebody else's tree.
 
 ### 10.5 Anton Sokolov. No action
 

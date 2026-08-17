@@ -47,10 +47,12 @@ $Cache = Join-Path $RepoPath ".refcache"
 $seed  = Join-Path $RepoPath "seed-refcache.ps1"
 $count = if (Test-Path $Cache) { (Get-ChildItem $Cache -Filter *.xml -EA SilentlyContinue).Count } else { 0 }
 
-# 27 = 20 RFCs + 7 I-Ds, the full set -03 cites. Raise this whenever a reference
+# 29 = 22 RFCs + 7 I-Ds, the full set -04 cites. -03 cited 27; RFC 9162 and
+# RFC 6962 were added for the Certificate Transparency relationship in 4.9.
+# Raise this whenever a reference
 # is added, or a build will silently run against an incomplete cache and hang on
 # bib.ietf.org for the missing one.
-if ($Reseed -or $count -lt 27) {
+if ($Reseed -or $count -lt 29) {
     if (Test-Path $seed) {
         Say "  seeding ($count entries present) ..." Yellow
         & powershell -NoProfile -ExecutionPolicy Bypass -File $seed -RepoPath $RepoPath | Out-Null

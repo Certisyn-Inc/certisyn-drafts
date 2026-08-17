@@ -1,7 +1,7 @@
 ---
 title: Attestation Reconciliation Protocol
 abbrev: ARP
-docname: draft-hillier-scitt-arp-03
+docname: draft-hillier-scitt-arp-04
 date: 2026-08-13
 category: std
 submissiontype: IETF
@@ -58,6 +58,8 @@ normative:
 
 informative:
   RFC6350:        # vCard 4.0
+  RFC9162:        # Certificate Transparency 2.0; {{merkle-construction}} states its relationship to Section 2.1.1
+  RFC6962:        # Certificate Transparency, obsoleted by RFC 9162 and cited deliberately: it is what deployed CT logs implement
   I-D.schrock-canonical-action-identifier:
   BODS:
     title: Beneficial Ownership Data Standard
@@ -1262,6 +1264,45 @@ not be equal and neither is derivable from the other. A leaf node is `SHA-256(0x
 last is carried up to the next level unchanged rather than duplicated. A tree
 over one leaf has that leaf's leaf-node hash as its root; a tree over no leaves
 has thirty-two zero octets as its root.
+
+For every non-empty tree this is the Merkle Tree Hash of Section 2.1.1 of
+{{RFC9162}}, which is unchanged from Section 2.1 of {{RFC6962}}. Both are named
+here: {{RFC9162}} because it is the current specification, and {{RFC6962}}
+because it is what most deployed Certificate Transparency logs implement and so
+is what an implementer is most likely to arrive from. The odd-node rule stated
+above and those documents' recursive split at the largest power of two below the
+leaf count are two descriptions of one tree: at every leaf count they produce
+the same root, and at every leaf count and index they produce the same sibling
+array. An implementation may compute either way and interoperate with one that
+computes the other. This is stated because the two rules do not look alike, so a
+reader who knows Certificate Transparency has no way to establish from the prose
+alone that they agree; and because a third convention is in common use, in which
+the last node at an odd level is duplicated and paired with itself, and that one
+produces different roots.
+
+The two diverge at exactly one input, the empty tree, and the divergence is
+deliberate. Certificate Transparency defines the Merkle Tree Hash of the empty
+list as the hash of the empty string, which under SHA-256 is
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`; this
+document defines it as thirty-two zero octets. The Certificate Transparency
+value is a well formed digest that a verifier reproduces successfully and may
+then treat as a root that commits to something. Thirty-two zero octets is a
+value no commitment in this document produces, so it cannot be mistaken for one.
+An implementation MUST use the value defined in this section and MUST NOT
+substitute the Certificate Transparency empty-tree value. The requirement below,
+that a verifier reject any inclusion proof presented against the empty root,
+holds under either convention and does not depend on which is chosen.
+
+Two further differences are matters of input and of encoding rather than of the
+tree, and each is a place an implementation ported from a Certificate
+Transparency log will be wrong if it is carried over unchanged. This document
+sorts leaves in bytewise lexicographic order and deduplicates them before the
+tree is built, where a Certificate Transparency log commits to entries in the
+order it received them; an implementation MUST apply the ordering and
+deduplication stated above and MUST NOT assume submission order. And this
+document's inclusion proof carries the leaf, its index and the leaf count
+alongside the sibling array, where the inclusion proof of Section 2.1.3 of
+{{RFC9162}} is the sibling array alone.
 
 An inclusion proof is a CBOR array of the leaf, its zero-based index, the leaf
 count, and the array of sibling hashes from the leaf's level upward. Domain
@@ -4313,6 +4354,44 @@ failure is a correlation that silently does not occur.
 # Document History
 
 RFC Editor: please remove this section before publication.
+
+## Since draft-hillier-scitt-arp-03
+
+{{merkle-construction}} now states its relationship to Certificate Transparency,
+which -03 did not mention anywhere in the document while defining a Merkle
+construction. An implementer arriving from Certificate Transparency had no way
+to tell from the text whether the two constructions agree, and three separate
+places to get it wrong if they assumed one answer or the other. The finding is
+Tom Sato's.
+
+The relationship was established by executing both constructions rather than by
+comparing their prose. The odd-node rule of {{merkle-construction}} and the
+recursive split at the largest power of two below the leaf count of {{RFC9162}}
+Section 2.1.1 produce identical roots for every leaf count from 1 to 1024, and
+identical sibling arrays for all 32,896 leaf-count-and-index pairs up to 256
+leaves. They diverge at one input in that whole range: the empty tree, where
+this document gives thirty-two zero octets and Certificate Transparency gives
+the hash of the empty string. That divergence is kept, and the section now says
+why -- the Certificate Transparency value is a digest a verifier reproduces
+successfully and may then treat as a root that commits to something, and
+thirty-two zero octets is a value no commitment in this document produces.
+
+The section also now states the two differences that are not differences in the
+tree: this document sorts and deduplicates leaves where a Certificate
+Transparency log commits to submission order, and this document's inclusion
+proof carries the leaf, index and leaf count where a Certificate Transparency
+inclusion proof carries the sibling array alone. Neither was previously stated
+in terms a reader coming from Certificate Transparency would recognise.
+
+{{RFC9162}} and {{RFC6962}} are both added as informative references. RFC 9162
+obsoletes RFC 6962 and is the current specification; RFC 6962 is cited
+deliberately alongside it because it is the version deployed Certificate
+Transparency logs implement, and naming only the replacement would leave the
+reader who is actually at risk without the reference they hold. The construction
+of Section 2.1.1 of RFC 9162 is unchanged from Section 2.1 of RFC 6962, so the
+statement above is true of both. Neither reference is normative: the
+construction is fully specified in this document and an implementation needs
+nothing from either to build it, so no downref is introduced.
 
 ## Since draft-hillier-scitt-arp-02
 

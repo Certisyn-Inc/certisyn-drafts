@@ -37,6 +37,11 @@ $RFCS = @{
   "8174" = @("Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words", @("B. Leiba"), "2017", "May")
   "8067" = @("Updating When Standards Track Documents May Refer Normatively to Documents at a Lower Level", @("B. Leiba"), "2017", "January")
   "6350" = @("vCard Format Specification", @("S. Perreault"), "2011", "August")
+  # 6962 is obsoleted by 9162 and cited deliberately anyway: it is what deployed
+  # CT logs implement. Section 4.9 says so in the text. idnits will emit an
+  # obsolete-reference warning for it; that warning is expected, not a defect.
+  "6962" = @("Certificate Transparency", @("B. Laurie", "A. Langley", "E. Kasper"), "2013", "June")
+  "9162" = @("Certificate Transparency Version 2.0", @("B. Laurie", "E. Messeri", "R. Stradling"), "2021", "December")
   "8615" = @("Well-Known Uniform Resource Identifiers (URIs)", @("M. Nottingham"), "2019", "May")
   "8259" = @("The JavaScript Object Notation (JSON) Data Interchange Format", @("T. Bray"), "2017", "December")
   "8785" = @("JSON Canonicalization Scheme (JCS)", @("A. Rundgren", "B. Jordan", "S. Erdtman"), "2020", "June")

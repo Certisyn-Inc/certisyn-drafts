@@ -307,21 +307,49 @@ def evaluate(fx, defect, timing_samples=0):
         for i in range(int(fx["rate_limit_per_window"]) + 3):
             seq_present.append(oth.get("R_present")["status"])
             seq_absent.append(oth.get("R_absent")["status"])
-        if 429 not in seq_present or 429 not in seq_absent:
-            findings.append("PV-04 rate limit never reached on at least one "
-                            "arm, so this endpoint is refused -- but the "
-                            "designed discriminator (equal 404/429 transition "
-                            "index) did not execute. Refused for the wrong "
-                            "reason; the budget-ordering channel is untested "
-                            "by this run")
-            codes.add("budget-not-reached")
-        elif seq_present.index(429) != seq_absent.index(429):
-            findings.append("PV-04 the two arms reach 429 after different "
-                            "request counts -- the budget is an oracle")
+        # The predicate S6.4.4 states is that a burst of each arm yields THE
+        # SAME SEQUENCE OF STATUSES. That is what is tested here. An earlier
+        # form of this check tested only the 404/429 transition index, and only
+        # where both arms reached 429 -- a strict subset of the predicate,
+        # which meant the strongest possible budget oracle (one arm rate-limited
+        # and the other never) was classed as "refused for the wrong reason"
+        # rather than as the channel firing. Standing rule 11: index the check
+        # by the predicate violated, not by the branch that catches it.
+        # Compare WHERE the limit bites, not the raw statuses. A status
+        # oracle makes the raw sequences differ too, and attributing that to
+        # the budget would be a misclassed finding -- standing rule 7. The
+        # 429 mask isolates the budget channel from every other channel.
+        mask_present = [x == 429 for x in seq_present]
+        mask_absent = [x == 429 for x in seq_absent]
+        if mask_present != mask_absent:
+            findings.append("PV-04 the two arms reach the rate limit at "
+                            "different points under equal bursts -- the "
+                            "budget is an oracle. present=%s absent=%s"
+                            % (_seq_str(seq_present), _seq_str(seq_absent)))
             codes.add("budget-ordering")
+        elif 429 not in seq_present:
+            # Not a finding. The sequences are equal, which is what S6.4.4
+            # requires. But the burst never reached the limit, so this run is
+            # not evidence that they stay equal under it, and saying so is the
+            # difference between a result and a claim.
+            codes.add("budget-limit-not-reached")
 
     verdict = "REFUSE" if findings else "ACCEPT"
     return verdict, findings, sorted(codes)
+
+
+def _seq_str(seq):
+    """Compact run-length rendering of a status sequence, for the findings."""
+    out, prev, n = [], None, 0
+    for v in seq:
+        if v == prev:
+            n += 1
+        else:
+            if prev is not None:
+                out.append("%dx%d" % (n, prev))
+            prev, n = v, 1
+    out.append("%dx%d" % (n, prev))
+    return ",".join(out)
 
 
 def timing_probe(fx, samples):
@@ -384,6 +412,28 @@ DEFECTS = [
      "every read refused, including the entitled one",
      "entitled-read-refused"),
 ]
+
+
+# Gaps that are properties of the METHOD rather than of any row, so no run of
+# this class can close them and no row records them. While any one stands, the
+# aggregate cannot reach PASS: a class whose own record says what it does not
+# establish should not report a headline that says otherwise.
+STANDING_EVIDENCE_GAPS = {
+    "encoder-independence":
+        "request-binding and deterministic CBOR are computed with functions "
+        "imported from the implementation under test, so an encoder defect -- "
+        "including an RFC 8949 S4.2.1 map-ordering violation -- is invisible "
+        "to this class. Closing evidence: expected bytes computed by an "
+        "encoder not imported from the harness, or fixed in the vector file "
+        "rather than derived at run time.",
+    "one-sided-negative-class":
+        "every NV row is fault injection into an endpoint written by the "
+        "specification's author from his own reading of his own text. No "
+        "independently written implementation has been refused, so the class "
+        "is not two-sided in the conformance-method sense and cannot surface "
+        "a specification defect. Closing evidence: this class refusing an "
+        "endpoint written by somebody else working only from the text.",
+}
 
 
 DEFAULT_SPEC = os.path.abspath(os.path.join(ROOT, "..",
@@ -455,6 +505,7 @@ def main():
     # harness cannot supply, decides it. Running it and reporting ACCEPT would
     # be the suite claiming coverage it does not have, so it is carried as a
     # declared gap with the evidence that would close it named.
+    method_limits = []
     v, f, c = evaluate(fx, "path-oracle")
     rows.append({
         "vector": "NV-ARP-EO-05", "endpoint": "defect:path-oracle",
@@ -473,9 +524,17 @@ def main():
         "wire_comparison_verdict": v,
         "discriminators_fired": c,
         "designed_discriminator": None,
-        "control_exercised": False,
+        "control_exercised": None,
+        "row_class": "method-limit",
         "requirement_source": "draft-hillier-scitt-arp-03 S6.4.4"})
-    unexercised.append("NV-ARP-EO-05")
+    # Not appended to `unexercised`. A negative control is credited when its
+    # designed discriminator fires; a row that by construction HAS no
+    # discriminator is not a control and counting it as an unexercised one
+    # states the wrong thing about the suite. The requirement it names is real
+    # and normative, so the row stays visible and is carried as a declared
+    # limit of the method with its closing evidence named. Standing rules 9
+    # and 11. Reclassified 2026-08-18.
+    method_limits.append("NV-ARP-EO-05")
 
     for vid, defect, why, designed in DEFECTS:
         v, f, c = evaluate(fx, defect)
@@ -496,9 +555,13 @@ def main():
 
     exercised_ids = [r["vector"] for r in rows
                      if r.get("control_exercised") is True]
+    # PASS is reserved for a run with no failed row, every control exercised,
+    # AND no declared method limit or evidence gap standing. Letting the
+    # aggregate reach PASS while `does_not_establish` still names open gaps
+    # would be a summary stronger than the record it summarises.
     if failed:
         aggregate = "FAIL"
-    elif unexercised:
+    elif unexercised or method_limits or STANDING_EVIDENCE_GAPS:
         aggregate = "PASS_WITH_DECLARED_GAPS"
     else:
         aggregate = "PASS"
@@ -553,9 +616,11 @@ def main():
                            "listed below",
         "deterministic_result": aggregate,
         "deterministic_result_note": "PASS requires every row to reach its "
-                                     "expected verdict AND every negative "
+                                     "expected verdict, every negative "
                                      "control to have fired its own designed "
-                                     "discriminator. "
+                                     "discriminator, AND no declared method "
+                                     "limit or standing evidence gap to "
+                                     "remain. "
                                      "PASS_WITH_DECLARED_GAPS means no row "
                                      "failed but at least one channel in "
                                      "controls_not_exercised was never "
@@ -567,26 +632,40 @@ def main():
                                      "and the distinction is carried here and "
                                      "in the printed result rather than in "
                                      "the exit code.",
+        "method_limits": method_limits,
+        "method_limits_note": "NV-ARP-EO-05 names a real and normative "
+                              "requirement -- the same-work requirement of "
+                              "S6.4.4 -- that no response-comparison suite can "
+                              "decide, because a short-circuit that produces "
+                              "byte-equivalent responses is invisible to one "
+                              "by construction. It is carried as a limit of "
+                              "the method and NOT as an unexercised control: a "
+                              "negative control is credited when its designed "
+                              "discriminator fires, and a row that by "
+                              "construction has no discriminator is not a "
+                              "control. Counting it as one stated the wrong "
+                              "thing about the suite. Reclassified 2026-08-18. "
+                              "Closing evidence: source or trace inspection of "
+                              "the entitlement path, or a timing population "
+                              "with a stated network placement and acceptance "
+                              "threshold.",
+        "standing_evidence_gaps": STANDING_EVIDENCE_GAPS,
         "declared_coverage_gaps": [
-            "NV-ARP-EO-05: the same-work requirement of S6.4.4 is structural "
-            "and is not decidable by response comparison.",
-            "NV-ARP-EO-04: refused, but by the fallback branch. The designed "
-            "discriminator -- equal 404/429 transition index -- has never "
-            "executed, because the defective endpoint answers 404 before "
-            "charging and so never reaches 429. The budget-ordering channel "
-            "is untested. The row is recorded with control_exercised false "
-            "and does not contribute to a complete-pass claim.",
+            "NV-ARP-EO-04: CLOSED 2026-08-18. The defect implementation was "
+            "rebuilt. It previously skipped the charge on BOTH refused arms, "
+            "which is a budget bug and not an oracle, so the two arms stayed "
+            "indistinguishable and the channel the row is named for was never "
+            "opened. It now performs the resource lookup before charging, so "
+            "an absent read costs nothing and a present one costs a unit, and "
+            "the two arms reach the limit at different points. The "
+            "discriminator was also widened from the 404/429 transition index "
+            "to the 429 mask, because the transition index is a strict subset "
+            "of the predicate S6.4.4 states and classed the strongest form of "
+            "the oracle -- one arm limited, the other never -- as a refusal "
+            "for the wrong reason. Standing rule 11. Found by Songbo Bu.",
             "NV-ARP-EO-06: the statistical timing row of the class as designed "
             "is not carried as a conformance row. It is reported separately "
             "as timing_observation and is not adjudicated.",
-            "Encoder independence: request-binding and deterministic CBOR are "
-            "computed with functions imported from the implementation under "
-            "test, so an encoder defect -- including an RFC 8949 S4.2.1 "
-            "map-ordering violation -- is invisible to this class.",
-            "Negative side: the NV rows are fault injection into the author's "
-            "own endpoint. No independently written implementation has been "
-            "refused, so the class is not two-sided in the conformance-method "
-            "sense.",
             "Timing resistance: no claim is made and none is tested; the "
             "loopback observation below is not evidence about a deployed path."
         ],
@@ -654,7 +733,22 @@ def main():
     if unexercised:
         w("controls NOT exercised %d        (%s)\n"
           % (len(unexercised), ", ".join(unexercised)))
+    if method_limits:
+        w("method limits          %d        (%s -- no discriminator exists; "
+          "not counted as controls)\n"
+          % (len(method_limits), ", ".join(method_limits)))
+    if STANDING_EVIDENCE_GAPS:
+        w("standing evidence gaps %d        (%s)\n"
+          % (len(STANDING_EVIDENCE_GAPS),
+             ", ".join(sorted(STANDING_EVIDENCE_GAPS))))
     w("\nDETERMINISTIC RESULT: %s\n" % out["deterministic_result"])
+    if not failed and not unexercised and (method_limits
+                                           or STANDING_EVIDENCE_GAPS):
+        w("  No row failed and every negative control fired its own designed\n"
+          "  discriminator. The result is not PASS because the method limits\n"
+          "  and standing evidence gaps above still stand, and they are\n"
+          "  properties of the method that no run of this class can close.\n"
+          "  Exit status is 0; a disclosed gap is not a failure.\n")
     if unexercised and not failed:
         w("  No row failed. The channels above were never exercised, so this "
           "run is not\n  a complete pass and does not claim to be. Exit "

@@ -281,11 +281,25 @@ class Handler(BaseHTTPRequestHandler):
 
         # --- the ordering that closes the budget channel -------------------
         if st.defect == "ratelimit-oracle":
-            present, entitled, _ = _equivalent_work(st, rid, keyid)
-            if not (present and entitled):
-                return self._emit(404, [], rb)
+            # The defect is that the resource lookup runs before the counter is
+            # charged, so a read of an absent resource costs nothing while a
+            # read of a present one costs a unit. Both refused arms still
+            # answer 404, so the single-response comparison sees nothing; the
+            # channel only opens under a burst, where the two arms reach the
+            # limit after different numbers of requests -- or, as here, where
+            # one arm reaches it and the other never does.
+            #
+            # An earlier form of this defect skipped the charge on BOTH refused
+            # arms. That is a budget bug and it is not an oracle: the two arms
+            # stayed indistinguishable, so the channel this row is named for
+            # was never opened and the row could not fire its own
+            # discriminator. Found by Songbo Bu, 2026-08-12, and rebuilt
+            # against the predicate rather than the branch on 2026-08-18.
+            if rid not in st.resources:
+                return self._emit(404, [], rb, arm="absent")
             if not st.charge(keyid):
                 return self._emit(429, [], rb)
+            present, entitled, _ = _equivalent_work(st, rid, keyid)
         else:
             if not st.charge(keyid):
                 return self._emit(429, [], rb)

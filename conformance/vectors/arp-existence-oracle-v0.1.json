@@ -86,18 +86,21 @@
       "id": "NV-ARP-EO-03b"
     },
     {
-      "channel": "entitlement evaluated before the counter is charged",
+      "channel": "the resource lookup runs before the counter is charged, so the two refused arms consume different budget",
       "class": "MUST-REFUSE",
       "defect": "ratelimit-oracle",
-      "id": "NV-ARP-EO-04"
+      "discriminator": "the 429 mask differs between the two arms under equal bursts",
+      "id": "NV-ARP-EO-04",
+      "note": "Rebuilt 2026-08-18. The first defect implementation skipped the charge on both refused arms, which is a budget bug and not an oracle: the arms stayed indistinguishable and this channel was never opened. Standing rule 11 -- the row is indexed by the predicate S6.4.4 states, that equal bursts of the two arms yield the same sequence of statuses, and not by the branch that catches a violation."
     },
     {
       "channel": "the absent arm short-circuits the entitlement-equivalent work",
-      "class": "STRUCTURAL",
+      "class": "METHOD-LIMIT",
       "closing_evidence": "source or trace inspection of the entitlement path, or a timing population with a stated network placement and acceptance threshold",
       "decidable_from_wire": false,
       "defect": "path-oracle",
-      "id": "NV-ARP-EO-05"
+      "id": "NV-ARP-EO-05",
+      "note": "Reclassified 2026-08-18 from a negative control to a limit of the method. A negative control is credited when its designed discriminator fires; a row that by construction has no wire-observable discriminator is not a control, and counting it as an unexercised one states the wrong thing about the suite. The requirement it names is real and normative, so the row stays visible and carries its closing evidence. Standing rules 9 and 11."
     },
     {
       "channel": "every read refused, including the entitled one",

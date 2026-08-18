@@ -169,11 +169,52 @@ The two that are not:
 retiring it and saying why; and rebuilding the `NV-ARP-EO-04` fixture so the
 endpoint reaches its budget before answering.
 
-Rule 11 names the cause of `NV-ARP-EO-04` rather than only its symptom: the
-suite indexes that control by the stage that catches the violation rather than
-by the predicate violated, so a fixture whose 404 fires before the budget
-counter is charged refuses through the wrong gate and the budget-ordering
-channel is never reached. Rebuild it against the predicate.
+**BOTH CLOSED 2026-08-18. Controls exercised go from six of eight to seven of
+seven.**
+
+**`NV-ARP-EO-04` was a mis-specified defect, not a mis-specified control.** The
+`ratelimit-oracle` configuration evaluated entitlement first and then skipped the
+charge on **both** refused arms. That is a budget bug and it is not an oracle:
+the two arms stayed indistinguishable, so the channel the row is named for was
+never opened, and no discriminator could have fired because there was nothing to
+discriminate. The row's `control_exercised: false` was accurate about the suite
+and silent about the cause.
+
+The defect now performs the resource lookup **before** charging, so a read of an
+absent resource costs nothing and a read of a present one costs a unit. Under
+equal bursts the present arm reaches the limit and the absent arm never does:
+
+    present = 7x404, 4x429     absent = 11x404
+
+That is the real budget oracle, and it is the strongest form of it.
+
+**The discriminator was also too narrow, which is the rule 11 half.** It tested
+the 404/429 transition index and only where both arms reached 429 — a strict
+subset of the predicate Section 6.4.4 actually states, which is that equal
+bursts of the two arms yield the same sequence of statuses. Under that narrow
+test the strongest form of the oracle, one arm rate-limited and the other never,
+was classed as "refused for the wrong reason". It now compares the **429 mask**
+between the arms. The mask and not the raw status sequence, because a status
+oracle also makes the raw sequences differ, and attributing that to the budget
+would be a misclassed finding under standing rule 7.
+
+**`NV-ARP-EO-05` is retired as a control and carried as a limit of the method.**
+It has no wire-observable discriminator by construction: a short-circuit that
+produces byte-equivalent responses is invisible to a response-comparison suite.
+A negative control is credited when its designed discriminator fires, so a row
+that has no discriminator is not a control, and counting it as an unexercised
+one stated the wrong thing about the suite rather than about the requirement.
+The requirement it names is real and normative, so the row stays visible in the
+record, carries its closing evidence, and no longer drags the control count.
+
+**The aggregate stays `PASS_WITH_DECLARED_GAPS`, and the reason changes.** It
+was "a control was never exercised". It is now "the standing evidence gaps at
+2.4 and 2.5 remain", which is the truth and is the thing that actually blocks
+an adoption ask. The runner now computes the aggregate over method limits and
+standing evidence gaps as well as over rows, so it cannot reach `PASS` while the
+record's own `does_not_establish` still names an open gap. Letting the headline
+outrun the record is the defect the working method exists to prevent, and the
+old aggregate would have reported `PASS` the moment 2.3 closed.
 
 ### 2.4 The class is one-sided
 
@@ -198,6 +239,15 @@ implementation importing it ships non-conforming bytes with no error.
 **Close it by:** computing the expected bytes with an independent encoder, or by
 adding a vector whose expected bytes are fixed in the file rather than derived at
 run time.
+
+This and 2.4 are now the **only two things holding the aggregate below `PASS`**.
+As of 2026-08-18 the runner carries them as `standing_evidence_gaps` with their
+closing evidence named in the record itself, and computes the aggregate over
+them, so neither can be closed by accident or reported as closed by a run that
+did not close it. Nenad Vasic states this item better than the record did:
+*spec-supplied bytes-plus-expected-digest vectors are what make the upgrade
+durable — deployment-authored vectors measure self-consistency, not
+conformance.*
 
 ### 2.6 Timing
 
@@ -723,6 +773,7 @@ That check has not been done yet.
 | 2026-08-17 | 2.1 closed. RFC 9162 correction, equivalence re-measured to 4200 leaves, `merkle_equiv.py` added to `runners/`. 2.8.1 opened and closed the same day on Nenad Vasic's finding. |
 | 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. Two red-team passes, 28 then 9 findings, all closed. Committed `67723fc`. |
 | 2026-08-18 | A4 and A6 checked, closed with no text change. 2.8.5 opened and closed. |
+| 2026-08-18 | 2.3 closed. `NV-ARP-EO-04` defect rebuilt against the predicate, `NV-ARP-EO-05` retired as a control, aggregate widened over method limits and standing evidence gaps. Controls six of eight to seven of seven. |
 
 ### Current Stage A digests
 

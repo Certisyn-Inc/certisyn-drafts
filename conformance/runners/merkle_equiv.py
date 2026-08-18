@@ -92,6 +92,27 @@ def audit_path(leaves, m):
 
 
 # ---------- verification ----------
+# ---------- the third convention: duplicate the last node at an odd level ----------
+def dup_root(leaves):
+    if not leaves:
+        return ZERO32
+    level = [leaf_hash(x) for x in leaves]
+    while len(level) > 1:
+        if len(level) % 2 == 1:
+            level = level + [level[-1]]          # duplicated and paired with itself
+        level = [node(level[i], level[i + 1]) for i in range(0, len(level), 2)]
+    return level[0]
+
+
+# ---------- level widths: ceiling-halving, not truncation ----------
+def widths(n):
+    w, out = n, [n]
+    while w > 1:
+        w = (w + 1) // 2
+        out.append(w)
+    return out
+
+
 def check(nmax_root, nmax_path):
     leaves_all = [b"leaf-%04d" % i for i in range(nmax_root)]
 
@@ -115,10 +136,34 @@ def check(nmax_root, nmax_path):
     print("(n,index) pairs       : %d  (n = 1..%d)" % (pair_count, nmax_path))
     print("path mismatches       : %s" % (path_mismatch or "none"))
     print()
+    # third convention
+    dup_same, dup_diff = [], []
+    for n in range(1, 1025):
+        D = leaves_all[:n]
+        (dup_same if dup_root(D) == mth(D) else dup_diff).append(n)
+    pow2 = [n for n in range(1, 1025) if n & (n - 1) == 0]
+    print("duplicate-last agrees at: %s" % ("exactly the powers of two"
+          if dup_same == pow2 else "OTHER SET -> %s" % dup_same[:20]))
+    print("  (n<=1024: agrees at %d counts, differs at %d)" % (len(dup_same), len(dup_diff)))
+
+    # ceiling vs truncation on the level width
+    bad = [n for n in range(1, 1025) if widths(n) == [n] + [] or False]
+    trunc_wrong = []
+    for n in range(1, 1025):
+        w, seq = n, [n]
+        while w > 1:
+            w = w // 2
+            seq.append(w)
+        if seq != widths(n):
+            trunc_wrong.append(n)
+    print("truncation-halving gives wrong widths at %d of 1024 leaf counts"
+          % len(trunc_wrong))
+    print("  n=5  ceiling %s   truncation %s" % (widths(5), [5, 2, 1]))
+    print()
     print("empty tree, ARP 4.9   : %s" % arp_root([]).hex())
     print("empty tree, CT       : %s" % mth([]).hex())
     print("diverge on empty tree : %s" % (arp_root([]) != mth([])))
 
 
 if __name__ == "__main__":
-    check(nmax_root=1024, nmax_path=256)
+    check(nmax_root=4200, nmax_path=512)

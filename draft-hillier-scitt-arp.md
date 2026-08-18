@@ -20,7 +20,7 @@ keyword:
   - friend-or-foe
 
 stand_alone: yes
-pi: [toc, sortrefs, symrefs]
+pi: [toc, sortrefs, symrefs, tocdepth="4"]
 
 author:
  -
@@ -268,34 +268,23 @@ Register Operator:
 
 Bilateral Register Agreement:
 : A negotiated contractual instrument between the operator of the
-  reconciliation server and a Register Operator, declaring the
-  permitted-predicate set, supported cryptographic primitives, supported
-  cryptographic-primitive-upgrade path, the transport, endpoint, framing and
-  encryption construction of the bilateral channel of {{projection}}, the
-  regulator-identity-provider trust anchor, notification endpoint and
-  statutory-regulator-access scope of {{regulator-portal}} together with the
-  per-jurisdiction permitted-read-field and permitted-read-predicate sets it is
-  computed from, the Subject Reference form and Freshness Window of
-  {{projection}}, the register's data-format profile and its parameters under
-  {{format-profiles}}, the register's public key material, the response window
-  after which a register is recorded unresponsive, the per-principal per-subject
-  query budget and its interval and any per-subject ceiling under
-  {{containment}}, the ledger-head notarisation interval and the Transparency
-  Service of {{settlement-ledger}}, the artefact retention period of
-  {{delivery}}, the read rate limit of {{read-errors}}, the notarisation polling
-  bound of {{async-registration}}, the authority origin of the reconciliation
-  server it authorises, at least one Audit Identity under {{audit-path}}, the Register Operator's own
-  read key, whether the Per-Register Claim Projection must carry the
-  Requester-Binding Class, the audit right over the query-budget counter of
-  {{budget-suppression}}, the reserved proportion of any per-subject ceiling and
-  its per-principal sub-budget, and OPTIONALLY an audience constraint under
-  {{audience}}. Each Bilateral Register
-  Agreement carries an Agreement Hash: the SHA-256 digest over the
-  deterministically encoded CBOR array of the declared items above, in the order
-  above, each absent optional item encoded as CBOR null. The reconciliation
-  server and the Register Operator compute it independently and MUST obtain the
-  same value, which "its canonicalised content" -- the wording of earlier
-  revisions -- does not make possible.
+  reconciliation server and a Register Operator, declaring the terms under which
+  a register is addressable under this document. {{bra}} enumerates the items an
+  Agreement MUST declare, in the order that fixes them, and defines the
+  Agreement Hash each Agreement carries.
+
+Witness Set:
+: The set of observers, declared in a Bilateral Register Agreement under
+  {{witness-entries}}, whose Head Consistency Statements under
+  {{head-consistency}} constitute head-consistency evidence independent of the
+  responding service.
+
+Witness Quorum:
+: The number of Witness Entries, as {{witness-entries}} defines them, with
+  pairwise distinct Operating-Party Identifiers whose Head Consistency
+  Statements a relying party must hold before the evidence condition of
+  {{read-responses}} is satisfied. Declared under {{bra-witness}} and evaluated
+  under {{quorum-rule}}.
 
 Policy-Epoch Store:
 : The persisted, versioned record of a deployment's verification-policy state,
@@ -1266,22 +1255,30 @@ over one leaf has that leaf's leaf-node hash as its root; a tree over no leaves
 has thirty-two zero octets as its root.
 
 For every non-empty tree this is the Merkle Tree Hash of Section 2.1.1 of
-{{RFC9162}}, which is unchanged from Section 2.1 of {{RFC6962}}. Both are named
-here: {{RFC9162}} because it is the current specification, and {{RFC6962}}
-because it is what most deployed Certificate Transparency logs implement and so
-is what an implementer is most likely to arrive from. The odd-node rule stated
-above and those documents' recursive split at the largest power of two below the
-leaf count are two descriptions of one tree: at every leaf count they produce
-the same root, and at every leaf count and index they produce the same sibling
-array. An implementation may compute either way and interoperate with one that
-computes the other. This is stated because the two rules do not look alike, so a
-reader who knows Certificate Transparency has no way to establish from the prose
-alone that they agree; and because a third convention is in common use, in which
-the last node at an odd level is duplicated and paired with itself, and that one
-produces different roots.
+{{RFC9162}} instantiated with SHA-256. The recursion of that section is the
+recursion of Section 2.1 of {{RFC6962}}; the two differ only in that
+{{RFC9162}} carries the hash algorithm as a log parameter where {{RFC6962}}
+fixes SHA-256, and this document fixes SHA-256. Both are named here:
+{{RFC9162}} because it is the current specification, and {{RFC6962}} because it
+is what most deployed Certificate Transparency logs implement and so is what an
+implementer is most likely to arrive from.
 
-The two diverge at exactly one input, the empty tree, and the divergence is
-deliberate. Certificate Transparency defines the Merkle Tree Hash of the empty
+The odd-node rule stated above and that recursive split at the largest power of
+two below the leaf count are two descriptions of one tree: at every leaf count
+they produce the same root, and at every leaf count and index they produce the
+same sibling array. An implementation may compute either way and interoperate
+with one that computes the other. This is stated because the two rules do not
+look alike, so a reader who knows Certificate Transparency has no way to
+establish from the prose alone that they agree; and because a third convention
+is in common use, in which the last node at an odd level is duplicated and
+paired with itself. That convention produces the same root at every leaf count
+that is a power of two, because no level of such a tree is ever odd, and a
+different root at every other leaf count. A conformance vector taken at four or
+eight leaves will therefore not detect it, and an implementation that ports it
+will pass a test suite and diverge in production.
+
+This document and Certificate Transparency diverge at exactly one input to the
+tree function, the empty tree, and the divergence is deliberate. Certificate Transparency defines the Merkle Tree Hash of the empty
 list as the hash of the empty string, which under SHA-256 is
 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`; this
 document defines it as thirty-two zero octets. The Certificate Transparency
@@ -1291,7 +1288,8 @@ value no commitment in this document produces, so it cannot be mistaken for one.
 An implementation MUST use the value defined in this section and MUST NOT
 substitute the Certificate Transparency empty-tree value. The requirement below,
 that a verifier reject any inclusion proof presented against the empty root,
-holds under either convention and does not depend on which is chosen.
+applies to whichever value a construction gives the empty tree, and the reason
+for it does not depend on which value that is.
 
 Two further differences are matters of input and of encoding rather than of the
 tree, and each is a place an implementation ported from a Certificate
@@ -1300,9 +1298,11 @@ sorts leaves in bytewise lexicographic order and deduplicates them before the
 tree is built, where a Certificate Transparency log commits to entries in the
 order it received them; an implementation MUST apply the ordering and
 deduplication stated above and MUST NOT assume submission order. And this
-document's inclusion proof carries the leaf, its index and the leaf count
-alongside the sibling array, where the inclusion proof of Section 2.1.3 of
-{{RFC9162}} is the sibling array alone.
+document's inclusion proof carries the leaf alongside the index, the leaf count
+and the sibling array, where the inclusion proof of Section 2.1.3 of
+{{RFC9162}} carries the index and the tree size but not the leaf, which its
+verifier is assumed already to hold. The leaf is the only field that differs,
+and {{leaf-binding}} states what a verifier must do with it.
 
 An inclusion proof is a CBOR array of the leaf, its zero-based index, the leaf
 count, and the array of sibling hashes from the leaf's level upward. Domain
@@ -1316,18 +1316,51 @@ and no entry for a level at which it was carried up unchanged, so its length is
 not in general the base-two logarithm of the leaf count and a verifier MUST NOT
 derive the expected length that way. No direction bit is carried: at each level
 the verifier derives whether the sibling is the left or the right operand from
-the index and the leaf count, halving the index and the level width as it
-ascends, which is well defined because the shape of the tree is fixed by the
-leaf count alone. And the empty tree's root of thirty-two zero octets admits no
+the index and the leaf count, taking the floor of half the index and the
+**ceiling** of half the level width as it ascends. Halving the width by
+truncation instead gives the wrong width at every leaf count that is not a power
+of two -- five leaves give widths 5, 3, 2, 1 and not 5, 2, 1 -- which is
+precisely the range of leaf counts this section exists to pin down. The
+derivation is well defined because the shape of the tree is fixed by the leaf
+count alone. And the empty tree's root of thirty-two zero octets admits no
 inclusion proof; a verifier MUST reject any proof presented against it rather
 than treat a root it can reproduce as a root that commits to something.
+
+### Leaf binding {#leaf-binding}
+
+The leaf a proof carries is a convenience and is not evidence. A verifier MUST
+compute the leaf from the object whose inclusion is being proved -- the
+canonical hash of the Partial Attestation for a Merkle Root under
+{{aggregation}}, the Claim Hash for an Examined-Set Root under
+{{sweep-statements}} -- and MUST use that computed value, and no value taken
+from the proof, as the input to the sibling walk. Where the proof carries a
+leaf, the verifier MUST refuse the proof if the computed value does not equal
+it, and MUST perform that comparison before the sibling array is walked.
+
+The requirement is stated over the object rather than over the carried field
+because the field is not always present. {{aggregation}} permits per-register
+inclusion proofs to be encoded as COSE Receipts {{RFC9942}}, whose inclusion
+proof carries no leaf; a requirement written only as a comparison against a
+carried leaf would be vacuous under that encoding, which is the encoding a
+SCITT-aware verifier is most likely to use.
+
+The ordering is the whole of the requirement. A proof whose leaf is lifted
+unchanged from another object's valid proof folds to the correct root under a
+sibling array that verifies, because it is a correct proof -- of the other
+object. A verifier that walks the path first and takes the carried leaf on trust
+accepts it, and concludes that the object it holds was committed when what was
+committed was something else. Nothing in the walk depends on the object, so the
+walk cannot detect this; only the recomputation can. It is the more dangerous
+half of its pair: a malformed proof fails loudly on every path a verifier
+tries, while a valid proof bound to the wrong leaf passes every check except
+this one.
 
 ## Aggregation {#aggregation}
 
 The aggregation subsystem operates in Hash-Linkage Aggregation. Each
 Partial Attestation is canonical-hashed and committed to a Merkle tree as
-{{merkle-construction}} defines it,, and emitted with a Merkle root
-and the Merkle Root carried in the Reconciliation Output. Its
+{{merkle-construction}} defines it, and the resulting Merkle Root is carried in
+the Reconciliation Output. Its
 per-register inclusion proofs MAY be encoded as COSE Receipts {{RFC9942}},
 enabling any SCITT-aware verifier to check inclusion without a bespoke proof
 format. Each leaf commits one register's attestation individually, so an
@@ -2648,7 +2681,7 @@ which is the case that matters and the case earlier revisions left open. The
 horizon is declared per predicate, so a deployment needing a shorter window for a
 sanctions predicate than for a corporate-registry one sets one.
 
-## Cryptographic-Primitive-Upgrade Path
+## Cryptographic-Primitive-Upgrade Path {#crypto-upgrade}
 
 Each Bilateral Register Agreement MUST declare a
 Cryptographic-Primitive-Upgrade Path comprising an ordered equivalence list
@@ -2674,6 +2707,373 @@ because those bytes are fixed at the moment the entry is appended and are never
 rewritten. A verifier recomputing a Prior-Entry Hash across a rotation boundary
 MUST therefore be able to re-serialise a signature made under a primitive it does
 not itself implement, which is a weaker requirement than verifying it.
+
+## The Bilateral Register Agreement {#bra}
+
+A register is addressable under this document only through a Bilateral Register
+Agreement. Nothing in this document can be executed against a register that has
+none: the projection has no permitted-predicate set to test against, the channel
+has no construction, the encryption has no key, and the Per-Register Claim
+Projection has no Bilateral-Register-Agreement Hash to carry. This section is
+where the obligations that other sections place on an Agreement are gathered,
+and it is the definition of the Agreement Hash.
+
+### Declared items {#bra-items}
+
+Each Bilateral Register Agreement MUST declare each of the following, save where
+an item is marked OPTIONAL or the text of the item admits its absence;
+{{bra-hash}} lists which those are. The numbering is normative: it is the order
+in which the Agreement Hash of {{bra-hash}} is computed, and it is the only
+order this document specifies.
+
+1. The permitted-predicate set of {{projection}}.
+2. The supported cryptographic primitives, including any post-quantum primitives
+   selected under {{post-quantum}}. Every primitive appearing in an equivalence
+   list of item 3 MUST appear here.
+3. The Cryptographic-Primitive-Upgrade Path of {{crypto-upgrade}}.
+4. The transport, endpoint, framing and encryption construction of the bilateral
+   channel of {{projection}}.
+5. The regulator-identity-provider trust anchor of {{regulator-portal}}.
+6. The notification endpoint of {{re-notification}}.
+7. The statutory-regulator-access scope of {{regulator-portal}}, together with
+   the per-jurisdiction permitted-read-field and permitted-read-predicate sets
+   it is computed from.
+8. The Subject Reference form of {{projection}}.
+9. The Freshness Window of {{projection}}.
+10. The register's data-format profile under {{format-profiles}}, together with
+    every value that profile obliges a declaring Agreement to supply or to name,
+    in the order the profile enumerates them. A vocabulary release a profile
+    requires the Agreement to name is such a value and is not a parameter in the
+    sense of {{format-profiles}}, so naming only the parameters would leave it
+    outside the Agreement Hash.
+11. The register's public key material, as a COSE Key Set carrying at least one
+    claim-encryption key and at least one partial-attestation-signature key,
+    each with its `arp-key-status` and `arp-key-validity`.
+12. The response window after which a register is recorded unresponsive.
+13. The per-principal per-subject query budget of {{containment}} and the
+    interval over which it is measured.
+14. Any per-subject ceiling under {{containment}}.
+15. The ledger-head notarisation interval of {{settlement-ledger}}.
+16. The Transparency Service of {{settlement-ledger}}.
+17. The artefact retention period of {{delivery}}.
+18. The read rate limit of {{read-errors}}.
+19. The notarisation polling bound of {{async-registration}}.
+20. The authority origin of the reconciliation server the Agreement authorises.
+21. At least one Audit Identity under {{audit-path}}.
+22. The Register Operator's own read key.
+23. Whether the Per-Register Claim Projection must carry the Requester-Binding
+    Class.
+24. The audit right over the query-budget counter of {{budget-suppression}}.
+25. The reserved proportion of any per-subject ceiling and its per-principal
+    sub-budget.
+26. The response freshness tolerance of {{read-responses}}, which MUST NOT
+    exceed the effective ledger-head notarisation interval of
+    {{settlement-ledger}}, being the shortest item 15 any Bilateral Register
+    Agreement the deployment holds declares. Bounding it against this
+    Agreement's own item 15 would admit a tolerance longer than the interval the
+    deployment notarises at, and so a response naming a head the reader could
+    already know to be superseded.
+27. The Witness Set of {{bra-witness}}, which MAY be empty.
+28. The Witness Quorum of {{bra-witness}}.
+29. OPTIONALLY, an audience constraint under {{audience}}.
+30. The regulator read keys of {{read-signing}}, or the means by which they are
+    resolved from the trust anchor of item 5, together with the means by which
+    key material for items 21, 22, 27 and 30 is retrieved. A Witness Entry
+    carries a key thumbprint, and a thumbprint is not key material, so without
+    this a relying party holding a Head Consistency Statement has no defined way
+    to obtain the key that verifies it.
+31. Whether partial attestations may be re-invoked under {{retroactive}}.
+
+Items 26, 27, 28, 30 and 31 are new in this revision; item 29 is carried from
+-03 in a new position. Two of the five were already required elsewhere in this
+document while sitting outside the Agreement Hash.
+{{read-responses}} obliges a deployment to declare a response freshness
+tolerance in its Bilateral Register Agreements; that is item 26.
+{{read-signing}} obliges an Agreement to declare the keys under which a
+regulator reads, and item 5's regulator-identity-provider trust anchor is not a
+key; that is item 30. In both cases two deployments could agree on every item
+the Agreement Hash committed to, differ on the term, and compute the same
+Agreement Hash -- an Agreement Hash that does not cover a term the Agreement is
+required to carry. {{retroactive}} makes re-invocation of partial attestations
+conditional on what the applicable Agreements permit without making that
+permission a declared item; that is item 31. Items 27 and 28 specify the witness
+quorum {{read-responses}} names and earlier revisions declined to fix.
+
+**An Agreement computed under an earlier revision does not compute the same
+Agreement Hash under this one.** The Agreement Hash covers five items it did not
+cover before -- 26, 27, 28, 30 and 31 -- and {{bra-hash}} now fixes the CBOR type of every item and the
+ordering within every set-valued one, so the value changes for every Agreement
+even where no negotiated term has changed. Agreements MUST be recomputed, and a deployment
+holding a Bilateral-Register-Agreement Hash recorded before this revision MUST
+treat it as naming an Agreement under the earlier item list rather than
+as a value comparable with one computed under this section. Comparing the two
+is the Bilateral-Register-Agreement drift of {{agreement-drift}}, and a
+deployment that does not recompute will observe drift where none exists.
+
+### Witness Set and Witness Quorum {#bra-witness}
+
+{{read-responses}} establishes that an empty result is falsifiable to the extent
+that its reader holds head-consistency evidence for the served chain from an
+observer independent of the responding service, and that head evidence obtained
+only from that service bounds nothing. It states the preference -- a witness
+countersignature over the head, or, failing that, an independently anchored head
+digest -- without saying how many countersignatures, from whom, or what makes
+two of them two rather than one. This section says.
+
+#### Witness Entries {#witness-entries}
+
+A **Witness Set** is a set of zero or more Witness Entries. Each Witness Entry
+is a CBOR array of exactly three elements, in this order and not nested:
+
+1. the Audience Member Identifier, as {{audience}} defines it;
+2. the Verification Method Reference, as {{audience}} defines it; and
+3. an **Operating-Party Identifier**: a URI naming the party that controls the
+   witness.
+
+{{audience}} encodes those first two as a two-element array. Here they are the
+first and second elements of a three-element array and are not wrapped in one,
+because a Witness Entry is carried both in the Agreement Hash of {{bra-hash}}
+and in the Policy Parameters Document of {{read-signing}}, and two readings of
+one shape would let those two artefacts disagree about a set they are both
+supposed to describe.
+
+Two Operating-Party Identifiers are **distinct** where they differ after
+normalisation under Sections 6.2.2 and 6.2.3 of {{RFC3986}}. Comparison is over
+the normalised form and is otherwise bytewise. Without a stated normalisation
+`https://acme.example` and `https://ACME.example/` are distinct to one
+implementation and identical to another, and whether a quorum is met turns on
+which.
+
+A Witness Entry's Operating-Party Identifier MUST NOT be that of the
+reconciliation server, of the Transparency Service of {{settlement-ledger}}, of
+any party controlling either, of any party controlled by either, or of any party
+under common control with either, and no two Witness Entries counted toward one
+quorum may be under common control with each other. The first exclusion runs in
+every direction because
+running it upward alone excludes nothing that matters: a reconciliation server
+that incorporates three subsidiaries, declares three distinct Operating-Party
+Identifiers and satisfies a quorum of three controls every observation the
+quorum is composed of, and the fork {{read-responses}} is concerned with stays
+invisible while the quorum reports it as checked. The second exclusion is there
+because the rationale of this section is observer diversity and not identifier
+diversity: three witnesses that are three subsidiaries of one unrelated parent
+declare three distinct Operating-Party Identifiers, pass the distinctness test
+as a verifier computes it, and are one observation reported three times. The
+Register Operator of the addressed register, and any operator of a secondary
+store under {{ledger-replication}}, are excluded on the same ground.
+
+#### Head Consistency Statements {#head-consistency}
+
+A **Head Consistency Statement** is a COSE_Sign1 by a witness, under the media
+type registered in {{iana-media}}, carrying the `arp-witness-identifier` header
+parameter registered in {{iana}} in its protected header, whose payload is
+the deterministically encoded CBOR array, under {{cbor-cose}}, of:
+
+1. the text string `arp-head-consistency-v1`;
+2. the Entry Sequence Number of the head covered;
+3. the Self-Entry Hash of that entry;
+4. the Statement Timestamp of the Ledger Head Statement the witness observed, in
+   the form of {{reconciliation-output}}; and
+5. the **Witness Observation Time**, being the time the witness produced this
+   Statement, in the same form.
+
+Item 5 exists because a COSE_Sign1 is not dateable from its own bytes, so a
+freshness rule over a Statement carrying no time is a rule no verifier can
+apply. {{settlement-ledger}} adds a Statement Timestamp to the Ledger Head
+Statement for the same reason.
+
+#### The quorum rule {#quorum-rule}
+
+The **Witness Quorum** is an integer `t` with `0 <= t <= n`, where `n` is the
+cardinality of the Witness Set. A Witness Set MUST contain at least `t` entries
+with pairwise distinct Operating-Party Identifiers; an Agreement whose Witness
+Set does not is non-conforming, and a deployment MUST NOT address a register
+under it. Without that constraint an Agreement declaring three entries under one
+operating party and `t` of three is well formed, satisfiable by nobody, and
+every empty result served under it is permanently unfalsifiable with no
+conformance test firing.
+
+A relying party holds sufficient head-consistency evidence for an empty result
+under {{read-responses}} when it holds Head Consistency Statements from at least
+`t` Witness Entries where:
+
+- each verifies under the key material declared for that entry;
+- the `t` entries have **pairwise distinct Operating-Party Identifiers**;
+- each covers the head the response names, that is, item 2 of the Statement
+  equals the response's `as-of-sequence-number` and item 3 equals the Self-Entry
+  Hash that response names; or covers a head at a higher Entry Sequence Number
+  **and** the relying party additionally holds the linkage triples between the
+  two, read under {{read-operations}}, and has verified all three of: that the
+  Self-Entry Hash of the triple at the Statement's Entry Sequence Number equals
+  item 3 of that Statement; that the Self-Entry Hash of the triple at the named
+  head equals the one the response names; and that every intervening triple's
+  Prior-Entry Hash equals the Self-Entry Hash of the triple below it; and
+- each carries a Witness Observation Time no earlier than the Statement
+  Timestamp of item 4 and no later than twice the effective ledger-head
+  notarisation interval after it, that interval being the shortest any Bilateral
+  Register Agreement the deployment holds declares, per the direction rule of
+  {{delivery}}.
+
+The chain requirement in the third condition is what makes the artefact worth
+its name, and it is why the condition pins **both ends** of the chain and not
+only its internal consistency. A witness signature over a head at a higher
+sequence number is, on its own, evidence about whatever branch that witness was
+served, which may not be the reader's: a fork at disjoint sequence numbers is
+precisely a pair of heads neither of which contradicts the other. A chain that
+is merely internally consistent proves only that the entries the responding
+service just served are consistent with each other, which that service controls
+entirely. Anchoring the top of the chain to the digest the witness signed, and
+the bottom to the digest the response named, is what puts the two observations
+on one chain. A Statement covering the named head exactly needs no linkage
+because there is nothing to link.
+
+The window in the fourth condition is measured from the Statement Timestamp of
+the Ledger Head Statement and not from the Entry Timestamp of the head, and it
+is two intervals and not one, because {{settlement-ledger}} republishes the
+Ledger Head Statement once per notarisation interval and not on every append. An
+entry appended just after a publication is not published until one interval
+later; a window of one interval measured from that entry's own timestamp is
+already closed when the witness first sees the head, and no conforming Statement
+could exist for it.
+
+The distinctness requirement is the substance of the rule. Countersignatures
+from witnesses under one operating party are one observation reported `t` times,
+and a quorum satisfied by them is a quorum in arithmetic only: the equivocation
+{{read-responses}} is concerned with becomes observable when two independent
+observers compare heads, and two instances of one observer are not two
+observers.
+
+#### Discovery {#witness-discovery}
+
+A relying party is not a party to any Bilateral Register Agreement and holds
+only the hashes of those Agreements, so a quorum declared only inside an
+Agreement is a test the party required to run it cannot read. The Policy
+Parameters Document of {{read-signing}} therefore carries the effective Witness
+Set and the effective Witness Quorum, and a relying party evaluates the quorum
+against that document.
+
+Where a deployment holds more than one Bilateral Register Agreement, the
+effective Witness Set is the intersection of the Witness Sets every such
+Agreement declares and the effective Witness Quorum is the largest any of them
+declares, per the direction rule of {{delivery}}.
+
+The effective Witness Set MUST contain at least the effective Witness Quorum
+entries with pairwise distinct Operating-Party Identifiers. Where it does not,
+the deployment is non-conforming and MUST NOT serve reads under
+{{read-responses}}. The per-Agreement constraint of {{quorum-rule}} does not
+reach this: two Agreements each declaring two entries and a quorum of two, with
+no entry in common, are each conforming and together produce an empty effective
+set under a quorum of two, which is the unsatisfiable quorum that constraint
+exists to forbid.
+
+#### Where the quorum is zero {#quorum-zero}
+
+A Witness Quorum of `0`, which a Witness Set of zero entries requires, declares
+that no witness evidence is available. A relying party acting on an empty result
+served under an effective quorum of `0` SHOULD instead hold an independently
+anchored head digest as {{read-responses}} provides, and MUST NOT treat the
+absence of a witness requirement as evidence that the head is uncontradicted. A
+deployment declaring `0` is making a statement about what its empty results can
+be checked against, in a term a relying party can read, rather than leaving a
+reader to infer it.
+
+### The Agreement Hash {#bra-hash}
+
+Each Bilateral Register Agreement carries an Agreement Hash: the SHA-256 digest
+over the deterministically encoded CBOR array, under {{cbor-cose}}, of the items
+of {{bra-items}} in the order given there. The array has **exactly thirty-one
+elements**. The reconciliation server and the Register Operator compute it
+independently and MUST obtain the same value.
+
+Determinism under Section 4.2.1 of {{RFC8949}} fixes how a given value is
+encoded. It does not fix which CBOR type an item takes, nor the order of
+elements within an item that is a set, and two parties that differ on either
+compute different digests from identical negotiated terms. Since
+{{agreement-drift}} suspends reconciliation on a deviation, that is an outage
+and not a warning. The types are therefore fixed here.
+
+| Item | CBOR encoding |
+|---|---|
+| 1, 2, 21, 27, 30 | array, sorted in bytewise lexicographic order of the deterministic CBOR encoding of each element |
+| 3 | three-element array, in the class order of {{crypto-upgrade}}, each element that class's equivalence list **in the declared preference order and not sorted** |
+| 4 | four-element array: transport identifier, endpoint URI and framing identifier, each a text string, and the sorted array of COSE algorithm identifiers of the encryption construction |
+| 5, 8, 16, 20 | text string |
+| 6 | URI, as a text string |
+| 7 | three-element array: the statutory-regulator-access scope as a text string, and the per-jurisdiction permitted-read-field and permitted-read-predicate sets, each a sorted array of two-element arrays of the jurisdiction identifier and the sorted set for it |
+| 9, 12, 15, 17, 19, 26 | unsigned integer, seconds |
+| 10 | two-element array: the profile identifier as a text string, and the array of profile-obliged values **in the order that profile enumerates them** |
+| 11, 22 | COSE Key Set, its keys sorted in bytewise lexicographic order of the deterministic CBOR encoding of each key |
+| 13 | two-element array: the budget as an unsigned integer count, and the interval in seconds as an unsigned integer |
+| 14, 28 | unsigned integer |
+| 18 | two-element array: the permitted request count as an unsigned integer, and the interval in seconds as an unsigned integer |
+| 23, 24, 31 | boolean |
+| 25 | two-element array: the reserved proportion as a CBOR decimal fraction, and the per-principal sub-budget as an unsigned integer |
+| 29 | two-element array: the maximum cardinality as an unsigned integer or null, and the permitted member class as a text string or null |
+
+Every item that is a set is encoded as a CBOR array sorted in bytewise
+lexicographic order of the deterministic CBOR encoding of each element. This
+document already requires that ordering of the Audience Set, of the algorithm
+array of {{read-signing}} and of the origin array of {{sealing-key-discovery}},
+and for the same reason: an unordered set gives one Agreement as many hashes as
+it has permutations. Items 3 and 10 are the exceptions and are called out in the
+table as such, because each is a **sequence** rather than a set: {{crypto-upgrade}}
+declares an ordered equivalence list whose order is the preference, and item 10
+takes its order from the profile that enumerates the values. Sorting either
+would discard the meaning it carries, and a change of order in either would then
+leave the Agreement Hash unmoved.
+
+An item that is absent, inapplicable or empty is encoded as CBOR null, and the
+element is present in the array regardless. **Items 14, 25, 27 and 29 are the
+only items that may be absent**: 14 and 25 where the Agreement sets no
+per-subject ceiling, 27 where the Witness Set is empty, and 29 because it is
+OPTIONAL. Item 25 is null whenever item 14 is. An empty Witness Set is encoded
+as CBOR null and not as an empty array. Every other item MUST be present and
+MUST NOT be null. Encoding an absent per-subject ceiling as null, as zero, or by
+omitting the element are three readings of one sentence, and all three produce
+different Agreement Hashes.
+
+The order is fixed by the numbering of {{bra-items}} and by nothing else. An
+implementation MUST NOT derive it from the order in which terms appear in the
+negotiated instrument, from any serialisation the parties exchange, or from an
+alphabetisation of the item names. Earlier revisions of this document specified
+the digest over "its canonicalised content", which named no order and so did not
+make independent computation of one value possible.
+
+A change to any item changes the Agreement Hash, and {{agreement-drift}}
+suspends reconciliation against a register whose Agreement Hash deviates from
+the one committed at the start of a reconciliation event. Items 11, 22, 27 and
+30 carry key material and witness membership, which change under ordinary
+operation -- a rotation under the upgrade path of item 3, the addition of a
+witness -- so an Agreement Hash change is a renegotiation event and the parties
+MUST agree the new Agreement Hash before the operation that causes it. A
+deployment that rotates first and renegotiates afterwards has suspended its own
+reconciliation, by its own drift rule, at the moment its upgrade path was
+exercised.
+
+### What a Bilateral Register Agreement does not establish {#bra-limits}
+
+An Agreement is a declaration by two parties. It is not evidence that what it
+declares is true.
+
+The Operating-Party Identifiers of {{witness-entries}} are declared, not proven.
+{{witness-entries}} excludes a witness under the control of the responding
+service, under common control with it, or controlling it, and that exclusion is
+normative; what this document supplies no mechanism for is **detecting a false
+declaration**. Two witnesses under common control that each declare a distinct
+Operating-Party Identifier satisfy the distinctness test as a verifier can
+compute it, and a relying party comparing the two identifiers sees two parties.
+The requirement is worth stating regardless, because a party that declares an
+independence it does not have has made a false attributable claim rather than
+benefited from an unexamined silence, and because an Audit Identity under
+{{audit-path}} can be given the Witness Set to examine. But a relying party
+MUST NOT treat a met quorum as proof of observer diversity. It is proof that
+observer diversity was declared, by a named party, in a term that party can be
+held to.
+
+The same holds of item 20, the authority origin, which {{containment}} already
+requires a register operator to corroborate by publishing an Authorised-Origin
+Document, and which is the one declared item this document does provide a
+mechanism to check.
 
 # Agentic Principal Reconciliation {#agentic}
 
@@ -2715,7 +3115,7 @@ is later revoked.
 
 # Encoding {#encoding}
 
-## CBOR-COSE Encoding
+## CBOR-COSE Encoding {#cbor-cose}
 
 The mandatory-to-implement encoding for ARP messages on the wire is CBOR with
 COSE {{RFC9052}} {{RFC9053}} envelopes. COSE_Sign1 is used for both Partial
@@ -2850,14 +3250,19 @@ commissioning request of {{request-binding}}.
 - The reconciliation server MUST publish a Policy Parameters Document at
   `/.well-known/arp-policy-parameters` on its authority origin: a COSE_Sign1 by
   its sealing key, under the media type registered in {{iana}}, whose payload is
-  the three-element CBOR array of: the array of permitted signature algorithm
+  the four-element CBOR array of: the array of permitted signature algorithm
   identifiers; the array of per-predicate entries, each a four-element array of
   the predicate, the admitted regime set sorted in bytewise lexicographic order,
   the two-element array of the resolved Verdict Arithmetic and its parameters,
   and the reliance interval, the entries themselves sorted by predicate; and the
   array of two-element arrays of the identifier and effective time of every
   Pattern-Library and Policy-Version transition the server has applied, sorted by
-  effective time, which {{sweep-statements}} relies on. A requester is
+  effective time, which {{sweep-statements}} relies on; and the two-element array
+  of the effective Witness Set and the effective Witness Quorum of
+  {{witness-discovery}}, the Witness Set sorted in bytewise lexicographic order
+  of the deterministic CBOR encoding of each entry. Without that fourth element a
+  relying party, which holds only Agreement Hashes, could not evaluate the quorum
+  the same section obliges it to evaluate. A requester is
   party to no Bilateral Register Agreement and could not otherwise determine how
   to sign, and publishing the resolved parameters removes the regime-shopping
   probe of {{verdict-arithmetic}} by making its result available without
@@ -2918,7 +3323,14 @@ that a party holding no entitlement at all can still observe a head.
   for an entry carrying a Reconciliation Hash it is entitled to; and a Register
   Operator or regulator requesting the Self-Entry Hash alone, for the consistency
   check of {{settlement-ledger}}, by the `fields=self-entry-hash` query
-  parameter.
+  parameter. Any requester whose signature verifies under {{read-signing}} is
+  additionally entitled to the three-element array of the Entry Sequence Number,
+  the Prior-Entry Hash and the Self-Entry Hash, by the `fields=linkage` query
+  parameter, for the head linkage of {{quorum-rule}}. That projection carries no
+  Reconciliation Hash and no structural metadata, so it discloses nothing beyond
+  the chain shape between two heads the Ledger Head Statement of
+  {{settlement-ledger}} already publishes unauthenticated. It is rate-limited as
+  {{read-errors}} provides.
 - `GET /arp/post-seal-records/{post-seal-evaluation-record-hash}` returns the
   Post-Seal Evaluation Record of {{post-seal}}. Entitlement: as for the
   Continuation entry that carries the hash.
@@ -2998,8 +3410,10 @@ A reader MUST check that the `request-binding` matches the request it sent, that
 the `response-time` is within a declared freshness tolerance, and that the
 `as-of-sequence-number` is at least that of the most recent Ledger Head Statement
 it has seen. A deployment MUST declare that tolerance in its Bilateral Register
-Agreements and it MUST NOT exceed the ledger-head notarisation interval of
-{{settlement-ledger}}: a tolerance left to each reader is not a property two
+Agreements and it MUST NOT exceed the effective ledger-head notarisation
+interval of {{settlement-ledger}}, being the shortest any Bilateral Register
+Agreement the deployment holds declares, per the direction rule of
+{{delivery}}: a tolerance left to each reader is not a property two
 implementations can be tested against, and one longer than the notarisation
 interval would admit a response naming a head the reader could already know to
 be superseded. Without those checks a server may serve a cached response for a
@@ -3028,11 +3442,15 @@ that no single consistent chain explains two observations, so it becomes
 observable when two independent observers compare heads and not before. A
 relying party acting on an empty result SHOULD hold head-consistency evidence
 for the served chain from at least one observer independent of the responding
-service -- a witness countersignature over the head, or, where no witness set is
+service -- a witness countersignature over the head, or, where no Witness Set is
 available, an independently anchored head digest, in decreasing order of
-strength. This document does not specify a witness quorum and does not claim to
-close the gap; it names the evidence that bounds it, so that a relying party can
-tell whether it holds any.
+strength. {{bra-witness}} specifies the Witness Set and the Witness Quorum, so
+that "at least one observer independent of the responding service" is a
+condition a deployment declares a value for and an implementation can be tested
+against, rather than a property each reader decides for itself. What that
+quorum does and does not establish is stated in {{bra-limits}}: it is
+independence declared, not independence proven, and this document still does not
+claim to close the gap.
 
 The contradiction is only as tight as the operator's freedom to defer. A
 `continuation-supersession` entry MUST be appended within the ledger-head
@@ -3539,7 +3957,7 @@ entry MUST record the requester-binding class the gate determined --
 corroborated -- so that downstream reliance is aware no accountable principal was
 established and can still tell the two apart.
 
-## Bilateral-Register-Agreement Drift
+## Bilateral-Register-Agreement Drift {#agreement-drift}
 
 Each Bilateral Register Agreement carries an Agreement Hash. Each Partial
 Attestation includes a reference to the Agreement Hash under which it was
@@ -3560,7 +3978,7 @@ nonce and created/expires parameter set that {{read-signing}} requires, so that
 a captured signed request
 cannot be replayed to initiate a fresh reconciliation.
 
-## Post-Quantum Migration
+## Post-Quantum Migration {#post-quantum}
 
 The Cryptographic-Primitive-Upgrade Path is the mechanism by which ARP
 deployments migrate to post-quantum primitives. ML-KEM-1024 {{FIPS203}}
@@ -3627,12 +4045,16 @@ the Output. {{budget-suppression}} records a further residual risk, and
 
 This document requests IANA to register the following:
 
-- Three COSE header parameters in the COSE Header Parameters registry, values
+- Four COSE header parameters in the COSE Header Parameters registry, values
   to be assigned by IANA:
   - `arp-bilateral-agreement-hash` (value TBD)
   - `arp-policy-version-hash` (value TBD)
   - `arp-source-data-version` (value TBD)
+  - `arp-witness-identifier` (value TBD)
 
+  `arp-witness-identifier` is a CBOR text string carrying the identifier of the
+  Witness Entry whose key signed the Head Consistency Statement, and is used by
+  {{head-consistency}};
   `arp-policy-version-hash` is a CBOR byte string;
   `arp-bilateral-agreement-hash` is a CBOR array of byte strings;
   `arp-source-data-version` is a CBOR array of two-element arrays, each of a list
@@ -3771,7 +4193,7 @@ specification document is this document.
 
 ## Media types {#iana-media}
 
-Eleven media types are requested, registered under the template of {{RFC6838}}.
+Twelve media types are requested, registered under the template of {{RFC6838}}.
 For each: the type name is `application`; there are no required and no optional
 parameters; the encoding considerations are binary, save for the `+json` type,
 which is 8-bit UTF-8 text; the security and interoperability considerations are
@@ -3799,6 +4221,7 @@ forms.
 | `arp-read-response+cose` | a signed read response | {{read-responses}} |
 | `arp-evaluation-sweep+cose` | an Evaluation Sweep Statement | {{sweep-statements}} |
 | `arp-key-set+cose` | a signed COSE Key Set or an Authorised-Origin Document | {{sealing-key-discovery}} |
+| `arp-head-consistency+cose` | a Head Consistency Statement | {{head-consistency}} |
 
 # Acknowledgments
 
@@ -3854,7 +4277,19 @@ treated as the log not having answered. {{read-responses}} takes that shape at
 his argument.
 
 Tom Sato's leaf-construction work on Certificate Transparency logs informed
-the inclusion-proof requirements of {{merkle-construction}}.
+the inclusion-proof requirements of {{merkle-construction}}, and established
+that a document defining a Merkle construction without stating its relationship
+to Certificate Transparency leaves an implementer arriving from RFC 6962 unable
+to tell whether the two agree.
+
+Nenad Vasic established that an inclusion proof whose carried leaf is lifted
+unchanged from another object's valid proof folds to the correct root under a
+sibling array that verifies, so that a verifier walking the path before
+recomputing the leaf accepts a proof bound to bytes it does not hold. The
+requirement in {{leaf-binding}} that a verifier compute the leaf from the object
+whose inclusion is being proved and use that value as the input to the sibling
+walk is his, contributed as an executable vector against a
+third-party corpus.
 
 --- back
 
@@ -4091,7 +4526,7 @@ four ways:
    Service, registering its own Signed Statements.
 
 4. ARP Hash-Linkage Aggregation MAY emit its Merkle commitment as COSE Receipts
-   {{RFC9942}}, the same inclusion-proof format
+   {{RFC9942}}, a compatible inclusion-proof encoding
    SCITT uses for transparency receipts, so a single verifier library checks
    both.
 
@@ -4357,18 +4792,19 @@ RFC Editor: please remove this section before publication.
 
 ## Since draft-hillier-scitt-arp-03
 
-{{merkle-construction}} now states its relationship to Certificate Transparency,
-which -03 did not mention anywhere in the document while defining a Merkle
-construction. An implementer arriving from Certificate Transparency had no way
-to tell from the text whether the two constructions agree, and three separate
-places to get it wrong if they assumed one answer or the other. The finding is
+### Certificate Transparency, and the leaf a proof carries
+
+{{merkle-construction}} now states its relationship to Certificate
+Transparency, which -03 named only in its Acknowledgments while defining a
+Merkle construction in its body. An implementer arriving from Certificate Transparency had
+no way to tell from the text whether the two constructions agree. The finding is
 Tom Sato's.
 
 The relationship was established by executing both constructions rather than by
 comparing their prose. The odd-node rule of {{merkle-construction}} and the
 recursive split at the largest power of two below the leaf count of {{RFC9162}}
-Section 2.1.1 produce identical roots for every leaf count from 1 to 1024, and
-identical sibling arrays for all 32,896 leaf-count-and-index pairs up to 256
+Section 2.1.1 produce identical roots for every leaf count from 1 to 4200, and
+identical sibling arrays for all 131,328 leaf-count-and-index pairs up to 512
 leaves. They diverge at one input in that whole range: the empty tree, where
 this document gives thirty-two zero octets and Certificate Transparency gives
 the hash of the empty string. That divergence is kept, and the section now says
@@ -4376,22 +4812,139 @@ why -- the Certificate Transparency value is a digest a verifier reproduces
 successfully and may then treat as a root that commits to something, and
 thirty-two zero octets is a value no commitment in this document produces.
 
-The section also now states the two differences that are not differences in the
-tree: this document sorts and deduplicates leaves where a Certificate
-Transparency log commits to submission order, and this document's inclusion
-proof carries the leaf, index and leaf count where a Certificate Transparency
-inclusion proof carries the sibling array alone. Neither was previously stated
-in terms a reader coming from Certificate Transparency would recognise.
+The section also states what an implementation ported from a Certificate
+Transparency log gets wrong if it is carried over unchanged: this document sorts
+and deduplicates leaves where a log commits to submission order, and this
+document's inclusion proof carries the leaf where the inclusion proof of
+{{RFC9162}} Section 2.1.3 does not, carrying the index and the tree size as this
+document does but assuming the verifier already holds the leaf. And it records
+that the third convention in common use -- duplicating the last node at an odd
+level -- agrees with this construction at **every leaf count that is a power of
+two** and disagrees at every other, so a conformance vector taken at four or
+eight leaves will not detect an implementation that ported it.
 
-{{RFC9162}} and {{RFC6962}} are both added as informative references. RFC 9162
-obsoletes RFC 6962 and is the current specification; RFC 6962 is cited
-deliberately alongside it because it is the version deployed Certificate
-Transparency logs implement, and naming only the replacement would leave the
-reader who is actually at risk without the reference they hold. The construction
-of Section 2.1.1 of RFC 9162 is unchanged from Section 2.1 of RFC 6962, so the
-statement above is true of both. Neither reference is normative: the
-construction is fully specified in this document and an implementation needs
-nothing from either to build it, so no downref is introduced.
+{{leaf-binding}} is new and is the security-relevant part. -03 defined the
+inclusion proof as carrying the leaf and said nothing about where a verifier
+should get the leaf it checks against. A proof whose carried leaf is lifted
+unchanged from another object's valid proof folds to the correct root under a
+sibling array that verifies, because it is a correct proof of the other object;
+a verifier that walks the path first and trusts the carried leaf accepts it and
+concludes that the object it holds was committed. Nothing in the walk depends on
+the object, so no amount of path checking detects it. A verifier MUST now compute
+the leaf from the object whose inclusion is being proved and use that value, and
+no value taken from the proof, as the input to the walk. The requirement is
+stated over the object rather than over the carried field because
+{{aggregation}} permits COSE Receipts {{RFC9942}}, whose inclusion proof carries
+no leaf, and a rule written only as a comparison against a carried leaf would be
+vacuous under exactly the encoding a SCITT-aware verifier is most likely to use.
+The finding is Nenad Vasic's, contributed as an executable vector against a
+third-party corpus.
+
+Two errors in the -03 text of {{merkle-construction}} are corrected. The
+sibling-derivation rule said the verifier halves "the index and the level width"
+as it ascends; the level width halves by **ceiling**, not by truncation, and an
+implementation following the sentence literally computes the wrong width at
+every leaf count that is not a power of two -- which is the entire range the
+paragraph exists to pin down. And {{composition-scitt}} described COSE Receipts as
+"the same inclusion-proof format", which they are not: an RFC 9942 inclusion
+proof carries no leaf and is defined over the RFC 9162 tree whose empty root
+this document rejects. {{aggregation}} also loses a stray duplicated clause.
+
+### The Bilateral Register Agreement
+
+{{bra}} is new. The Bilateral Register Agreement is what makes a register
+addressable, and -03 defined it in a definition-list entry in
+{{terminology}}: one paragraph enumerating twenty-six declared items and the
+Agreement Hash construction over them. That is normative content with MUST-level
+force, sited where a reader looks for a definition and not for a requirement,
+and unreadable at the length it had reached. It is now a section, the
+enumeration is numbered, and the numbering is what fixes the Agreement Hash
+order.
+
+Gathering it surfaced two obligations this document places on an Agreement
+elsewhere and never enumerated here, so that neither was covered by the
+Agreement Hash. {{read-responses}} obliges a deployment to declare a response
+freshness tolerance; that is now item 26. {{read-signing}} obliges an Agreement
+to declare the keys under which a regulator reads, and the
+regulator-identity-provider trust anchor of item 5 is not a key; that is now
+item 30. In both cases two deployments could agree on every item the Agreement
+Hash committed to, differ on the term, and compute the same Agreement Hash --
+an Agreement Hash that does not cover a term the Agreement is required to carry,
+which is the class of defect this document exists to prevent. Item 31 makes the
+re-invocation permission {{retroactive}} already conditions on a declared term
+for the same reason.
+
+{{bra-hash}} now fixes the CBOR type of every item and requires every set-valued
+item to be sorted in bytewise lexicographic order of the deterministic CBOR
+encoding of each element. Determinism under Section 4.2.1 of {{RFC8949}} fixes
+how a given value is encoded and does not fix which type an item takes or how a
+set is ordered, so -03's construction was not one two parties could
+independently compute even with the item order settled. It also states that the
+array has exactly thirty-one elements and that an absent, inapplicable or empty
+item is encoded as CBOR null with the element still present, naming the four
+items that may be absent -- -03 said only that an absent *optional* item was
+null, while more than the one OPTIONAL item admits absence. Since {{agreement-drift}} suspends reconciliation on a deviating
+Agreement Hash, each of these was an outage rather than a warning.
+
+### The witness quorum
+
+{{bra-witness}} specifies the witness quorum. -03 stated, in
+{{read-responses}}, that a relying party acting on an empty result SHOULD hold
+head-consistency evidence from at least one observer independent of the
+responding service, and said in terms that it specified no quorum. The condition
+was therefore normative while the thing that satisfies it was not. The finding
+that this is bounded by observer diversity rather than by any stronger single-log
+property is Walter Hawkins's, carried from -03.
+
+An Agreement now declares a Witness Set and a Witness Quorum, both of which
+enter the Agreement Hash. {{witness-entries}} gives a Witness Entry a form and
+an Operating-Party Identifier with a stated normalisation, so that "distinct"
+is a test a verifier computes rather than one it decides. The exclusion runs in
+every direction -- a witness may not be operated by the responding service, by a
+party controlling it, by a party it controls, or by a party under common control
+-- because an exclusion running upward alone excludes nothing that matters: a
+server that incorporates three subsidiaries satisfies a quorum of three while
+controlling every observation in it.
+
+{{head-consistency}} gives the Statement a payload, a media type and a
+registered protected-header parameter, and carries a Witness Observation Time,
+because a COSE_Sign1 is not dateable from its own bytes and a freshness rule
+over an undateable artefact is a rule no verifier can apply.
+
+{{quorum-rule}} requires that a Statement covering a **higher** head be
+accompanied by the entries linking that head back to the one the response names,
+verified by Prior-Entry Hash. A witness signature over a higher head is
+otherwise evidence about whichever branch that witness was served, and a fork at
+disjoint sequence numbers is precisely a pair of heads neither of which
+contradicts the other; only the linkage puts the two observations on one chain.
+It also measures the freshness window from the Statement Timestamp of the Ledger
+Head Statement rather than from the head's own Entry Timestamp, and sets it at
+two notarisation intervals, because {{settlement-ledger}} republishes once per
+interval and a one-interval window measured from an entry's own timestamp closes
+before any witness can see that entry.
+
+{{witness-discovery}} puts the effective Witness Set and Quorum in the Policy
+Parameters Document of {{read-signing}}. A relying party is party to no
+Agreement and holds only Agreement Hashes, so a quorum declared solely inside an
+Agreement is a test the party obliged to run it cannot read.
+
+{{bra-limits}} states what none of this establishes. Operating-Party Identifiers
+are declared and not proven; the exclusion is normative and the detection of a
+false declaration is not provided for. A met quorum is proof that observer
+diversity was declared, by a named party, in a term that party can be held to.
+
+### Mechanical
+
+Anchors were added to sections that had none -- {{crypto-upgrade}},
+{{cbor-cose}}, {{agreement-drift}} and {{post-quantum}} -- so that {{bra}} can
+cite them. No heading text changed. Item 2 of {{bra-items}} cites
+{{post-quantum}} for the post-quantum primitives a deployment has selected. {{RFC9162}} and {{RFC6962}} are added as
+informative references: RFC 9162 obsoletes RFC 6962 and is the current
+specification, and RFC 6962 is cited deliberately alongside it because it is the
+version deployed Certificate Transparency logs implement, so naming only the
+replacement would leave the reader who is actually at risk without the reference
+they hold. Neither is normative -- the construction is fully specified here --
+so no downref is introduced.
 
 ## Since draft-hillier-scitt-arp-02
 

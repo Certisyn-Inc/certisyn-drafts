@@ -57,6 +57,7 @@ and keeping a second copy here would invite it to drift.
 | `run_outcome_vectors.py` | The five outcome vectors, two-sided. |
 | `run_cpb_vectors.py` | ARP against the `draft-mih-sokolov-scitt-payload-binding` conformance suite. |
 | `run_existence_oracle_vectors.py` | The existence-oracle class against `reference/arp_read_ref.py`. Reads `../draft-hillier-scitt-arp.md` so the run record binds to one draft revision; `--spec-source` supplies it when the tree is unpacked outside the repository, and its absence is reported as an instruction rather than a traceback. Every negative control declares the **discriminator it is designed to trip**, and a control that refuses through some other check is recorded `control_exercised: false` and excluded from the pass predicate — so the aggregate cannot read PASS over a channel that was never exercised. Two currently are not: NV-ARP-EO-05 is structural and not decidable from the wire, and NV-ARP-EO-04 refuses through a fallback branch. The aggregate is therefore `PASS_WITH_DECLARED_GAPS`. |
+| `merkle_equiv.py` | Executes the Section 4.9 construction and RFC 9162 Section 2.1.1 side by side and compares them. Standing rule 12. Roots over leaf counts 1-4200, sibling arrays over all 131,328 (leaf count, index) pairs to 512 leaves, plus the duplicate-last convention and the level-width halving rule. No arguments, no dependencies, ~2 min. Prints its own counts; a claim in Section 4.9 that this contradicts is a defect in the draft, not in the script. |
 | `run_aac_vectors.py` | ARP against the Agent Action Capsule Class-1 frozen suite, plus a differential test of whether AAC's `capsule_id` and CPB's `jcs-n` are the same construction. **CPB-python and AAC-python are the same source and their agreement is code identity, not corroboration** — the runner discloses this and the evidence column is the AAC **Go** canonicalizer. Stage 3 needs `--go-shim`; without it it reports NOT RUN, not PASS. |
 
 ## runs/
@@ -120,3 +121,17 @@ difference is a finding, not noise.
     tree for its author and a `FileNotFoundError` for everyone else. Reported
     by Walter Hawkins and Songbo Bu on 2026-08-12, both on the same package.
     REPRODUCE.md section 3a says what a package must contain.
+11. A vector is indexed by the predicate it violates, not by the stage that
+    catches the violation. Where a violation is caught is implementation
+    topology; the predicate is the contract. One vector per predicate keeps two
+    engines comparable when their gate placement differs. Reported by Nenad
+    Vasic on 2026-08-17, from a run in which seven of nine malformed inputs were
+    refused at a shape gate rather than at the purpose-built check. This is
+    rule 9 stated constructively: rule 9 refuses credit when the designed
+    discriminator did not fire; rule 11 says how to build a suite in which it
+    does. `NV-ARP-EO-04` fails for exactly this reason.
+12. An equivalence that a normative section of the draft asserts is executed on
+    every revision that touches that section, and the script that executes it
+    lives in `runners/`. An unexecuted equivalence in normative text is a gate
+    reporting success over inputs it never examined, which is the class rules 9
+    and 10 exist for. `merkle_equiv.py` is the first.

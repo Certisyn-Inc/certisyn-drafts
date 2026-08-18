@@ -156,12 +156,22 @@ regenerating early.
 
 ```
 STAGE A — draft text, all of it, no runs
-  A1  2.1  Section 4.9 / RFC 6962                        [DONE this session]
-  A2  2.2  witness set and quorum rule
-  A3  2.7  register binding  (2.2 lands inside it)
+  A1  2.1  Section 4.9 / Certificate Transparency        [DONE]
+  A3  2.7  register binding -> new Section 4.23          [DONE]
+  A2  2.2  witness set and quorum rule -> 4.23.2         [DONE, inside A3]
+  A8  4.9.1 leaf binding                     (Vasic)  [DONE]
+  A11 4.9 corrections: RFC 9162 not 6962; hash agility; the CT
+      inclusion-proof claim; ceiling-halving; 4.10 typos    [DONE]
+  A12 4.23 red-team repairs: witness encoding, discovery, control
+      exclusion, consistency linkage, Agreement Hash types  [DONE]
   A4  2.6  timing: confirm no claim added; no text change
-  A5  Document History "Since -03" completed for A2-A4
   A6  Note to the RFC Editor: recheck the SCRAPI paragraph
+  A7  reference implementation citation -- see §10, NOT in ARP-04.md
+  A9  DECIDE: digest-suite transition -- axis, or verifier contract?
+      (Vasic item 2; sits between 4.21 and 4.22)      [OPEN, §9a]
+  A10 CHECK: two-clock skew on the response freshness tolerance
+      (Dogru; question not defect)                    [OPEN, §9a]
+  A5  Document History "Since -03" completed for A4, A6, A9, A10
       -- scrapi is in the RFC Editor queue; if it gets its number
          before -04 files, that paragraph changes
   >>> FREEZE THE DRAFT SOURCE <<<
@@ -369,13 +379,66 @@ deduplication rule was in `-03` but two paragraphs away from anything that
 mentioned Certificate Transparency, which is to say invisible to the reader who
 most needed it.
 
+### A3 + A2 — items 2.7 and 2.2, the register binding: closed
+
+New **Section 4.23, The Bilateral Register Agreement**, appended at the end of
+Section 4. Placement is deliberate: it renumbers nothing, so 4.9 and 6.4.3 and
+6.4.4 all hold. Four subsections — `bra-items`, `bra-witness`, `bra-hash`,
+`bra-limits`.
+
+`-03` defined the Agreement inside a **definition-list entry in Section 3**: one
+paragraph enumerating twenty-six declared items plus the Agreement Hash
+construction. Normative content with MUST-level force, sited where a reader
+looks for a definition rather than a requirement. It is now a numbered list, and
+the numbering is what fixes the Agreement Hash order. The terminology entry
+shrinks to a definition and a pointer, and gains `Witness Set` and
+`Witness Quorum`.
+
+**A defect fell out of gathering it.** Section 6.4.3 obliges a deployment to
+declare a **response freshness tolerance** in its Bilateral Register Agreements.
+That item was not among the twenty-six the Agreement Hash covered. Two
+deployments could hold Agreements that differ on the tolerance and **compute the
+same Agreement Hash** — a hash that does not cover a term the Agreement is
+required to carry. That is the exact class of defect the document exists to
+prevent, and it was sitting in `-03`. It is now item 26.
+
+**The witness quorum.** Item 27 is a Witness Set — zero or more entries, each an
+identifier, a key thumbprint and an **Operating-Party Identifier**. Item 28 is
+the quorum `t`. No entry may name the reconciliation server, the Transparency
+Service, or a party controlling either. The substance is the distinctness rule:
+the `t` entries satisfying a quorum MUST have **pairwise distinct
+Operating-Party Identifiers**, because countersignatures from witnesses under
+one operating party are one observation reported `t` times. That is standing
+rule 8 of the conformance tree — *two numbers produced by one construction are
+one measurement* — promoted to a normative requirement.
+
+`bra-limits` says what it does not establish: Operating-Party Identifiers are
+**declared, not proven**. Two witnesses under common control that declare
+distinct parties satisfy the rule as written and no mechanism here detects it.
+Stated anyway, because it converts an unexamined property into an asserted one
+an Audit Identity can be given to examine. A met quorum is proof that observer
+diversity was declared, not that it exists.
+
+**Consequence you need to price.** Three items enter the Agreement Hash, so
+**every existing Agreement computes a different hash under `-04`**, even where
+no negotiated term changed. Agreements must be recomputed; a hash recorded
+before `-04` names an Agreement under the old item list. A deployment that does
+not recompute observes Bilateral-Register-Agreement drift where none exists.
+The section says this in terms.
+
+Four sections had no anchor and now have one — `crypto-upgrade`, `cbor-cose`,
+`agreement-drift`, `post-quantum` — so 4.23 can cite them. No heading text
+changed. Every `{{...}}` in the document resolves; checked mechanically.
+
 ### State of the tree right now
 
-- Draft source edited: `d7916da7d024aa44e2110c13591bb8d5c2adeacc53afcf928f5214c8509e6614`,
-  296,623 B (was `e8cb3b93…`, 291,282 B). One heading added — `## Since
-  draft-hillier-scitt-arp-03`, in Document History, after every numbered
-  section. Section 4.9 gains no heading, so **no section number in the document
-  moves and 6.4.3 / 6.4.4 are unchanged.**
+- Draft source edited: **see `ARP-04.md` section 12 for the current digest.**
+  The figure moves with every Stage A edit and is recorded there rather than
+  duplicated here.
+- Headings 85 → 90. Section 4 gains one subsection **at the end** (4.23) and
+  Document History gains `## Since draft-hillier-scitt-arp-03`. **4.1–4.22, all
+  of Section 5 and all of Section 6 keep their numbers, so 4.9, 6.4.3 and 6.4.4
+  are unchanged and Walter's external citation still resolves.**
 - `seed-refcache.ps1` `d018eea0…`, `build-draft.ps1` `ef419260…`,
   `merkle_equiv.py` `5a136557…`,
   `.refcache\reference.RFC.6962.xml` `653624e2…` (611 B),
@@ -387,6 +450,121 @@ most needed it.
 - Nothing regenerated, nothing built, nothing filed.
 - Working tree on the device now differs from `843ea3b` by one file. **The
   commit is yours to make.**
+
+---
+
+## §9a — From the SCITT list, 17 August 2026
+
+Three threads landed today. One of them changes `-04`.
+
+### Nenad Vasic — implementation experience against `-03`
+
+Subject: *"Re: draft-noa-scitt-ai-agent-receipt-00 — ARP reconciliation run
+against the EMILIA and Noa corpora"*, `nenadvasic@protonmail.com`, 21:11 UTC.
+Five numbered items; four bear on `-04`. Composed and sent by "Elara", the
+project's AI maintainer, under a receipted mandate — **the attribution wording
+in the Acknowledgments is yours to settle**; I have credited Nenad Vasic by
+name and said the finding was contributed as an executable vector.
+
+**Item 4 is a defect in ARP and it is now closed.** He describes a proof whose
+carried leaf is lifted verbatim from another object's valid proof: the path
+folds, the root matches, the signature verifies, and the leaf is bound to
+another receipt's bytes. A path-only verifier accepts. `-03` §4.9 defined the
+inclusion proof as carrying the leaf and **said nothing about where a verifier
+should get the leaf it checks against** — so ARP had exactly this hole. §4.9 now
+requires the verifier to recompute the leaf from the object whose inclusion is
+being proved, **before** walking the sibling array, and to refuse on mismatch
+regardless of whether the walk would reach the root. In ARP the bite is §4.10:
+present register A's inclusion proof alongside register B's Partial Attestation
+and a path-only verifier concludes B was committed.
+
+This one is worth taking seriously beyond the text fix. It is the first defect
+in ARP found by somebody running code against it who did not write the
+specification, which is the exact gap `ARP-04.md` §2.4 says is untested.
+
+**Item 2 is a new `-04` candidate, not yet actioned.** A digest-suite transition
+of the evidence itself: records under a predecessor suite stay valid at their
+recorded positions, while a retroactive re-digest of the same bytes under the
+successor must refuse. His discriminating property — *a naive engine that
+re-hashes history under the new suite agrees with the forged digest and
+accepts*. In ARP this sits between §4.22 (Cryptographic-Primitive-Upgrade Path)
+and §4.21 (Retroactive Evaluation), and §4.22 currently says the chain is
+unbroken across a rotation without saying what a re-digest of historical bytes
+under the new primitive must do. **Either a Divergence Axis or an explicit
+statement that suite transition belongs to the verifier contract.** Needs a
+decision before the Stage A freeze.
+
+**Item 3 generalises standing rule 9.** He recommends indexing vectors by *the
+predicate violated* rather than by *the stage that caught the violation*,
+noting seven of nine malformed files in his own run were refused at a shape gate
+rather than the purpose-built check. Rule 9 says a control is credited only when
+its designed discriminator fired; his point is the constructive form — one
+vector per predicate keeps engines comparable when their gate placement differs.
+**Candidate rule 11**, and it bears directly on `NV-ARP-EO-04`, which fails for
+precisely this reason.
+
+**Item 5 corroborates §2.5 from outside.** *"Spec-supplied
+bytes-plus-expected-digest vectors are what make the upgrade durable —
+deployment-authored vectors measure self-consistency, not conformance."* That is
+`ARP-04.md` §2.5's own proposed fix, arrived at independently by someone
+shipping the same discipline. Useful to cite when §2.5 lands.
+
+Item 1 supports the §3 agent-axis split surviving registry review unchanged.
+
+**He has a git-apply-able patch ready and asked for the slot.** Taking it is
+cheap and it is the strongest single move available on §2.4.
+
+### Emek Can Doğru — a question for ARP, not a defect in it
+
+Subject: *draft-dogru-scitt-disclosure-evidence-02*, 20:28 UTC, cc Walter and
+Iman. Mostly about his own draft, where he found that a three-second clock
+difference between two time sources turned a boundary artefact into an
+accusation, and is fixing `-04` to name both clocks and declare a skew bound.
+
+The transferable question: **ARP's response freshness tolerance is also decided
+across two clocks** — the responding service stamps `response-time`, the reader
+compares it against its own — and neither §6.4.3 nor the new item 26 names them
+or bounds skew. `-03` does not use the words "clock" or "skew" either. I am
+flagging this as a question rather than asserting a defect, because ARP's
+tolerance is bounded above by the notarisation interval and Doğru's case
+involved an unbounded window. **Worth ten minutes before the freeze.**
+
+### Anton Sokolov — precedent for the §2.4 ask
+
+Subject: *draft-mih-sato-agent-accountability-composition-01*, 16:09 UTC, cc
+Tom Sato, Steven Mih, Iman Schrock, Songbo Bu — four of your six reviewers on
+one thread. No ARP content. Worth one line anyway: he commits to running someone
+else's vectors before writing his `-02`, because *"the honest way to check that
+is against a profile I did not write."* That is §2.4's argument in someone
+else's mouth, on the SCITT list, this week. Cite it when you make the ask.
+
+### Not ARP: four bounced outreach messages today
+
+`cameron@kelley.vc`, `info@mobasi.ai`, `justin.grover@gmail.com` and
+`hexordia@hexordia.com` all rejected by `mx.google.com` — *"blocked because its
+content presents a potential security issue"*. Four in one day, all
+Google-hosted, all outbound from `certisyn.com`. That reads as a sender-side
+reputation or content-filter problem rather than four coincidences, and none of
+those people know you tried to reach them.
+
+---
+
+## §10 — Two things carried forward that `ARP-04.md` does not list
+
+**The reference-implementation citation was promised to `-04`.**
+`_notes-local/ARP-03-adoption-plan.md` §3 declines to write "is being developed
+in parallel" into `-03`, on the ground that a draft should not announce an
+artefact that does not exist, and commits instead to: publish the implementation
+first, then cite it by repository and commit alongside the vectors it is checked
+against — *"The citation lands in -04."* That commitment is not in `ARP-04.md`'s
+seven items. Either it lands in `-04` or `-04` should say why it did not, on the
+same reasoning that kept it out of `-03`.
+
+**A7 and §2.4 are the same item wearing two hats.** The independent endpoint
+that would let the existence-oracle class surface a specification defect, and a
+published reference implementation, are both "code written from the text by
+someone who is not holding the author's intent". If one person can be found to
+write the endpoint, the artefact is both.
 
 ---
 
@@ -404,3 +582,36 @@ Three decisions gate the rest, and none of them are technical.
    said at an adoption call, and it has to be asked for now to land by November.
 
 Everything in Stage A and Stage B can proceed while those are open.
+
+
+---
+
+## §11 — Red team, 2026-08-18
+
+Two adversarial passes over the new Section 4.9 and Section 4.23 before any
+build, instructed to refute rather than confirm. Twenty-eight findings; the
+substance is in `ARP-04.md` section 14. Three things to carry into the rest of
+Stage A:
+
+**Red-team the new text, not just the old.** Two of the three defects corrected
+in 4.9 were in `-03` and survived a filing and a networked idnits run. The scope
+error in the first draft of 4.9.1 was written and caught inside an hour. Neither
+class is reachable by reading more carefully; both were found by an adversary
+instructed to break the claim.
+
+**Every measured number in normative text gets executed.** Three of the
+overclaims were numbers or equivalences that read as obviously true. The
+duplicate-last convention "produces different roots" is false at every power of
+two. The level width "halves" — it does not, it halves by ceiling, wrong at 1013
+of the first 1024 leaf counts. That is standing rule 12.
+
+**An encoding that two parties must compute independently needs a type table.**
+The Agreement Hash fixed an item order and nothing else. Determinism under RFC
+8949 §4.2.1 fixes how a value encodes, not which type an item takes or how a set
+orders. Eight of thirty-one items are sets. Apply the same test to every other
+digest this document defines before the freeze — that check has not been done.
+
+Deferred to `-05`, recorded not fixed: Agreement items 13, 14, 20, 24 and 25
+anchor normative declarable terms into Section 7, Security Considerations, which
+is conventionally non-normative and which an AD review will flag. Moving them
+renumbers Section 7.

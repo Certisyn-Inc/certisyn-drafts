@@ -1,0 +1,66 @@
+{
+  "class": "arp-deterministic-encoding",
+  "controls_exercised": [
+    "NV-ARP-DE-01",
+    "NV-ARP-DE-02",
+    "NV-ARP-DE-03"
+  ],
+  "controls_not_exercised": [],
+  "deterministic_result": "PASS",
+  "does_not_establish": "that any OTHER class in this tree computes its expected bytes independently. Those classes still import the encoder under test. What this class establishes is that the imported encoder is itself pinned to fixed bytes, so a silent encoder defect would be caught here even though it remains invisible there.",
+  "establishes": "that the deterministic encoder of the reference implementation reproduces byte strings fixed outside it, including the map key order of RFC 8949 Section 4.2.1, and that a suite checking it refuses three named encoder defects.",
+  "measured_divergence": {
+    "cbor2_canonical_hex": "a50a012003186402617a0462616105",
+    "cbor2_canonical_matches_s423": true,
+    "finding": "cbor2 6.1.4 in canonical mode emits the Section 4.2.3 ordering. An implementation that computes ARP digests with it ships non-conforming bytes and raises no error, because both orderings are well-formed CBOR and only one is the one this document cites.",
+    "input_repr": "{10: 1, 100: 2, -1: 3, 'z': 4, 'aa': 5}",
+    "rfc8949_s421_hex": "a50a011864022003617a0462616105",
+    "rfc8949_s423_length_first_hex": "a50a012003186402617a0462616105"
+  },
+  "positive_rows": [
+    {
+      "got_hex": "8b00010a171818181918641903e820293863",
+      "id": "DE-01",
+      "match": true
+    },
+    {
+      "got_hex": "8617181818ff19010019ffff1a00010000",
+      "id": "DE-02",
+      "match": true
+    },
+    {
+      "got_hex": "87404401020304606161644945544662c3bc63e6b0b4",
+      "id": "DE-03",
+      "match": true
+    },
+    {
+      "got_hex": "8380830102038301820203820405",
+      "id": "DE-04",
+      "match": true
+    },
+    {
+      "got_hex": "a3616101616202616303",
+      "id": "DE-05",
+      "match": true
+    },
+    {
+      "got_hex": "a50a011864022003617a0462616105",
+      "id": "DE-06",
+      "match": true
+    },
+    {
+      "got_hex": "8463474554782968747470733a2f2f6172702e6578616d706c652f6172702f6f7574707574732f525f70726573656e74726e2d3030303030303030303030303030303167702d6f74686572",
+      "id": "DE-07",
+      "match": true
+    },
+    {
+      "got_hex": "846a5369676e61747572653143a1012740527061796c6f61642d756e6465722d74657374",
+      "id": "DE-08",
+      "match": true
+    }
+  ],
+  "reference_sha256": "1a7af14d483d45ee3bf75ae06a9c56ec4a1ac76716d683899626377bba43f3d2",
+  "runner_sha256": "40ce075456a790752549e4d8c0d8328ff773faabade672d980b099c67d1547c7",
+  "vectors_sha256": "6a62db7c2624d678d278956b7d6c10852448b779a6e6b101c363b94c243f6129",
+  "version": "v0.1"
+}

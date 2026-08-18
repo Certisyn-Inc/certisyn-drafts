@@ -240,14 +240,47 @@ implementation importing it ships non-conforming bytes with no error.
 adding a vector whose expected bytes are fixed in the file rather than derived at
 run time.
 
-This and 2.4 are now the **only two things holding the aggregate below `PASS`**.
-As of 2026-08-18 the runner carries them as `standing_evidence_gaps` with their
-closing evidence named in the record itself, and computes the aggregate over
-them, so neither can be closed by accident or reported as closed by a run that
-did not close it. Nenad Vasic states this item better than the record did:
-*spec-supplied bytes-plus-expected-digest vectors are what make the upgrade
-durable — deployment-authored vectors measure self-consistency, not
-conformance.*
+**CLOSED 2026-08-18**, by the second of the two options above and on Nenad
+Vasic's formulation of it: *spec-supplied bytes-plus-expected-digest vectors are
+what make the upgrade durable — deployment-authored vectors measure
+self-consistency, not conformance.*
+
+New class `arp-deterministic-encoding`, eight known-answer rows whose expected
+bytes are **fixed in the vector file and derived by nothing at run time**, plus
+three defective encoders. It is the only class in the tree whose expectations do
+not come from the implementation under test. Result `PASS`, three of three
+controls exercised.
+
+**The claim in this section is now measured, with the library named.** cbor2
+6.1.4 in `canonical=True` mode emits RFC 8949 Section 4.2.3 length-first
+ordering, not the Section 4.2.1 bytewise ordering ARP cites. For
+`{10:1, 100:2, -1:3, "z":4, "aa":5}`, whose keys encode to three different
+lengths:
+
+    Section 4.2.1     a50a011864022003617a0462616105    <- what ARP requires
+    Section 4.2.3     a50a012003186402617a0462616105
+    cbor2 canonical   a50a012003186402617a0462616105    <- equals 4.2.3
+
+Both are well-formed CBOR and only one is the one this document cites, so an
+implementation computing ARP digests with cbor2's canonical mode ships
+non-conforming bytes and raises no error. The three byte strings are in the
+vector file, so the claim is checkable rather than asserted.
+
+**Corroboration is bounded and the boundary is stated.** cbor2 corroborates the
+item encodings — head bytes, integer arguments, string lengths, container
+framing. It does **not** corroborate map key order, since on that it disagrees.
+For the ordering rule the evidence is the RFC text plus a second implementation
+that disagrees, and that disagreement is recorded as a finding rather than
+resolved by majority: two implementations are not a vote, and standing rule 8
+says two numbers from one construction are one measurement.
+
+**Coverage moved, it was not gained.** The existence-oracle class still imports
+the encoder under test and an encoder defect is still invisible *there*. What
+changed is that the imported encoder is now pinned to fixed bytes elsewhere in
+the tree, so a silent defect would be caught. The existence-oracle run record
+says exactly that under `covered_elsewhere` rather than deleting the gap.
+
+**2.4 is now the only thing holding the aggregate below `PASS`.**
 
 ### 2.6 Timing
 
@@ -773,6 +806,7 @@ That check has not been done yet.
 | 2026-08-17 | 2.1 closed. RFC 9162 correction, equivalence re-measured to 4200 leaves, `merkle_equiv.py` added to `runners/`. 2.8.1 opened and closed the same day on Nenad Vasic's finding. |
 | 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. Two red-team passes, 28 then 9 findings, all closed. Committed `67723fc`. |
 | 2026-08-18 | A4 and A6 checked, closed with no text change. 2.8.5 opened and closed. |
+| 2026-08-18 | 2.5 closed. New `arp-deterministic-encoding` class, eight known-answer rows with bytes fixed in the file, three defective encoders, `PASS`. cbor2 canonical-mode divergence measured and recorded. |
 | 2026-08-18 | 2.3 closed. `NV-ARP-EO-04` defect rebuilt against the predicate, `NV-ARP-EO-05` retired as a control, aggregate widened over method limits and standing evidence gaps. Controls six of eight to seven of seven. |
 
 ### Current Stage A digests

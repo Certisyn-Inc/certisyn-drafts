@@ -419,13 +419,6 @@ DEFECTS = [
 # aggregate cannot reach PASS: a class whose own record says what it does not
 # establish should not report a headline that says otherwise.
 STANDING_EVIDENCE_GAPS = {
-    "encoder-independence":
-        "request-binding and deterministic CBOR are computed with functions "
-        "imported from the implementation under test, so an encoder defect -- "
-        "including an RFC 8949 S4.2.1 map-ordering violation -- is invisible "
-        "to this class. Closing evidence: expected bytes computed by an "
-        "encoder not imported from the harness, or fixed in the vector file "
-        "rather than derived at run time.",
     "one-sided-negative-class":
         "every NV row is fault injection into an endpoint written by the "
         "specification's author from his own reading of his own text. No "
@@ -650,6 +643,23 @@ def main():
                               "with a stated network placement and acceptance "
                               "threshold.",
         "standing_evidence_gaps": STANDING_EVIDENCE_GAPS,
+        "covered_elsewhere": {
+            "encoder-independence":
+                "CLOSED 2026-08-18 by the arp-deterministic-encoding class, "
+                "runs/deterministic_encoding_run.json. This class still "
+                "computes request-binding and deterministic CBOR with "
+                "functions imported from the implementation under test, and "
+                "that has not changed: an encoder defect is still invisible "
+                "HERE. What changed is that the imported encoder is now "
+                "pinned to byte strings fixed in a vector file and derived by "
+                "nothing at run time, and three named encoder defects -- "
+                "length-first map ordering, non-shortest arguments and "
+                "indefinite-length containers -- are each refused by the row "
+                "designed to trip them. A silent encoder defect would "
+                "therefore be caught in this tree even though it remains "
+                "undetectable in this class. Stated as coverage moved rather "
+                "than as coverage gained.",
+        },
         "declared_coverage_gaps": [
             "NV-ARP-EO-04: CLOSED 2026-08-18. The defect implementation was "
             "rebuilt. It previously skipped the charge on BOTH refused arms, "

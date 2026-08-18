@@ -177,10 +177,16 @@ which is the intended behaviour and not a defect in the runner.
     python3 runners/run_existence_oracle_vectors.py --timing-samples 60
 
     # (i) the deterministic-encoding class. No arguments, no third-party
-    #     dependency, about a second. Thirteen rows whose expected bytes were
-    #     computed WITHOUT the encoder under test, and four defective encoders
-    #     each of which must be caught by exactly the rows designed for it.
+    #     dependency, about a second. Thirteen encoding rows and ten RFC 3986
+    #     normalisation rows whose expected values were computed WITHOUT the
+    #     implementation under test, plus five mutants each of which must be
+    #     caught by exactly the rows designed for it.
     python3 runners/run_deterministic_encoding_vectors.py
+
+    # (j2) which ARP digests survive an ECDSA signature substitution. Needs
+    #      cryptography, 200 trials, a few seconds. Expect Prior-Entry Hash
+    #      stable 0 of 200 until 2.8.7 lands, and 200 of 200 after.
+    python3 runners/ecdsa_malleability_probe.py
 
     # (j) the Section 4.9 Merkle equivalence, executed rather than asserted.
     #     Standing rule 12. About two minutes, no arguments, no dependency.
@@ -276,9 +282,10 @@ No other fixture is used. Everything else is read from the pinned corpora.
     runs/eatf_run_anchor.json
       sha256 3f81214a0131c48e63d6b585952ce842ab4675aca6dff7ece918929cd83d32d7
     runs/deterministic_encoding_run.json    PASS_WITH_DECLARED_GAPS
-                                            13 rows, 4 of 4 controls,
+                                            13 encoding + 10 normalisation
+                                            rows, 5 of 5 controls,
                                             4 declared non-coverage items
-      sha256 0ccbac01c2027bc3b6d46d43ceaa762d7bb836de45f84ed8692ec7f5a9a66fc6
+      sha256 a1948642ae666a9c7c99661b04e4e98b93e17c2b784a17c82e6b2cf558bcddc9
     runs/existence_oracle_run.json  PASS_WITH_DECLARED_GAPS, 7 of 7
                                     controls exercised, 6 declared gaps
       sha256 74df0c9aae6a6d230c1ecc1a9fc92be2ace571be411c50666e7cf8bfb5199869
@@ -326,13 +333,15 @@ two rows; see CHANGES-v2.1.md.
     b1056fa365900b196ad186e4a07fac2939d4c75843d0280629f21c0828e3b621  runners/run_typed_ref_vectors.py
     8726e9f178ea94bb2b255af808bd0761e3f2f46473fcd403413fce5ab1db1b35  vectors/arp-outcome-vectors-v0.2.json
     88153dd1c4b62cfd313cd890ae84fc65de1f67bcd6db7556fce00b7893ce673d  vectors/arp-typed-ref-cpb01-v0.1.json
-    28615cc8ef023373b19157a871860418f0f0584a68b5fe849142340ab5c3bbbe  reference/arp_read_ref.py
+    24698fdd0ed5f69a7b5a3d035ffec8aed625df1bb93ad76f9ec4c669d1062804  reference/arp_read_ref.py
     e6813a46496ac119532264a72c1ee7bd7d6fe5953355e59008a245cfd4bae48a  reference/arp_cbor.py
+    59382d0e3ee3a98e6e393afe7b2cee19cbdebe5b81761c22a0dae548f68d1dfe  reference/arp_uri.py
     5b9527cd05d407fba59a809a890fec428d8315ebe84a1e28ae5f0a8c83973f0b  runners/de_codec.py
-    6f3fe1293fe5cd8ce54e8a105a8d685ccad997166d2dbe24862bf915cc991cc4  runners/build_deterministic_encoding_vectors.py
-    8ba9f87b45a139c931f388615b7418686084b76576d2546e68ae71a4f9b2c781  runners/run_deterministic_encoding_vectors.py
+    554cceb33b95ca7027300d600be108437c346b82ab732774d33de6c415006b6d  runners/build_deterministic_encoding_vectors.py
+    9313e91e3066ce09a353d977a5a580004646556fa7610bdf04f3503193117d8e  runners/run_deterministic_encoding_vectors.py
     366b3868c60758468e40f83de61a74389a2639cd720ac5df7674f0286617c294  runners/merkle_equiv.py
-    8d23244fc7227de1de52bb1af2d2d63729ebe5754b98a3e64d62503706812e15  vectors/arp-deterministic-encoding-v0.2.json
+    7032b93b2aa349c6ffdd9304968d9b146586a2d6ac26080b1e5933780aeab27a  runners/ecdsa_malleability_probe.py
+    b5cf28d058beb6d235a6f1a168658c66bc4da4c53aa994027ae7afcc1b34045b  vectors/arp-deterministic-encoding-v0.2.json
     8ce61405fc02755c4950c44bdacada84e3379356e20cd552ffd2d43d41393a36  reference/fixture-eo-v0.1.json
     6e50ea9014fc348d8ddd632fb8b36a0103c44a965d26af4be1607b5107651af7  runners/run_existence_oracle_vectors.py
     e75e9e594c589aa449ed8b816a9e42c75ded2e4107789d44dbf45fc5a8ee7d66  vectors/arp-existence-oracle-v0.1.json

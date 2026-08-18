@@ -46,6 +46,7 @@ sys.path.insert(0, os.path.join(ROOT, "runners"))
 import de_codec as C                                          # noqa: E402
 
 ENCODER = os.path.join(ROOT, "reference", "arp_cbor.py")
+NORMALISER = os.path.join(ROOT, "reference", "arp_uri.py")
 VECTORS = os.path.join(ROOT, "vectors",
                        "arp-deterministic-encoding-v0.2.json")
 RUN = os.path.join(ROOT, "runs", "deterministic_encoding_run.json")
@@ -53,6 +54,35 @@ RUN = os.path.join(ROOT, "runs", "deterministic_encoding_run.json")
 _spec = importlib.util.spec_from_file_location("arp_cbor", ENCODER)
 ref = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ref)
+
+_uspec = importlib.util.spec_from_file_location("arp_uri", NORMALISER)
+uri = importlib.util.module_from_spec(_uspec)
+_uspec.loader.exec_module(uri)
+
+
+def pre3986_normalise(target):
+    """The normaliser this tree carried until 2026-08-18, written out in full.
+
+    Scheme and host lowercased, default port dropped, and nothing else: no
+    dot-segment removal, no percent-encoding normalisation, userinfo silently
+    discarded. It is a mutant like the encoder mutants, not a call into the
+    subject, so it cannot be merely defective relative to whatever the subject
+    currently does.
+    """
+    from urllib.parse import urlsplit
+    u = urlsplit(target)
+    scheme = u.scheme.lower()
+    host = u.hostname.lower() if u.hostname else ""
+    port = u.port
+    if port is not None and not ((scheme == "http" and port == 80) or
+                                 (scheme == "https" and port == 443)):
+        host = "%s:%d" % (host, port)
+    path = u.path or "/"
+    return "%s://%s%s%s" % (scheme, host, path,
+                            ("?" + u.query) if u.query else "")
+
+
+NORM_MUTANTS = {"pre-3986-normaliser": pre3986_normalise}
 
 
 # --------------------------------------------------------- mutant encoders
@@ -262,6 +292,66 @@ def main():
         w("  %-11s %-14s %-22s %s\n"
           % (state, spec["id"], spec["defect"], note))
 
+    # --- normalisation, positive then negative ------------------------------
+    norm_rows, norm_controls = [], []
+    norm_exercised, norm_not_exercised = [], []
+    nrows = doc.get("normalisation", [])
+    if nrows:
+        w("\n")
+        for nv in nrows:
+            try:
+                got = uri.normalise_target(nv["raw"])
+                rb = hashlib.sha256(ref.cbor(
+                    ["GET", got, "n-0000000000000001", "p-other"])).hexdigest()
+                ok = (got == nv["expected_normalised"]
+                      and rb == nv["expected_request_binding_hex"])
+                state = "ok" if ok else "FAIL"
+                note = "" if ok else ("got %s" % got)
+            except Exception as exc:
+                state = "UNREACHABLE"
+                note = "%s: %s" % (type(exc).__name__, exc)
+            if state != "ok":
+                failed = True
+            norm_rows.append({"id": nv["id"], "state": state, "note": note})
+            w("  %-11s %-8s %s\n" % (state, nv["id"], note))
+
+        for spec in doc.get("normalisation_controls", []):
+            mut = NORM_MUTANTS.get(spec["defect"])
+            if mut is None:
+                norm_not_exercised.append(spec["id"])
+                norm_controls.append({"id": spec["id"],
+                                      "state": "NOT-IMPLEMENTED"})
+                w("  %-11s %-14s declared and not implemented here\n"
+                  % ("gap", spec["id"]))
+                continue
+            caught = [nv["id"] for nv in nrows
+                      if mut(nv["raw"]) != nv["expected_normalised"]]
+            distinct = any(mut(nv["raw"]) != uri.normalise_target(nv["raw"])
+                           for nv in nrows)
+            exact = sorted(caught) == sorted(spec["designed_rows"])
+            if not distinct:
+                state, failed = "FAIL", True
+                note = ("the mutant agrees with the subject on every row, so "
+                        "this control cannot distinguish itself from the "
+                        "thing it tests")
+            elif exact:
+                state, note = "ok", "caught by exactly its designed rows"
+                norm_exercised.append(spec["id"])
+            else:
+                state = "gap"
+                norm_not_exercised.append(spec["id"])
+                note = ("caught set differs: extra %s, missing %s"
+                        % (sorted(set(caught) - set(spec["designed_rows"]))
+                           or "none",
+                           sorted(set(spec["designed_rows"]) - set(caught))
+                           or "none"))
+            norm_controls.append({"id": spec["id"], "state": state,
+                                  "caught": sorted(caught),
+                                  "designed": spec["designed_rows"],
+                                  "note": note})
+            w("  %-11s %-14s %-22s %s\n"
+              % (state, spec["id"], spec["defect"], note))
+
     md = doc["measured_divergence"]
     w("\nrecorded divergence (measured by the builder, not here):\n")
     w("  Section 4.2.1   %s\n" % md["rfc8949_s421_hex"])
@@ -269,6 +359,8 @@ def main():
     w("  cbor2 canonical %s\n" % md["cbor2_canonical_hex"])
 
     gaps = doc.get("does_not_establish", [])
+    not_exercised = not_exercised + norm_not_exercised
+    exercised = exercised + norm_exercised
     if failed:
         aggregate = "FAIL"
     elif not_exercised or gaps:
@@ -276,8 +368,10 @@ def main():
     else:
         aggregate = "PASS"
 
-    w("\nrows                 %d, %d reproduced the expected bytes\n"
+    w("\nencoding rows        %d, %d reproduced the expected bytes\n"
       % (len(rows), sum(1 for r in rows if r["state"] == "ok")))
+    w("normalisation rows   %d, %d reproduced the expected form and digest\n"
+      % (len(norm_rows), sum(1 for r in norm_rows if r["state"] == "ok")))
     w("controls exercised   %d of %d\n"
       % (len(exercised), len(exercised) + len(not_exercised)))
     w("declared non-coverage %d\n" % len(gaps))
@@ -296,7 +390,10 @@ def main():
         "codec_sha256": sha256_file(os.path.join(ROOT, "runners",
                                                  "de_codec.py")),
         "rows": rows,
-        "controls": control_rows,
+        "normalisation_rows": norm_rows,
+        "normalisation_controls": norm_controls,
+        "normaliser_sha256": sha256_file(NORMALISER),
+        "controls": control_rows + norm_controls,
         "controls_exercised": exercised,
         "controls_not_exercised": not_exercised,
         "recorded_divergence": md,

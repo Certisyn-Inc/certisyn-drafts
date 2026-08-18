@@ -1,7 +1,8 @@
 {
   "built_against": {
     "encoder_sha256": "e6813a46496ac119532264a72c1ee7bd7d6fe5953355e59008a245cfd4bae48a",
-    "independent_implementation": "cbor2 6.1.4"
+    "independent_implementation": "cbor2 6.1.4",
+    "normaliser_sha256": "59382d0e3ee3a98e6e393afe7b2cee19cbdebe5b81761c22a0dae548f68d1dfe"
   },
   "class": "arp-deterministic-encoding",
   "corroboration_boundary": "cbor2 is an independent implementation of CBOR item encoding. It is NOT an independent implementation of the Section 4.2.1 map ordering: its canonical mode emits the Section 4.2.3 ordering, so on that rule it is a second implementation that DISAGREES. The ordering in this file is therefore the builder's own application of the RFC text to independently encoded keys. Two implementations are not a vote and the RFC decides it. Standing rule 8.",
@@ -76,7 +77,7 @@
     "Floating-point values. The encoder raises TypeError on a float and this document commits to none, so the shortest-float rule of Section 4.2.1 is out of scope by construction rather than untested by omission. Stated here so the omission is a decision and not a gap.",
     "Tags. The encoder emits no major type 6; the COSE_Sign1 tag 0xd2 is prepended by hand in arp_read_ref.py and is not produced by this encoder.",
     "Duplicate map keys. Python cannot express one, so no vector in this file can carry it. An implementation reading CBOR must still refuse them.",
-    "RFC 3986 target normalisation. DE-11 uses an already-normalised target. normalise_target() in arp_read_ref.py is NOT tested by this class and is not conformant to Sections 6.2.2 and 6.2.3: it performs no dot-segment removal and no percent-encoding normalisation, and it drops userinfo silently. Recorded 2026-08-18; a separate row set is owed."
+    "Internationalised domain names. No NORM row carries a non-ASCII host, and this class states no position on whether a target is normalised to A-labels before digesting. Two parties disagreeing about that compute different bindings."
   ],
   "expectation_provenance": "Scalars, strings and arrays: encoded by cbor2 6.1.4, which shares no code with this tree. Maps: each key and value encoded by cbor2 independently, the encoded key byte strings sorted by the builder's own bytewise comparison, the head emitted by the builder's own argument-width logic. The implementation under test contributes NOTHING to any expectation and is asserted against them. cbor2's canonical mode is never called.",
   "measured_divergence": {
@@ -89,6 +90,93 @@
     "rfc8949_s421_hex": "a50a011864022003617a0462616105",
     "rfc8949_s423_length_first_hex": "a50a012003186402617a0462616105"
   },
+  "normalisation": [
+    {
+      "expected_normalised": "https://arp.example/arp/outputs/R1",
+      "expected_request_binding_hex": "d81271e0eb5d4f37548f8722af0e42948ef82892583c209ae10bcd4a57888543",
+      "id": "NORM-01",
+      "purpose": "6.2.2.1 host case",
+      "raw": "https://ARP.Example/arp/outputs/R1"
+    },
+    {
+      "expected_normalised": "https://arp.example/arp/outputs/R1",
+      "expected_request_binding_hex": "d81271e0eb5d4f37548f8722af0e42948ef82892583c209ae10bcd4a57888543",
+      "id": "NORM-02",
+      "purpose": "6.2.2.1 scheme case, and 6.2.3 default port dropped",
+      "raw": "HTTPS://arp.example:443/arp/outputs/R1"
+    },
+    {
+      "expected_normalised": "https://arp.example:8443/arp/outputs/R1",
+      "expected_request_binding_hex": "f35dcc3708292c89bc25f2c8efdb6972eee6d10094d0187bd35681d324faa7e4",
+      "id": "NORM-03",
+      "purpose": "6.2.3 a non-default port is kept",
+      "raw": "https://arp.example:8443/arp/outputs/R1"
+    },
+    {
+      "expected_normalised": "https://arp.example/arp/outputs/R1",
+      "expected_request_binding_hex": "d81271e0eb5d4f37548f8722af0e42948ef82892583c209ae10bcd4a57888543",
+      "id": "NORM-04",
+      "purpose": "6.2.2.3 dot-segment removal",
+      "raw": "https://arp.example/arp/./outputs/../outputs/R1"
+    },
+    {
+      "expected_normalised": "https://arp.example/arp/outputs/R_present",
+      "expected_request_binding_hex": "21629351d6d4788b1fbfd234d5c025add80af3b6d6a14a8d63cfd1b1021fb95a",
+      "id": "NORM-05",
+      "purpose": "6.2.2.2 a percent-encoded unreserved character is decoded",
+      "raw": "https://arp.example/arp/outputs/R%5fpresent"
+    },
+    {
+      "expected_normalised": "https://arp.example/arp/outputs/r%2Fpresent",
+      "expected_request_binding_hex": "94fe3a232e4ba781cbc9b79cfe99c001a400ab1a2dba9d4f2f16edbbb4481bcc",
+      "id": "NORM-06",
+      "purpose": "6.2.2.1 and 6.2.2.2: %2F is a reserved character, so its hexadecimal digits are uppercased and it is NOT decoded. Decoding it would change the path's segment structure, which is a different resource",
+      "raw": "https://arp.example/arp/outputs/r%2fpresent"
+    },
+    {
+      "expected_normalised": "https://arp.example/",
+      "expected_request_binding_hex": "21f271b257798d04c4536c7aea95fa71f3c5cf9643aa422d3f28f37bb459363a",
+      "id": "NORM-07",
+      "purpose": "6.2.3 an empty path becomes /",
+      "raw": "https://arp.example"
+    },
+    {
+      "expected_normalised": "https://joel@arp.example/arp/outputs/R1",
+      "expected_request_binding_hex": "d3d82f2496348d0b99eadc9c6d9408bbdb52a2a73e7632960c1d576e18b4c314",
+      "id": "NORM-08",
+      "purpose": "userinfo is preserved. Dropping it makes two distinct targets normalise to one binding, which is the failure this normalisation exists to prevent",
+      "raw": "https://joel@arp.example/arp/outputs/R1"
+    },
+    {
+      "expected_normalised": "https://arp.example/arp/outputs/R1",
+      "expected_request_binding_hex": "d81271e0eb5d4f37548f8722af0e42948ef82892583c209ae10bcd4a57888543",
+      "id": "NORM-09",
+      "purpose": "a fragment is not sent on the wire and is excluded",
+      "raw": "https://arp.example/arp/outputs/R1#frag"
+    },
+    {
+      "expected_normalised": "https://arp.example/c",
+      "expected_request_binding_hex": "3055cc9c0a4b2c09b9deef9079ad2f18eabfe029c532d8e584efdb203b7afaee",
+      "id": "NORM-10",
+      "purpose": "5.2.4 dot segments that would climb above the root are discarded rather than escaping it",
+      "raw": "https://arp.example/a/b/../../../c"
+    }
+  ],
+  "normalisation_controls": [
+    {
+      "channel": "the normaliser this tree carried until 2026-08-18: scheme and host lowercased and a default port dropped, but no dot-segment removal, no percent-encoding normalisation, and userinfo discarded silently",
+      "defect": "pre-3986-normaliser",
+      "designed_rows": [
+        "NORM-04",
+        "NORM-05",
+        "NORM-06",
+        "NORM-08",
+        "NORM-10"
+      ],
+      "id": "NV-ARP-NM-01"
+    }
+  ],
+  "normalisation_note": "Section 6.4.1 digests a NORMALISED target so that two clients addressing one resource compute one binding. Each expected normalised form here is written into the builder rather than produced by the subject, and each request-binding digest is computed from that literal string with the builder's own encoder, so neither half of a row comes from the implementation under test. Nonce 'n-0000000000000001', keyid 'p-other'.",
   "property": "The deterministic encoder reproduces byte strings the implementation under test did not compute.",
   "spec": "RFC 8949 Section 4.2.1, as cited by draft-hillier-scitt-arp for every digest preimage and every signed payload",
   "supersedes": "v0.1, which three encoder defects passed. See runners/build_deterministic_encoding_vectors.py.",

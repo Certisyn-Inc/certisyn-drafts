@@ -115,13 +115,33 @@
       "note": "caught by exactly its designed rows",
       "state": "ok",
       "unreachable": []
+    },
+    {
+      "caught": [
+        "NORM-04",
+        "NORM-05",
+        "NORM-06",
+        "NORM-08",
+        "NORM-10"
+      ],
+      "designed": [
+        "NORM-04",
+        "NORM-05",
+        "NORM-06",
+        "NORM-08",
+        "NORM-10"
+      ],
+      "id": "NV-ARP-NM-01",
+      "note": "caught by exactly its designed rows",
+      "state": "ok"
     }
   ],
   "controls_exercised": [
     "NV-ARP-DE-01",
     "NV-ARP-DE-02",
     "NV-ARP-DE-03",
-    "NV-ARP-DE-04"
+    "NV-ARP-DE-04",
+    "NV-ARP-NM-01"
   ],
   "controls_not_exercised": [],
   "deterministic_result": "PASS_WITH_DECLARED_GAPS",
@@ -129,11 +149,85 @@
     "Floating-point values. The encoder raises TypeError on a float and this document commits to none, so the shortest-float rule of Section 4.2.1 is out of scope by construction rather than untested by omission. Stated here so the omission is a decision and not a gap.",
     "Tags. The encoder emits no major type 6; the COSE_Sign1 tag 0xd2 is prepended by hand in arp_read_ref.py and is not produced by this encoder.",
     "Duplicate map keys. Python cannot express one, so no vector in this file can carry it. An implementation reading CBOR must still refuse them.",
-    "RFC 3986 target normalisation. DE-11 uses an already-normalised target. normalise_target() in arp_read_ref.py is NOT tested by this class and is not conformant to Sections 6.2.2 and 6.2.3: it performs no dot-segment removal and no percent-encoding normalisation, and it drops userinfo silently. Recorded 2026-08-18; a separate row set is owed.",
+    "Internationalised domain names. No NORM row carries a non-ASCII host, and this class states no position on whether a target is normalised to A-labels before digesting. Two parties disagreeing about that compute different bindings.",
     "that any OTHER class in this tree computes its expected bytes independently. Those classes still import the encoder under test. What this class establishes is that the imported encoder is pinned to bytes it did not compute, so a silent encoder defect would be caught here even though it remains invisible there."
   ],
   "encoder_sha256": "e6813a46496ac119532264a72c1ee7bd7d6fe5953355e59008a245cfd4bae48a",
   "establishes": "that the deterministic encoder reproduces byte strings computed without it, across every argument width of every major type it emits, including nested map key ordering, and that four named encoder defects are each caught by exactly the rows designed to catch them.",
+  "normalisation_controls": [
+    {
+      "caught": [
+        "NORM-04",
+        "NORM-05",
+        "NORM-06",
+        "NORM-08",
+        "NORM-10"
+      ],
+      "designed": [
+        "NORM-04",
+        "NORM-05",
+        "NORM-06",
+        "NORM-08",
+        "NORM-10"
+      ],
+      "id": "NV-ARP-NM-01",
+      "note": "caught by exactly its designed rows",
+      "state": "ok"
+    }
+  ],
+  "normalisation_rows": [
+    {
+      "id": "NORM-01",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-02",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-03",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-04",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-05",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-06",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-07",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-08",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-09",
+      "note": "",
+      "state": "ok"
+    },
+    {
+      "id": "NORM-10",
+      "note": "",
+      "state": "ok"
+    }
+  ],
+  "normaliser_sha256": "59382d0e3ee3a98e6e393afe7b2cee19cbdebe5b81761c22a0dae548f68d1dfe",
   "recorded_divergence": {
     "cbor2_canonical_hex": "a50a012003186402617a0462616105",
     "cbor2_canonical_matches_s421": false,
@@ -211,7 +305,7 @@
       "state": "ok"
     }
   ],
-  "runner_sha256": "8ba9f87b45a139c931f388615b7418686084b76576d2546e68ae71a4f9b2c781",
-  "vectors_sha256": "8d23244fc7227de1de52bb1af2d2d63729ebe5754b98a3e64d62503706812e15",
+  "runner_sha256": "9313e91e3066ce09a353d977a5a580004646556fa7610bdf04f3503193117d8e",
+  "vectors_sha256": "b5cf28d058beb6d235a6f1a168658c66bc4da4c53aa994027ae7afcc1b34045b",
   "version": "v0.2"
 }

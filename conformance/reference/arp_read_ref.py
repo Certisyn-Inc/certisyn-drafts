@@ -58,7 +58,6 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlsplit
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey, Ed25519PublicKey)
@@ -120,17 +119,10 @@ def request_binding(method: str, target: str, nonce: str, keyid: str) -> bytes:
                                 nonce, keyid])).digest()
 
 
-def normalise_target(target: str) -> str:
-    u = urlsplit(target)
-    scheme = u.scheme.lower()
-    host = u.hostname.lower() if u.hostname else ""
-    port = u.port
-    if port is not None and not ((scheme == "http" and port == 80) or
-                                 (scheme == "https" and port == 443)):
-        host = "%s:%d" % (host, port)
-    path = u.path or "/"
-    return "%s://%s%s%s" % (scheme, host, path,
-                            ("?" + u.query) if u.query else "")
+# RFC 3986 6.2.2/6.2.3 normalisation lives in arp_uri.py, for the same
+# reason the encoder lives in arp_cbor.py: it is testable on its own and the
+# test should not have to stand up an HTTP server to reach it.
+from arp_uri import normalise_target, remove_dot_segments   # noqa: E402,F401
 
 
 # -------------------------------------------------------------------- server

@@ -46,6 +46,7 @@ sys.path.insert(0, os.path.join(ROOT, "reference"))
 import de_codec as C                                          # noqa: E402
 
 REF = os.path.join(ROOT, "reference", "arp_cbor.py")
+URI = os.path.join(ROOT, "reference", "arp_uri.py")
 OUT = os.path.join(ROOT, "vectors", "arp-deterministic-encoding-v0.2.json")
 
 try:
@@ -62,6 +63,10 @@ except Exception:
 _spec = importlib.util.spec_from_file_location("arp_cbor", REF)
 ref = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ref)
+
+_uspec = importlib.util.spec_from_file_location("arp_uri", URI)
+uri = importlib.util.module_from_spec(_uspec)
+_uspec.loader.exec_module(uri)
 
 
 # --------------------------------------------------------- builder-local head
@@ -182,6 +187,63 @@ CONTROLS = [
                        "DE-13"]},
 ]
 
+# RFC 3986 Sections 6.2.2 and 6.2.3. Every expected normalised form below is
+# WRITTEN OUT HERE, not produced by the subject, and the subject is asserted
+# against it. The request-binding digest is then computed from the literal
+# normalised string with the builder's own encoder, so neither half of the row
+# comes from the implementation under test.
+NONCE = "n-0000000000000001"
+KEYID = "p-other"
+
+NORMALISATION = [
+    ("NORM-01", "6.2.2.1 host case",
+     "https://ARP.Example/arp/outputs/R1",
+     "https://arp.example/arp/outputs/R1"),
+    ("NORM-02", "6.2.2.1 scheme case, and 6.2.3 default port dropped",
+     "HTTPS://arp.example:443/arp/outputs/R1",
+     "https://arp.example/arp/outputs/R1"),
+    ("NORM-03", "6.2.3 a non-default port is kept",
+     "https://arp.example:8443/arp/outputs/R1",
+     "https://arp.example:8443/arp/outputs/R1"),
+    ("NORM-04", "6.2.2.3 dot-segment removal",
+     "https://arp.example/arp/./outputs/../outputs/R1",
+     "https://arp.example/arp/outputs/R1"),
+    ("NORM-05", "6.2.2.2 a percent-encoded unreserved character is decoded",
+     "https://arp.example/arp/outputs/R%5fpresent",
+     "https://arp.example/arp/outputs/R_present"),
+    ("NORM-06", "6.2.2.1 and 6.2.2.2: %2F is a reserved character, so its "
+                "hexadecimal digits are uppercased and it is NOT decoded. "
+                "Decoding it would change the path's segment structure, which "
+                "is a different resource",
+     "https://arp.example/arp/outputs/r%2fpresent",
+     "https://arp.example/arp/outputs/r%2Fpresent"),
+    ("NORM-07", "6.2.3 an empty path becomes /",
+     "https://arp.example",
+     "https://arp.example/"),
+    ("NORM-08", "userinfo is preserved. Dropping it makes two distinct "
+                "targets normalise to one binding, which is the failure this "
+                "normalisation exists to prevent",
+     "https://joel@arp.example/arp/outputs/R1",
+     "https://joel@arp.example/arp/outputs/R1"),
+    ("NORM-09", "a fragment is not sent on the wire and is excluded",
+     "https://arp.example/arp/outputs/R1#frag",
+     "https://arp.example/arp/outputs/R1"),
+    ("NORM-10", "5.2.4 dot segments that would climb above the root are "
+                "discarded rather than escaping it",
+     "https://arp.example/a/b/../../../c",
+     "https://arp.example/c"),
+]
+
+NORM_CONTROLS = [
+    {"id": "NV-ARP-NM-01", "defect": "pre-3986-normaliser",
+     "channel": "the normaliser this tree carried until 2026-08-18: scheme "
+                "and host lowercased and a default port dropped, but no "
+                "dot-segment removal, no percent-encoding normalisation, and "
+                "userinfo discarded silently",
+     "designed_rows": ["NORM-04", "NORM-05", "NORM-06", "NORM-08",
+                       "NORM-10"]},
+]
+
 UNTESTED = [
     "Floating-point values. The encoder raises TypeError on a float and this "
     "document commits to none, so the shortest-float rule of Section 4.2.1 is "
@@ -191,11 +253,10 @@ UNTESTED = [
     "prepended by hand in arp_read_ref.py and is not produced by this encoder.",
     "Duplicate map keys. Python cannot express one, so no vector in this file "
     "can carry it. An implementation reading CBOR must still refuse them.",
-    "RFC 3986 target normalisation. DE-11 uses an already-normalised target. "
-    "normalise_target() in arp_read_ref.py is NOT tested by this class and is "
-    "not conformant to Sections 6.2.2 and 6.2.3: it performs no dot-segment "
-    "removal and no percent-encoding normalisation, and it drops userinfo "
-    "silently. Recorded 2026-08-18; a separate row set is owed.",
+    "Internationalised domain names. No NORM row carries a non-ASCII host, "
+    "and this class states no position on whether a target is normalised to "
+    "A-labels before digesting. Two parties disagreeing about that compute "
+    "different bindings.",
 ]
 
 
@@ -218,6 +279,14 @@ def build():
             "input": node,
             "expected_hex": exp.hex(),
         })
+
+    for nid, _purpose, raw, norm in NORMALISATION:
+        got = uri.normalise_target(raw)
+        if got != norm:
+            raise SystemExit(
+                "%s: the normaliser under test does not reproduce the "
+                "expected form.\n  raw      %s\n  expected %s\n  got      %s"
+                % (nid, raw, norm, got))
 
     div = {10: 1, 100: 2, -1: 3, "z": 4, "aa": 5}
     pairs = [(expect(k), expect(v)) for k, v in div.items()]
@@ -246,6 +315,7 @@ def build():
             "them. cbor2's canonical mode is never called." % CBOR2_VERSION,
         "built_against": {
             "encoder_sha256": _sha256_file(REF),
+            "normaliser_sha256": _sha256_file(URI),
             "independent_implementation": "cbor2 %s" % CBOR2_VERSION,
         },
         "corroboration_boundary":
@@ -274,6 +344,22 @@ def build():
                        "non-conforming bytes and raises no error."
                        % CBOR2_VERSION,
         },
+        "normalisation": [
+            {"id": nid, "purpose": purpose, "raw": raw,
+             "expected_normalised": norm,
+             "expected_request_binding_hex":
+                 hashlib.sha256(expect(["GET", norm, NONCE, KEYID])).hexdigest()}
+            for nid, purpose, raw, norm in NORMALISATION
+        ],
+        "normalisation_note":
+            "Section 6.4.1 digests a NORMALISED target so that two clients "
+            "addressing one resource compute one binding. Each expected "
+            "normalised form here is written into the builder rather than "
+            "produced by the subject, and each request-binding digest is "
+            "computed from that literal string with the builder's own "
+            "encoder, so neither half of a row comes from the implementation "
+            "under test. Nonce %r, keyid %r." % (NONCE, KEYID),
+        "normalisation_controls": NORM_CONTROLS,
         "defective_encoders": CONTROLS,
         "does_not_establish": UNTESTED,
         "vectors": vectors,
@@ -294,9 +380,13 @@ if __name__ == "__main__":
         json.dump(doc, fh, indent=2, sort_keys=True)
         fh.write("\n")
     sys.stdout.write("written %s\n" % OUT)
-    sys.stdout.write("  %d rows, %d controls, %d declared non-coverage items\n"
-                     % (len(doc["vectors"]), len(doc["defective_encoders"]),
-                        len(doc["does_not_establish"])))
+    sys.stdout.write("  %d encoding rows, %d encoder controls\n"
+                     % (len(doc["vectors"]), len(doc["defective_encoders"])))
+    sys.stdout.write("  %d normalisation rows, %d normalisation controls\n"
+                     % (len(doc["normalisation"]),
+                        len(doc["normalisation_controls"])))
+    sys.stdout.write("  %d declared non-coverage items\n"
+                     % len(doc["does_not_establish"]))
     md = doc["measured_divergence"]
     sys.stdout.write("  cbor2 canonical == S4.2.3: %s   == S4.2.1: %s\n"
                      % (md["cbor2_canonical_matches_s423"],

@@ -319,6 +319,82 @@ changed is that the imported encoder is now pinned to fixed bytes elsewhere in
 the tree, so a silent defect would be caught. The existence-oracle run record
 says exactly that under `covered_elsewhere` rather than deleting the gap.
 
+**2.8.7 Three ARP digests are taken over bytes that include a signature, and
+under ECDSA those bytes are not unique. OPEN, and the largest remaining `-04`
+item.**
+
+Anton Sokolov posted the reproduction to the SCITT list on 2026-08-18: for an
+ECDSA signature `(r, s)`, the pair `(r, n - s)` verifies against the same key
+over the same message. SEC1 v2.0 Section 4.1.3 permits the substitution in
+terms, FIPS 186-5 Section 6.4.2 and SEC1 Section 4.1.4 range-check `r` and `s`
+only, and RFC 9053 Section 2.1 constrains neither. **Nothing is violated and
+nothing is forged** — the same authority signed, and a party holding no key
+produces the second byte-string from the first, in transit. Henri Sirkkavaara
+ran it against his own implementation the same day and found the defect there.
+
+Measured against ARP's own constructions, ES256 over P-256, 200 random keys
+(`conformance/runners/ecdsa_malleability_probe.py`):
+
+| digest | defined over | stable |
+|---|---|---|
+| Prior-Entry Hash, §4.18 | the preceding entry **in its entirety, including that entry's Entry Signature** | **0 of 200** |
+| Self-Entry Hash, §4.18 | the entry with the signature position encoded as CBOR null | 200 of 200 |
+| Reconciliation Hash, §3 | the Output excluding its Sealing Signature | 200 of 200 |
+
+200 of 200 twins verified; 200 of 200 changed the entry bytes.
+
+Two more have the same shape and are treated as exposed on the same argument
+rather than separately measured: the **Post-Seal Evaluation Record Hash** of
+§4.17, defined "over that array in its entirety, signature included", and the
+**Merkle leaf** of §4.10, which is the canonical hash of a Partial Attestation
+signed by the addressed register.
+
+**Why this is worse in ARP than the receipt-identity case Anton describes.**
+Prior-Entry Hash is a chain link, not an identifier. A reader served a
+substituted entry *n* computes a different digest for it, that digest does not
+match entry *n+1*'s Prior-Entry Hash, and the reader concludes the chain is
+broken. Nothing was forged, the operator equivocated about nothing, and
+verification fails anyway. §4.22 argues the chain survives a primitive rotation
+precisely because the entry's bytes "are fixed at the moment the entry is
+appended and are never rewritten" — **true of the operator's copy, and not a
+property of what a reader can be handed.**
+
+**It also collides with 2.8.1, written the day before.** §4.9.1 requires a
+verifier to recompute a Merkle leaf from the object rather than trust the leaf
+a proof carries. That rule is right. Combined with a leaf taken over a signed
+envelope, it converts a substituted signature from a silent difference into a
+**refused valid proof**. Two correct-looking decisions, one of them made this
+week, and the failure exists only where they meet.
+
+**The fix, and why ARP's is cheaper than SCITT's.** Take each of the three
+digests over the **signing input** — the COSE Sig_structure — rather than over
+the envelope. The Sig_structure covers the protected header, which in ARP
+carries the Sealing-Key Identifier and the algorithm identifier, so every
+commitment §4.22 wanted is kept — which key, which algorithm, which payload —
+and only the bytes that were never unique are dropped. The argument survives
+and the defect does not. §4.18's Self-Entry Hash already does the equivalent by
+nulling the signature position, so the shape is one the document already uses.
+
+**Both rules are in ARP at once, two paragraphs apart.** Self-Entry Hash is
+right and Prior-Entry Hash is wrong, in the same bulleted list. That is
+Sirkkavaara's finding reproduced in a second document on the same day: *one
+file being right is no evidence about the next one* — and here, one paragraph
+being right was no evidence about the paragraph below it. **Sweep every digest
+in any document before concluding the class is closed.**
+
+Exposure is conditional and the condition is not forbidden. ARP's reference
+endpoint signs with Ed25519, which RFC 8032 Section 8.4 makes non-malleable by
+putting the low-S check in verification. **ARP does not require Ed25519.**
+Item 2 of a Bilateral Register Agreement declares the supported signature
+primitives and nothing in the document forbids an ECDSA one. "Our
+implementation is fine" and "the specification is fine" are different claims
+and only the first was true.
+
+Sections to change: 4.10, 4.17, 4.18, 4.22. This is normative and it is Stage A,
+so it lands before the freeze.
+
+---
+
 **2.4 is now the only thing holding the existence-oracle aggregate below
 `PASS`.**
 
@@ -330,15 +406,38 @@ was an adversary instructed to break the claim, not a more careful reading. Red
 team every artefact that carries a closure, including the one written an hour
 ago.
 
-**2.8.6 `normalise_target()` is not RFC 3986 conformant. OPEN.** Found in the
-same pass. Section 6.4.1 requires the request-binding target to be normalised
-as in Sections 6.2.2 and 6.2.3 of RFC 3986. The reference endpoint lowercases
-the scheme and host and drops a default port, and does none of: dot-segment
-removal, percent-encoding normalisation, or preserving userinfo — it drops
-userinfo silently. Two clients normalising the same URL differently compute
-different request-bindings and neither is told why. The deterministic-encoding
-class declares this untested rather than implying otherwise; a row set is owed
-and the reference needs the missing three steps.
+**2.8.6 `normalise_target()` was not RFC 3986 conformant. CLOSED 2026-08-18.**
+Found in the same pass. Section 6.4.1 requires the request-binding target to be
+normalised as in Sections 6.2.2 and 6.2.3 of RFC 3986. The reference endpoint
+lowercased the scheme and host and dropped a default port, and did none of:
+dot-segment removal, percent-encoding normalisation, or preserving userinfo —
+it dropped userinfo silently. Two clients addressing one resource normalised
+differently, computed different request-bindings, and neither was told why.
+
+`reference/arp_uri.py` now implements 6.2.2.1 case normalisation over the
+scheme, the host and the hexadecimal digits of every percent-encoded octet;
+6.2.2.2 decoding of percent-encoded unreserved characters, leaving every
+reserved one encoded — **`%2F` is not decoded**, because a decoded slash
+changes the path's segment structure and is a different resource; 6.2.2.3
+dot-segment removal by RFC 3986 Section 5.2.4 written out rather than
+approximated; and 6.2.3 default-port removal and empty-path-to-`/`. Userinfo
+is preserved rather than dropped: discarding it makes two distinct targets
+normalise to one binding, which is the failure the normalisation exists to
+prevent. A deployment that wants to refuse userinfo should refuse the request.
+
+Ten known-answer rows, `NORM-01` to `NORM-10`, carry a raw target, the
+expected normalised form **written into the builder rather than produced by the
+subject**, and the resulting request-binding digest computed from that literal
+string with the builder's own encoder. One mutant, `NV-ARP-NM-01`, is the
+pre-2026-08-18 normaliser written out in full; it is caught by exactly the five
+rows designed for it — dot segments, unreserved decoding, reserved-hex casing,
+userinfo, and dot segments climbing above the root.
+
+The class now reads 13 encoding rows, 10 normalisation rows, 5 of 5 controls,
+`PASS_WITH_DECLARED_GAPS`. The one non-coverage item this replaced is now
+internationalised domain names: no row carries a non-ASCII host and the class
+states no position on A-label conversion, which is a real disagreement two
+parties could have.
 
 ### 2.6 Timing
 
@@ -865,6 +964,8 @@ That check has not been done yet.
 | 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. Two red-team passes, 28 then 9 findings, all closed. Committed `67723fc`. |
 | 2026-08-18 | A4 and A6 checked, closed with no text change. 2.8.5 opened and closed. |
 | 2026-08-18 | 2.5 declared closed at class v0.1. |
+| 2026-08-18 | 2.8.7 opened: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
+| 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |
 | 2026-08-18 | 2.3 closed. `NV-ARP-EO-04` defect rebuilt against the predicate, `NV-ARP-EO-05` retired as a control, aggregate widened over method limits and standing evidence gaps. Controls six of eight to seven of seven. |
 

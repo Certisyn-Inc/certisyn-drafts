@@ -240,16 +240,55 @@ implementation importing it ships non-conforming bytes with no error.
 adding a vector whose expected bytes are fixed in the file rather than derived at
 run time.
 
-**CLOSED 2026-08-18**, by the second of the two options above and on Nenad
-Vasic's formulation of it: *spec-supplied bytes-plus-expected-digest vectors are
+**Declared closed on 2026-08-18 at v0.1. That was wrong, and red team found it
+the same day, before it was relied on.** v0.1 of the class did not close this.
+Its expected bytes were emitted by `ref.cbor` and written into the vector file,
+filtered through one equality check against cbor2 -- so regenerating it against
+a deliberately broken encoder produced a **byte-identical vector file**, and
+"regenerate and diff rather than trusting it" detected nothing. Worse, it
+contained no byte string of twenty-four octets or more, no container of
+twenty-four members or more, and no map below the top level. Three independent
+encoder defects passed the whole suite with `PASS`:
+
+- a length argument widened on byte strings, arrays and maps once it reaches
+  24 -- **every digest this document commits to is a 32-octet byte string**;
+- a depth-dependent map ordering defect, which is the shape of the `{4: kid}`
+  header inside every COSE_Sign1 this document signs;
+- and the builder's own blindness to both.
+
+**CLOSED 2026-08-18 at v0.2**, by the second of the two options above and on
+Nenad Vasic's formulation of it: *spec-supplied bytes-plus-expected-digest vectors are
 what make the upgrade durable — deployment-authored vectors measure
 self-consistency, not conformance.*
 
-New class `arp-deterministic-encoding`, eight known-answer rows whose expected
-bytes are **fixed in the vector file and derived by nothing at run time**, plus
-three defective encoders. It is the only class in the tree whose expectations do
-not come from the implementation under test. Result `PASS`, three of three
-controls exercised.
+New class `arp-deterministic-encoding` at **v0.2**: thirteen known-answer rows
+whose expected bytes were computed **without the encoder under test** -- by
+cbor2 and by the builder's own argument-width and ordering logic -- plus four
+mutant encoders. The builder now *asserts* the subject against those bytes; a
+mismatch stops the build and names the row rather than rewriting the
+expectation. Verified by re-injecting each of the three defects that passed
+v0.1: all three now fail, and the full length-first defect additionally trips
+the new guard that a mutant byte-identical to the subject is a failed control
+rather than a passing one.
+
+Result `PASS_WITH_DECLARED_GAPS`, four of four controls caught by **exactly**
+their designed rows. Not `PASS`, because the class names four things it does
+not establish: floats and tags are out of scope by construction and said so
+rather than omitted, duplicate map keys are inexpressible in the input format,
+and RFC 3986 target normalisation is owed (see 2.8.6).
+
+Coverage now spans every argument width of every major type the encoder emits,
+nested map ordering, keys of mixed major type, and the real signed structures --
+the request-binding preimage, the Sig_structure and the read-response payload
+with its two 32-octet digests.
+
+Three of the four control declarations were wrong when first written, and the
+exact-set rule caught them rather than membership hiding them. One row, DE-09,
+was declared to discriminate map ordering and did not: its four keys' two
+orderings coincided. It was redesigned so a short encoding with a high first
+octet competes with a long encoding with a low one, which is the condition
+under which the two orderings disagree, and then it did. **The declaration was
+fixed by fixing the row, not by fitting the declaration to the outcome.**
 
 **The claim in this section is now measured, with the library named.** cbor2
 6.1.4 in `canonical=True` mode emits RFC 8949 Section 4.2.3 length-first
@@ -280,7 +319,26 @@ changed is that the imported encoder is now pinned to fixed bytes elsewhere in
 the tree, so a silent defect would be caught. The existence-oracle run record
 says exactly that under `covered_elsewhere` rather than deleting the gap.
 
-**2.4 is now the only thing holding the aggregate below `PASS`.**
+**2.4 is now the only thing holding the existence-oracle aggregate below
+`PASS`.**
+
+**The lesson, which is the same one as 2.8.2 and is now the third instance.**
+Evidence written today to close a finding is not evidence until something has
+tried to break it. v0.1 of this class was written, run, recorded as `PASS`,
+committed and reported as closing 2.5 — and it closed nothing. What found it
+was an adversary instructed to break the claim, not a more careful reading. Red
+team every artefact that carries a closure, including the one written an hour
+ago.
+
+**2.8.6 `normalise_target()` is not RFC 3986 conformant. OPEN.** Found in the
+same pass. Section 6.4.1 requires the request-binding target to be normalised
+as in Sections 6.2.2 and 6.2.3 of RFC 3986. The reference endpoint lowercases
+the scheme and host and drops a default port, and does none of: dot-segment
+removal, percent-encoding normalisation, or preserving userinfo — it drops
+userinfo silently. Two clients normalising the same URL differently compute
+different request-bindings and neither is told why. The deterministic-encoding
+class declares this untested rather than implying otherwise; a row set is owed
+and the reference needs the missing three steps.
 
 ### 2.6 Timing
 
@@ -806,7 +864,8 @@ That check has not been done yet.
 | 2026-08-17 | 2.1 closed. RFC 9162 correction, equivalence re-measured to 4200 leaves, `merkle_equiv.py` added to `runners/`. 2.8.1 opened and closed the same day on Nenad Vasic's finding. |
 | 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. Two red-team passes, 28 then 9 findings, all closed. Committed `67723fc`. |
 | 2026-08-18 | A4 and A6 checked, closed with no text change. 2.8.5 opened and closed. |
-| 2026-08-18 | 2.5 closed. New `arp-deterministic-encoding` class, eight known-answer rows with bytes fixed in the file, three defective encoders, `PASS`. cbor2 canonical-mode divergence measured and recorded. |
+| 2026-08-18 | 2.5 declared closed at class v0.1. |
+| 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |
 | 2026-08-18 | 2.3 closed. `NV-ARP-EO-04` defect rebuilt against the predicate, `NV-ARP-EO-05` retired as a control, aggregate widened over method limits and standing evidence gaps. Controls six of eight to seven of seven. |
 
 ### Current Stage A digests

@@ -645,20 +645,25 @@ def main():
         "standing_evidence_gaps": STANDING_EVIDENCE_GAPS,
         "covered_elsewhere": {
             "encoder-independence":
-                "CLOSED 2026-08-18 by the arp-deterministic-encoding class, "
-                "runs/deterministic_encoding_run.json. This class still "
+                "CLOSED 2026-08-18 by the arp-deterministic-encoding class at "
+                "v0.2, runs/deterministic_encoding_run.json. This class still "
                 "computes request-binding and deterministic CBOR with "
                 "functions imported from the implementation under test, and "
                 "that has not changed: an encoder defect is still invisible "
-                "HERE. What changed is that the imported encoder is now "
-                "pinned to byte strings fixed in a vector file and derived by "
-                "nothing at run time, and three named encoder defects -- "
-                "length-first map ordering, non-shortest arguments and "
-                "indefinite-length containers -- are each refused by the row "
-                "designed to trip them. A silent encoder defect would "
-                "therefore be caught in this tree even though it remains "
-                "undetectable in this class. Stated as coverage moved rather "
-                "than as coverage gained.",
+                "HERE. What changed is that the imported encoder is pinned by "
+                "thirteen rows whose expected bytes were computed WITHOUT it "
+                "-- by cbor2 and by that builder's own argument-width and "
+                "ordering logic -- covering every argument width of every "
+                "major type the encoder emits, nested map key ordering, and "
+                "keys of mixed major type. Four named encoder defects are each "
+                "caught by exactly the rows designed to catch them. Stated as "
+                "coverage moved rather than as coverage gained. "
+                "v0.1 of that class did NOT close this and was recorded as "
+                "closing it for one day: its expected bytes were emitted by "
+                "the encoder under test, it contained no byte string of "
+                "twenty-four octets or more and no map below the top level, "
+                "and three encoder defects passed it completely. Red team on "
+                "2026-08-18 found that before it was relied on.",
         },
         "declared_coverage_gaps": [
             "NV-ARP-EO-04: CLOSED 2026-08-18. The defect implementation was "

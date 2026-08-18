@@ -1,0 +1,2338 @@
+{
+  "built_against": {
+    "encoder_sha256": "e6813a46496ac119532264a72c1ee7bd7d6fe5953355e59008a245cfd4bae48a",
+    "independent_implementation": "cbor2 6.1.4"
+  },
+  "class": "arp-deterministic-encoding",
+  "corroboration_boundary": "cbor2 is an independent implementation of CBOR item encoding. It is NOT an independent implementation of the Section 4.2.1 map ordering: its canonical mode emits the Section 4.2.3 ordering, so on that rule it is a second implementation that DISAGREES. The ordering in this file is therefore the builder's own application of the RFC text to independently encoded keys. Two implementations are not a vote and the RFC decides it. Standing rule 8.",
+  "defective_encoders": [
+    {
+      "channel": "map keys sorted by encoded length then bytewise, RFC 8949 Section 4.2.3 where Section 4.2.1 is required",
+      "defect": "length-first-ordering",
+      "designed_rows": [
+        "DE-07",
+        "DE-08",
+        "DE-09",
+        "DE-10"
+      ],
+      "id": "NV-ARP-DE-01"
+    },
+    {
+      "channel": "a length or value argument encoded in a wider field than needed, in ANY major type",
+      "defect": "non-shortest-argument",
+      "designed_rows": [
+        "DE-01",
+        "DE-02",
+        "DE-03",
+        "DE-04",
+        "DE-05",
+        "DE-06",
+        "DE-07",
+        "DE-08",
+        "DE-09",
+        "DE-10",
+        "DE-11",
+        "DE-12",
+        "DE-13"
+      ],
+      "id": "NV-ARP-DE-02"
+    },
+    {
+      "channel": "indefinite-length containers, which Section 4.2.1 forbids. Every row is designed to catch this one, because every row's value is or contains a container. A control that everything catches is weak evidence about any single row and is still worth carrying: what it establishes is that the suite refuses the defect at all",
+      "defect": "indefinite-length",
+      "designed_rows": [
+        "DE-01",
+        "DE-02",
+        "DE-03",
+        "DE-04",
+        "DE-05",
+        "DE-06",
+        "DE-07",
+        "DE-08",
+        "DE-09",
+        "DE-10",
+        "DE-11",
+        "DE-12",
+        "DE-13"
+      ],
+      "id": "NV-ARP-DE-03"
+    },
+    {
+      "channel": "byte-string, array and map length arguments widened to two octets once they reach 24. **This is the defect that passed v0.1 completely**, because no v0.1 row reached a length of 24 in those major types",
+      "defect": "wide-string-length",
+      "designed_rows": [
+        "DE-03",
+        "DE-04",
+        "DE-05",
+        "DE-06",
+        "DE-09",
+        "DE-11",
+        "DE-13"
+      ],
+      "id": "NV-ARP-DE-04"
+    }
+  ],
+  "does_not_establish": [
+    "Floating-point values. The encoder raises TypeError on a float and this document commits to none, so the shortest-float rule of Section 4.2.1 is out of scope by construction rather than untested by omission. Stated here so the omission is a decision and not a gap.",
+    "Tags. The encoder emits no major type 6; the COSE_Sign1 tag 0xd2 is prepended by hand in arp_read_ref.py and is not produced by this encoder.",
+    "Duplicate map keys. Python cannot express one, so no vector in this file can carry it. An implementation reading CBOR must still refuse them.",
+    "RFC 3986 target normalisation. DE-11 uses an already-normalised target. normalise_target() in arp_read_ref.py is NOT tested by this class and is not conformant to Sections 6.2.2 and 6.2.3: it performs no dot-segment removal and no percent-encoding normalisation, and it drops userinfo silently. Recorded 2026-08-18; a separate row set is owed."
+  ],
+  "expectation_provenance": "Scalars, strings and arrays: encoded by cbor2 6.1.4, which shares no code with this tree. Maps: each key and value encoded by cbor2 independently, the encoded key byte strings sorted by the builder's own bytewise comparison, the head emitted by the builder's own argument-width logic. The implementation under test contributes NOTHING to any expectation and is asserted against them. cbor2's canonical mode is never called.",
+  "measured_divergence": {
+    "cbor2_canonical_hex": "a50a012003186402617a0462616105",
+    "cbor2_canonical_matches_s421": false,
+    "cbor2_canonical_matches_s423": true,
+    "finding": "cbor2 6.1.4 in canonical mode emits the Section 4.2.3 ordering. Both orderings are well-formed CBOR and only one is the one this document cites, so an implementation computing ARP digests with it ships non-conforming bytes and raises no error.",
+    "input_repr": "{10: 1, 100: 2, -1: 3, 'z': 4, 'aa': 5}",
+    "measured_by": "the builder, not the runner. The runner has no cbor2 and copies this block forward as a recorded measurement rather than repeating it.",
+    "rfc8949_s421_hex": "a50a011864022003617a0462616105",
+    "rfc8949_s423_length_first_hex": "a50a012003186402617a0462616105"
+  },
+  "property": "The deterministic encoder reproduces byte strings the implementation under test did not compute.",
+  "spec": "RFC 8949 Section 4.2.1, as cited by draft-hillier-scitt-arp for every digest preimage and every signed payload",
+  "supersedes": "v0.1, which three encoder defects passed. See runners/build_deterministic_encoding_vectors.py.",
+  "vectors": [
+    {
+      "expected_hex": "8a000117181818ff19010019ffff1a000100001affffffff1b0000000100000000",
+      "id": "DE-01",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "uint",
+            "v": 0
+          },
+          {
+            "t": "uint",
+            "v": 1
+          },
+          {
+            "t": "uint",
+            "v": 23
+          },
+          {
+            "t": "uint",
+            "v": 24
+          },
+          {
+            "t": "uint",
+            "v": 255
+          },
+          {
+            "t": "uint",
+            "v": 256
+          },
+          {
+            "t": "uint",
+            "v": 65535
+          },
+          {
+            "t": "uint",
+            "v": 65536
+          },
+          {
+            "t": "uint",
+            "v": 4294967295
+          },
+          {
+            "t": "uint",
+            "v": 4294967296
+          }
+        ]
+      },
+      "purpose": "unsigned integers at every argument-width boundary"
+    },
+    {
+      "expected_hex": "892037381838ff39010039ffff3a000100003affffffff3b0000000100000000",
+      "id": "DE-02",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "nint",
+            "v": -1
+          },
+          {
+            "t": "nint",
+            "v": -24
+          },
+          {
+            "t": "nint",
+            "v": -25
+          },
+          {
+            "t": "nint",
+            "v": -256
+          },
+          {
+            "t": "nint",
+            "v": -257
+          },
+          {
+            "t": "nint",
+            "v": -65536
+          },
+          {
+            "t": "nint",
+            "v": -65537
+          },
+          {
+            "t": "nint",
+            "v": -4294967296
+          },
+          {
+            "t": "nint",
+            "v": -4294967297
+          }
+        ]
+      },
+      "purpose": "negative integers at every argument-width boundary. v0.1 tested three of these and none above one byte"
+    },
+    {
+      "expected_hex": "87404101570000000000000000000000000000000000000000000000581800000000000000000000000000000000000000000000000058204c6196a31ec5dbdeab57827428f67316aa27d6fc3cbd10c6e20755cda74960ed58ff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "id": "DE-03",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "bstr",
+            "v": ""
+          },
+          {
+            "t": "bstr",
+            "v": "01"
+          },
+          {
+            "t": "bstr",
+            "v": "0000000000000000000000000000000000000000000000"
+          },
+          {
+            "t": "bstr",
+            "v": "000000000000000000000000000000000000000000000000"
+          },
+          {
+            "t": "bstr",
+            "v": "4c6196a31ec5dbdeab57827428f67316aa27d6fc3cbd10c6e20755cda74960ed"
+          },
+          {
+            "t": "bstr",
+            "v": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "t": "bstr",
+            "v": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "purpose": "byte strings at every length-argument boundary. **A 32-octet byte string is the shape of every digest this document commits to, and v0.1 contained none**, so a defect widening the bstr length argument passed the whole suite"
+    },
+    {
+      "expected_hex": "896061616449455446777575757575757575757575757575757575757575757575781875757575757575757575757575757575757575757575757578ff7575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757901007575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757575757562c3bc63e6b0b4",
+      "id": "DE-04",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "tstr",
+            "v": ""
+          },
+          {
+            "t": "tstr",
+            "v": "a"
+          },
+          {
+            "t": "tstr",
+            "v": "IETF"
+          },
+          {
+            "t": "tstr",
+            "v": "uuuuuuuuuuuuuuuuuuuuuuu"
+          },
+          {
+            "t": "tstr",
+            "v": "uuuuuuuuuuuuuuuuuuuuuuuu"
+          },
+          {
+            "t": "tstr",
+            "v": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+          },
+          {
+            "t": "tstr",
+            "v": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+          },
+          {
+            "t": "tstr",
+            "v": "\u00fc"
+          },
+          {
+            "t": "tstr",
+            "v": "\u6c34"
+          }
+        ]
+      },
+      "purpose": "text strings at every length-argument boundary, and multi-octet UTF-8"
+    },
+    {
+      "expected_hex": "85808301020383018202038204059818000102030405060708090a0b0c0d0e0f1011121314151617990100000102030405060708090a0b0c0d0e0f101112131415161718181819181a181b181c181d181e181f1820182118221823182418251826182718281829182a182b182c182d182e182f1830183118321833183418351836183718381839183a183b183c183d183e183f1840184118421843184418451846184718481849184a184b184c184d184e184f1850185118521853185418551856185718581859185a185b185c185d185e185f1860186118621863186418651866186718681869186a186b186c186d186e186f1870187118721873187418751876187718781879187a187b187c187d187e187f1880188118821883188418851886188718881889188a188b188c188d188e188f1890189118921893189418951896189718981899189a189b189c189d189e189f18a018a118a218a318a418a518a618a718a818a918aa18ab18ac18ad18ae18af18b018b118b218b318b418b518b618b718b818b918ba18bb18bc18bd18be18bf18c018c118c218c318c418c518c618c718c818c918ca18cb18cc18cd18ce18cf18d018d118d218d318d418d518d618d718d818d918da18db18dc18dd18de18df18e018e118e218e318e418e518e618e718e818e918ea18eb18ec18ed18ee18ef18f018f118f218f318f418f518f618f718f818f918fa18fb18fc18fd18fe18ff",
+      "id": "DE-05",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "array",
+            "v": []
+          },
+          {
+            "t": "array",
+            "v": [
+              {
+                "t": "uint",
+                "v": 1
+              },
+              {
+                "t": "uint",
+                "v": 2
+              },
+              {
+                "t": "uint",
+                "v": 3
+              }
+            ]
+          },
+          {
+            "t": "array",
+            "v": [
+              {
+                "t": "uint",
+                "v": 1
+              },
+              {
+                "t": "array",
+                "v": [
+                  {
+                    "t": "uint",
+                    "v": 2
+                  },
+                  {
+                    "t": "uint",
+                    "v": 3
+                  }
+                ]
+              },
+              {
+                "t": "array",
+                "v": [
+                  {
+                    "t": "uint",
+                    "v": 4
+                  },
+                  {
+                    "t": "uint",
+                    "v": 5
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "t": "array",
+            "v": [
+              {
+                "t": "uint",
+                "v": 0
+              },
+              {
+                "t": "uint",
+                "v": 1
+              },
+              {
+                "t": "uint",
+                "v": 2
+              },
+              {
+                "t": "uint",
+                "v": 3
+              },
+              {
+                "t": "uint",
+                "v": 4
+              },
+              {
+                "t": "uint",
+                "v": 5
+              },
+              {
+                "t": "uint",
+                "v": 6
+              },
+              {
+                "t": "uint",
+                "v": 7
+              },
+              {
+                "t": "uint",
+                "v": 8
+              },
+              {
+                "t": "uint",
+                "v": 9
+              },
+              {
+                "t": "uint",
+                "v": 10
+              },
+              {
+                "t": "uint",
+                "v": 11
+              },
+              {
+                "t": "uint",
+                "v": 12
+              },
+              {
+                "t": "uint",
+                "v": 13
+              },
+              {
+                "t": "uint",
+                "v": 14
+              },
+              {
+                "t": "uint",
+                "v": 15
+              },
+              {
+                "t": "uint",
+                "v": 16
+              },
+              {
+                "t": "uint",
+                "v": 17
+              },
+              {
+                "t": "uint",
+                "v": 18
+              },
+              {
+                "t": "uint",
+                "v": 19
+              },
+              {
+                "t": "uint",
+                "v": 20
+              },
+              {
+                "t": "uint",
+                "v": 21
+              },
+              {
+                "t": "uint",
+                "v": 22
+              },
+              {
+                "t": "uint",
+                "v": 23
+              }
+            ]
+          },
+          {
+            "t": "array",
+            "v": [
+              {
+                "t": "uint",
+                "v": 0
+              },
+              {
+                "t": "uint",
+                "v": 1
+              },
+              {
+                "t": "uint",
+                "v": 2
+              },
+              {
+                "t": "uint",
+                "v": 3
+              },
+              {
+                "t": "uint",
+                "v": 4
+              },
+              {
+                "t": "uint",
+                "v": 5
+              },
+              {
+                "t": "uint",
+                "v": 6
+              },
+              {
+                "t": "uint",
+                "v": 7
+              },
+              {
+                "t": "uint",
+                "v": 8
+              },
+              {
+                "t": "uint",
+                "v": 9
+              },
+              {
+                "t": "uint",
+                "v": 10
+              },
+              {
+                "t": "uint",
+                "v": 11
+              },
+              {
+                "t": "uint",
+                "v": 12
+              },
+              {
+                "t": "uint",
+                "v": 13
+              },
+              {
+                "t": "uint",
+                "v": 14
+              },
+              {
+                "t": "uint",
+                "v": 15
+              },
+              {
+                "t": "uint",
+                "v": 16
+              },
+              {
+                "t": "uint",
+                "v": 17
+              },
+              {
+                "t": "uint",
+                "v": 18
+              },
+              {
+                "t": "uint",
+                "v": 19
+              },
+              {
+                "t": "uint",
+                "v": 20
+              },
+              {
+                "t": "uint",
+                "v": 21
+              },
+              {
+                "t": "uint",
+                "v": 22
+              },
+              {
+                "t": "uint",
+                "v": 23
+              },
+              {
+                "t": "uint",
+                "v": 24
+              },
+              {
+                "t": "uint",
+                "v": 25
+              },
+              {
+                "t": "uint",
+                "v": 26
+              },
+              {
+                "t": "uint",
+                "v": 27
+              },
+              {
+                "t": "uint",
+                "v": 28
+              },
+              {
+                "t": "uint",
+                "v": 29
+              },
+              {
+                "t": "uint",
+                "v": 30
+              },
+              {
+                "t": "uint",
+                "v": 31
+              },
+              {
+                "t": "uint",
+                "v": 32
+              },
+              {
+                "t": "uint",
+                "v": 33
+              },
+              {
+                "t": "uint",
+                "v": 34
+              },
+              {
+                "t": "uint",
+                "v": 35
+              },
+              {
+                "t": "uint",
+                "v": 36
+              },
+              {
+                "t": "uint",
+                "v": 37
+              },
+              {
+                "t": "uint",
+                "v": 38
+              },
+              {
+                "t": "uint",
+                "v": 39
+              },
+              {
+                "t": "uint",
+                "v": 40
+              },
+              {
+                "t": "uint",
+                "v": 41
+              },
+              {
+                "t": "uint",
+                "v": 42
+              },
+              {
+                "t": "uint",
+                "v": 43
+              },
+              {
+                "t": "uint",
+                "v": 44
+              },
+              {
+                "t": "uint",
+                "v": 45
+              },
+              {
+                "t": "uint",
+                "v": 46
+              },
+              {
+                "t": "uint",
+                "v": 47
+              },
+              {
+                "t": "uint",
+                "v": 48
+              },
+              {
+                "t": "uint",
+                "v": 49
+              },
+              {
+                "t": "uint",
+                "v": 50
+              },
+              {
+                "t": "uint",
+                "v": 51
+              },
+              {
+                "t": "uint",
+                "v": 52
+              },
+              {
+                "t": "uint",
+                "v": 53
+              },
+              {
+                "t": "uint",
+                "v": 54
+              },
+              {
+                "t": "uint",
+                "v": 55
+              },
+              {
+                "t": "uint",
+                "v": 56
+              },
+              {
+                "t": "uint",
+                "v": 57
+              },
+              {
+                "t": "uint",
+                "v": 58
+              },
+              {
+                "t": "uint",
+                "v": 59
+              },
+              {
+                "t": "uint",
+                "v": 60
+              },
+              {
+                "t": "uint",
+                "v": 61
+              },
+              {
+                "t": "uint",
+                "v": 62
+              },
+              {
+                "t": "uint",
+                "v": 63
+              },
+              {
+                "t": "uint",
+                "v": 64
+              },
+              {
+                "t": "uint",
+                "v": 65
+              },
+              {
+                "t": "uint",
+                "v": 66
+              },
+              {
+                "t": "uint",
+                "v": 67
+              },
+              {
+                "t": "uint",
+                "v": 68
+              },
+              {
+                "t": "uint",
+                "v": 69
+              },
+              {
+                "t": "uint",
+                "v": 70
+              },
+              {
+                "t": "uint",
+                "v": 71
+              },
+              {
+                "t": "uint",
+                "v": 72
+              },
+              {
+                "t": "uint",
+                "v": 73
+              },
+              {
+                "t": "uint",
+                "v": 74
+              },
+              {
+                "t": "uint",
+                "v": 75
+              },
+              {
+                "t": "uint",
+                "v": 76
+              },
+              {
+                "t": "uint",
+                "v": 77
+              },
+              {
+                "t": "uint",
+                "v": 78
+              },
+              {
+                "t": "uint",
+                "v": 79
+              },
+              {
+                "t": "uint",
+                "v": 80
+              },
+              {
+                "t": "uint",
+                "v": 81
+              },
+              {
+                "t": "uint",
+                "v": 82
+              },
+              {
+                "t": "uint",
+                "v": 83
+              },
+              {
+                "t": "uint",
+                "v": 84
+              },
+              {
+                "t": "uint",
+                "v": 85
+              },
+              {
+                "t": "uint",
+                "v": 86
+              },
+              {
+                "t": "uint",
+                "v": 87
+              },
+              {
+                "t": "uint",
+                "v": 88
+              },
+              {
+                "t": "uint",
+                "v": 89
+              },
+              {
+                "t": "uint",
+                "v": 90
+              },
+              {
+                "t": "uint",
+                "v": 91
+              },
+              {
+                "t": "uint",
+                "v": 92
+              },
+              {
+                "t": "uint",
+                "v": 93
+              },
+              {
+                "t": "uint",
+                "v": 94
+              },
+              {
+                "t": "uint",
+                "v": 95
+              },
+              {
+                "t": "uint",
+                "v": 96
+              },
+              {
+                "t": "uint",
+                "v": 97
+              },
+              {
+                "t": "uint",
+                "v": 98
+              },
+              {
+                "t": "uint",
+                "v": 99
+              },
+              {
+                "t": "uint",
+                "v": 100
+              },
+              {
+                "t": "uint",
+                "v": 101
+              },
+              {
+                "t": "uint",
+                "v": 102
+              },
+              {
+                "t": "uint",
+                "v": 103
+              },
+              {
+                "t": "uint",
+                "v": 104
+              },
+              {
+                "t": "uint",
+                "v": 105
+              },
+              {
+                "t": "uint",
+                "v": 106
+              },
+              {
+                "t": "uint",
+                "v": 107
+              },
+              {
+                "t": "uint",
+                "v": 108
+              },
+              {
+                "t": "uint",
+                "v": 109
+              },
+              {
+                "t": "uint",
+                "v": 110
+              },
+              {
+                "t": "uint",
+                "v": 111
+              },
+              {
+                "t": "uint",
+                "v": 112
+              },
+              {
+                "t": "uint",
+                "v": 113
+              },
+              {
+                "t": "uint",
+                "v": 114
+              },
+              {
+                "t": "uint",
+                "v": 115
+              },
+              {
+                "t": "uint",
+                "v": 116
+              },
+              {
+                "t": "uint",
+                "v": 117
+              },
+              {
+                "t": "uint",
+                "v": 118
+              },
+              {
+                "t": "uint",
+                "v": 119
+              },
+              {
+                "t": "uint",
+                "v": 120
+              },
+              {
+                "t": "uint",
+                "v": 121
+              },
+              {
+                "t": "uint",
+                "v": 122
+              },
+              {
+                "t": "uint",
+                "v": 123
+              },
+              {
+                "t": "uint",
+                "v": 124
+              },
+              {
+                "t": "uint",
+                "v": 125
+              },
+              {
+                "t": "uint",
+                "v": 126
+              },
+              {
+                "t": "uint",
+                "v": 127
+              },
+              {
+                "t": "uint",
+                "v": 128
+              },
+              {
+                "t": "uint",
+                "v": 129
+              },
+              {
+                "t": "uint",
+                "v": 130
+              },
+              {
+                "t": "uint",
+                "v": 131
+              },
+              {
+                "t": "uint",
+                "v": 132
+              },
+              {
+                "t": "uint",
+                "v": 133
+              },
+              {
+                "t": "uint",
+                "v": 134
+              },
+              {
+                "t": "uint",
+                "v": 135
+              },
+              {
+                "t": "uint",
+                "v": 136
+              },
+              {
+                "t": "uint",
+                "v": 137
+              },
+              {
+                "t": "uint",
+                "v": 138
+              },
+              {
+                "t": "uint",
+                "v": 139
+              },
+              {
+                "t": "uint",
+                "v": 140
+              },
+              {
+                "t": "uint",
+                "v": 141
+              },
+              {
+                "t": "uint",
+                "v": 142
+              },
+              {
+                "t": "uint",
+                "v": 143
+              },
+              {
+                "t": "uint",
+                "v": 144
+              },
+              {
+                "t": "uint",
+                "v": 145
+              },
+              {
+                "t": "uint",
+                "v": 146
+              },
+              {
+                "t": "uint",
+                "v": 147
+              },
+              {
+                "t": "uint",
+                "v": 148
+              },
+              {
+                "t": "uint",
+                "v": 149
+              },
+              {
+                "t": "uint",
+                "v": 150
+              },
+              {
+                "t": "uint",
+                "v": 151
+              },
+              {
+                "t": "uint",
+                "v": 152
+              },
+              {
+                "t": "uint",
+                "v": 153
+              },
+              {
+                "t": "uint",
+                "v": 154
+              },
+              {
+                "t": "uint",
+                "v": 155
+              },
+              {
+                "t": "uint",
+                "v": 156
+              },
+              {
+                "t": "uint",
+                "v": 157
+              },
+              {
+                "t": "uint",
+                "v": 158
+              },
+              {
+                "t": "uint",
+                "v": 159
+              },
+              {
+                "t": "uint",
+                "v": 160
+              },
+              {
+                "t": "uint",
+                "v": 161
+              },
+              {
+                "t": "uint",
+                "v": 162
+              },
+              {
+                "t": "uint",
+                "v": 163
+              },
+              {
+                "t": "uint",
+                "v": 164
+              },
+              {
+                "t": "uint",
+                "v": 165
+              },
+              {
+                "t": "uint",
+                "v": 166
+              },
+              {
+                "t": "uint",
+                "v": 167
+              },
+              {
+                "t": "uint",
+                "v": 168
+              },
+              {
+                "t": "uint",
+                "v": 169
+              },
+              {
+                "t": "uint",
+                "v": 170
+              },
+              {
+                "t": "uint",
+                "v": 171
+              },
+              {
+                "t": "uint",
+                "v": 172
+              },
+              {
+                "t": "uint",
+                "v": 173
+              },
+              {
+                "t": "uint",
+                "v": 174
+              },
+              {
+                "t": "uint",
+                "v": 175
+              },
+              {
+                "t": "uint",
+                "v": 176
+              },
+              {
+                "t": "uint",
+                "v": 177
+              },
+              {
+                "t": "uint",
+                "v": 178
+              },
+              {
+                "t": "uint",
+                "v": 179
+              },
+              {
+                "t": "uint",
+                "v": 180
+              },
+              {
+                "t": "uint",
+                "v": 181
+              },
+              {
+                "t": "uint",
+                "v": 182
+              },
+              {
+                "t": "uint",
+                "v": 183
+              },
+              {
+                "t": "uint",
+                "v": 184
+              },
+              {
+                "t": "uint",
+                "v": 185
+              },
+              {
+                "t": "uint",
+                "v": 186
+              },
+              {
+                "t": "uint",
+                "v": 187
+              },
+              {
+                "t": "uint",
+                "v": 188
+              },
+              {
+                "t": "uint",
+                "v": 189
+              },
+              {
+                "t": "uint",
+                "v": 190
+              },
+              {
+                "t": "uint",
+                "v": 191
+              },
+              {
+                "t": "uint",
+                "v": 192
+              },
+              {
+                "t": "uint",
+                "v": 193
+              },
+              {
+                "t": "uint",
+                "v": 194
+              },
+              {
+                "t": "uint",
+                "v": 195
+              },
+              {
+                "t": "uint",
+                "v": 196
+              },
+              {
+                "t": "uint",
+                "v": 197
+              },
+              {
+                "t": "uint",
+                "v": 198
+              },
+              {
+                "t": "uint",
+                "v": 199
+              },
+              {
+                "t": "uint",
+                "v": 200
+              },
+              {
+                "t": "uint",
+                "v": 201
+              },
+              {
+                "t": "uint",
+                "v": 202
+              },
+              {
+                "t": "uint",
+                "v": 203
+              },
+              {
+                "t": "uint",
+                "v": 204
+              },
+              {
+                "t": "uint",
+                "v": 205
+              },
+              {
+                "t": "uint",
+                "v": 206
+              },
+              {
+                "t": "uint",
+                "v": 207
+              },
+              {
+                "t": "uint",
+                "v": 208
+              },
+              {
+                "t": "uint",
+                "v": 209
+              },
+              {
+                "t": "uint",
+                "v": 210
+              },
+              {
+                "t": "uint",
+                "v": 211
+              },
+              {
+                "t": "uint",
+                "v": 212
+              },
+              {
+                "t": "uint",
+                "v": 213
+              },
+              {
+                "t": "uint",
+                "v": 214
+              },
+              {
+                "t": "uint",
+                "v": 215
+              },
+              {
+                "t": "uint",
+                "v": 216
+              },
+              {
+                "t": "uint",
+                "v": 217
+              },
+              {
+                "t": "uint",
+                "v": 218
+              },
+              {
+                "t": "uint",
+                "v": 219
+              },
+              {
+                "t": "uint",
+                "v": 220
+              },
+              {
+                "t": "uint",
+                "v": 221
+              },
+              {
+                "t": "uint",
+                "v": 222
+              },
+              {
+                "t": "uint",
+                "v": 223
+              },
+              {
+                "t": "uint",
+                "v": 224
+              },
+              {
+                "t": "uint",
+                "v": 225
+              },
+              {
+                "t": "uint",
+                "v": 226
+              },
+              {
+                "t": "uint",
+                "v": 227
+              },
+              {
+                "t": "uint",
+                "v": 228
+              },
+              {
+                "t": "uint",
+                "v": 229
+              },
+              {
+                "t": "uint",
+                "v": 230
+              },
+              {
+                "t": "uint",
+                "v": 231
+              },
+              {
+                "t": "uint",
+                "v": 232
+              },
+              {
+                "t": "uint",
+                "v": 233
+              },
+              {
+                "t": "uint",
+                "v": 234
+              },
+              {
+                "t": "uint",
+                "v": 235
+              },
+              {
+                "t": "uint",
+                "v": 236
+              },
+              {
+                "t": "uint",
+                "v": 237
+              },
+              {
+                "t": "uint",
+                "v": 238
+              },
+              {
+                "t": "uint",
+                "v": 239
+              },
+              {
+                "t": "uint",
+                "v": 240
+              },
+              {
+                "t": "uint",
+                "v": 241
+              },
+              {
+                "t": "uint",
+                "v": 242
+              },
+              {
+                "t": "uint",
+                "v": 243
+              },
+              {
+                "t": "uint",
+                "v": 244
+              },
+              {
+                "t": "uint",
+                "v": 245
+              },
+              {
+                "t": "uint",
+                "v": 246
+              },
+              {
+                "t": "uint",
+                "v": 247
+              },
+              {
+                "t": "uint",
+                "v": 248
+              },
+              {
+                "t": "uint",
+                "v": 249
+              },
+              {
+                "t": "uint",
+                "v": 250
+              },
+              {
+                "t": "uint",
+                "v": 251
+              },
+              {
+                "t": "uint",
+                "v": 252
+              },
+              {
+                "t": "uint",
+                "v": 253
+              },
+              {
+                "t": "uint",
+                "v": 254
+              },
+              {
+                "t": "uint",
+                "v": 255
+              }
+            ]
+          }
+        ]
+      },
+      "purpose": "arrays at every length-argument boundary, and nesting"
+    },
+    {
+      "expected_hex": "84a0a1616101b7636b303000636b303101636b303202636b303303636b303404636b303505636b303606636b303707636b303808636b303909636b31300a636b31310b636b31320c636b31330d636b31340e636b31350f636b313610636b313711636b313812636b313913636b323014636b323115636b323216b818646b30303000646b30303101646b30303202646b30303303646b30303404646b30303505646b30303606646b30303707646b30303808646b30303909646b3031300a646b3031310b646b3031320c646b3031330d646b3031340e646b3031350f646b30313610646b30313711646b30313812646b30313913646b30323014646b30323115646b30323216646b30323317",
+      "id": "DE-06",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "map",
+            "v": []
+          },
+          {
+            "t": "map",
+            "v": [
+              [
+                {
+                  "t": "tstr",
+                  "v": "a"
+                },
+                {
+                  "t": "uint",
+                  "v": 1
+                }
+              ]
+            ]
+          },
+          {
+            "t": "map",
+            "v": [
+              [
+                {
+                  "t": "tstr",
+                  "v": "k00"
+                },
+                {
+                  "t": "uint",
+                  "v": 0
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k01"
+                },
+                {
+                  "t": "uint",
+                  "v": 1
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k02"
+                },
+                {
+                  "t": "uint",
+                  "v": 2
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k03"
+                },
+                {
+                  "t": "uint",
+                  "v": 3
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k04"
+                },
+                {
+                  "t": "uint",
+                  "v": 4
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k05"
+                },
+                {
+                  "t": "uint",
+                  "v": 5
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k06"
+                },
+                {
+                  "t": "uint",
+                  "v": 6
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k07"
+                },
+                {
+                  "t": "uint",
+                  "v": 7
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k08"
+                },
+                {
+                  "t": "uint",
+                  "v": 8
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k09"
+                },
+                {
+                  "t": "uint",
+                  "v": 9
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k10"
+                },
+                {
+                  "t": "uint",
+                  "v": 10
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k11"
+                },
+                {
+                  "t": "uint",
+                  "v": 11
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k12"
+                },
+                {
+                  "t": "uint",
+                  "v": 12
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k13"
+                },
+                {
+                  "t": "uint",
+                  "v": 13
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k14"
+                },
+                {
+                  "t": "uint",
+                  "v": 14
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k15"
+                },
+                {
+                  "t": "uint",
+                  "v": 15
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k16"
+                },
+                {
+                  "t": "uint",
+                  "v": 16
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k17"
+                },
+                {
+                  "t": "uint",
+                  "v": 17
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k18"
+                },
+                {
+                  "t": "uint",
+                  "v": 18
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k19"
+                },
+                {
+                  "t": "uint",
+                  "v": 19
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k20"
+                },
+                {
+                  "t": "uint",
+                  "v": 20
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k21"
+                },
+                {
+                  "t": "uint",
+                  "v": 21
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k22"
+                },
+                {
+                  "t": "uint",
+                  "v": 22
+                }
+              ]
+            ]
+          },
+          {
+            "t": "map",
+            "v": [
+              [
+                {
+                  "t": "tstr",
+                  "v": "k000"
+                },
+                {
+                  "t": "uint",
+                  "v": 0
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k001"
+                },
+                {
+                  "t": "uint",
+                  "v": 1
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k002"
+                },
+                {
+                  "t": "uint",
+                  "v": 2
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k003"
+                },
+                {
+                  "t": "uint",
+                  "v": 3
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k004"
+                },
+                {
+                  "t": "uint",
+                  "v": 4
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k005"
+                },
+                {
+                  "t": "uint",
+                  "v": 5
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k006"
+                },
+                {
+                  "t": "uint",
+                  "v": 6
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k007"
+                },
+                {
+                  "t": "uint",
+                  "v": 7
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k008"
+                },
+                {
+                  "t": "uint",
+                  "v": 8
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k009"
+                },
+                {
+                  "t": "uint",
+                  "v": 9
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k010"
+                },
+                {
+                  "t": "uint",
+                  "v": 10
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k011"
+                },
+                {
+                  "t": "uint",
+                  "v": 11
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k012"
+                },
+                {
+                  "t": "uint",
+                  "v": 12
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k013"
+                },
+                {
+                  "t": "uint",
+                  "v": 13
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k014"
+                },
+                {
+                  "t": "uint",
+                  "v": 14
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k015"
+                },
+                {
+                  "t": "uint",
+                  "v": 15
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k016"
+                },
+                {
+                  "t": "uint",
+                  "v": 16
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k017"
+                },
+                {
+                  "t": "uint",
+                  "v": 17
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k018"
+                },
+                {
+                  "t": "uint",
+                  "v": 18
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k019"
+                },
+                {
+                  "t": "uint",
+                  "v": 19
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k020"
+                },
+                {
+                  "t": "uint",
+                  "v": 20
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k021"
+                },
+                {
+                  "t": "uint",
+                  "v": 21
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k022"
+                },
+                {
+                  "t": "uint",
+                  "v": 22
+                }
+              ],
+              [
+                {
+                  "t": "tstr",
+                  "v": "k023"
+                },
+                {
+                  "t": "uint",
+                  "v": 23
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "purpose": "maps at every length-argument boundary"
+    },
+    {
+      "expected_hex": "a50a011864022003617a0462616105",
+      "id": "DE-07",
+      "input": {
+        "t": "map",
+        "v": [
+          [
+            {
+              "t": "uint",
+              "v": 10
+            },
+            {
+              "t": "uint",
+              "v": 1
+            }
+          ],
+          [
+            {
+              "t": "uint",
+              "v": 100
+            },
+            {
+              "t": "uint",
+              "v": 2
+            }
+          ],
+          [
+            {
+              "t": "nint",
+              "v": -1
+            },
+            {
+              "t": "uint",
+              "v": 3
+            }
+          ],
+          [
+            {
+              "t": "tstr",
+              "v": "z"
+            },
+            {
+              "t": "uint",
+              "v": 4
+            }
+          ],
+          [
+            {
+              "t": "tstr",
+              "v": "aa"
+            },
+            {
+              "t": "uint",
+              "v": 5
+            }
+          ]
+        ]
+      },
+      "purpose": "THE ORDERING ROW. Keys whose encoded forms have three different lengths, which is the only condition under which Section 4.2.1 and Section 4.2.3 can differ"
+    },
+    {
+      "expected_hex": "a60161612061624061654101616360616661316164",
+      "id": "DE-08",
+      "input": {
+        "t": "map",
+        "v": [
+          [
+            {
+              "t": "uint",
+              "v": 1
+            },
+            {
+              "t": "tstr",
+              "v": "a"
+            }
+          ],
+          [
+            {
+              "t": "nint",
+              "v": -1
+            },
+            {
+              "t": "tstr",
+              "v": "b"
+            }
+          ],
+          [
+            {
+              "t": "bstr",
+              "v": "01"
+            },
+            {
+              "t": "tstr",
+              "v": "c"
+            }
+          ],
+          [
+            {
+              "t": "tstr",
+              "v": "1"
+            },
+            {
+              "t": "tstr",
+              "v": "d"
+            }
+          ],
+          [
+            {
+              "t": "bstr",
+              "v": ""
+            },
+            {
+              "t": "tstr",
+              "v": "e"
+            }
+          ],
+          [
+            {
+              "t": "tstr",
+              "v": ""
+            },
+            {
+              "t": "tstr",
+              "v": "f"
+            }
+          ]
+        ]
+      },
+      "purpose": "ordering across major types: integer, byte-string and text-string keys in one map, which no v0.1 row contained"
+    },
+    {
+      "expected_hex": "a41a000f424004581800000000000000000000000000000000000000000000000001617a0278186b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b03",
+      "id": "DE-09",
+      "input": {
+        "t": "map",
+        "v": [
+          [
+            {
+              "t": "bstr",
+              "v": "000000000000000000000000000000000000000000000000"
+            },
+            {
+              "t": "uint",
+              "v": 1
+            }
+          ],
+          [
+            {
+              "t": "tstr",
+              "v": "z"
+            },
+            {
+              "t": "uint",
+              "v": 2
+            }
+          ],
+          [
+            {
+              "t": "tstr",
+              "v": "kkkkkkkkkkkkkkkkkkkkkkkk"
+            },
+            {
+              "t": "uint",
+              "v": 3
+            }
+          ],
+          [
+            {
+              "t": "uint",
+              "v": 1000000
+            },
+            {
+              "t": "uint",
+              "v": 4
+            }
+          ]
+        ]
+      },
+      "purpose": "keys straddling the 24-octet encoded-length boundary, chosen so a short encoding with a HIGH first octet competes with a long encoding with a LOW one -- the condition under which the two orderings disagree most. A first draft of this row used four text keys of 22, 23 and 24 characters plus an integer; their two orderings coincided and the row discriminated nothing, which the exact-set control check caught"
+    },
+    {
+      "expected_hex": "836a5369676e617475726531a21864012002a1656f75746572a3186401200262616103",
+      "id": "DE-10",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "tstr",
+            "v": "Signature1"
+          },
+          {
+            "t": "map",
+            "v": [
+              [
+                {
+                  "t": "uint",
+                  "v": 100
+                },
+                {
+                  "t": "uint",
+                  "v": 1
+                }
+              ],
+              [
+                {
+                  "t": "nint",
+                  "v": -1
+                },
+                {
+                  "t": "uint",
+                  "v": 2
+                }
+              ]
+            ]
+          },
+          {
+            "t": "map",
+            "v": [
+              [
+                {
+                  "t": "tstr",
+                  "v": "outer"
+                },
+                {
+                  "t": "map",
+                  "v": [
+                    [
+                      {
+                        "t": "uint",
+                        "v": 100
+                      },
+                      {
+                        "t": "uint",
+                        "v": 1
+                      }
+                    ],
+                    [
+                      {
+                        "t": "nint",
+                        "v": -1
+                      },
+                      {
+                        "t": "uint",
+                        "v": 2
+                      }
+                    ],
+                    [
+                      {
+                        "t": "tstr",
+                        "v": "aa"
+                      },
+                      {
+                        "t": "uint",
+                        "v": 3
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "purpose": "**NESTED map ordering.** v0.1 had no map below the top level, so a depth-dependent ordering defect passed. This is the shape of the `{4: kid}` unprotected header inside every COSE_Sign1 this document signs"
+    },
+    {
+      "expected_hex": "8463474554782968747470733a2f2f6172702e6578616d706c652f6172702f6f7574707574732f525f70726573656e74726e2d3030303030303030303030303030303167702d6f74686572",
+      "id": "DE-11",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "tstr",
+            "v": "GET"
+          },
+          {
+            "t": "tstr",
+            "v": "https://arp.example/arp/outputs/R_present"
+          },
+          {
+            "t": "tstr",
+            "v": "n-0000000000000001"
+          },
+          {
+            "t": "tstr",
+            "v": "p-other"
+          }
+        ]
+      },
+      "purpose": "the Section 6.4.1 request-binding preimage: the deterministic CBOR array of the four covered values"
+    },
+    {
+      "expected_hex": "846a5369676e61747572653143a1012740527061796c6f61642d756e6465722d74657374",
+      "id": "DE-12",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "tstr",
+            "v": "Signature1"
+          },
+          {
+            "t": "bstr",
+            "v": "a10127"
+          },
+          {
+            "t": "bstr",
+            "v": ""
+          },
+          {
+            "t": "bstr",
+            "v": "7061796c6f61642d756e6465722d74657374"
+          }
+        ]
+      },
+      "purpose": "the RFC 9052 Section 4.4 Sig_structure preimage, with the EdDSA protected header built from literal bytes rather than from the subject. v0.1 took this input FROM the subject, so a map defect in the protected header was baked into the input and the row still passed"
+    },
+    {
+      "expected_hex": "876b6172702d726561642d763158204c6196a31ec5dbdeab57827428f67316aa27d6fc3cbd10c6e20755cda74960ed19019474323032362d30382d31385430303a30303a30305a19107358204c6196a31ec5dbdeab57827428f67316aa27d6fc3cbd10c6e20755cda74960ed80",
+      "id": "DE-13",
+      "input": {
+        "t": "array",
+        "v": [
+          {
+            "t": "tstr",
+            "v": "arp-read-v1"
+          },
+          {
+            "t": "bstr",
+            "v": "4c6196a31ec5dbdeab57827428f67316aa27d6fc3cbd10c6e20755cda74960ed"
+          },
+          {
+            "t": "uint",
+            "v": 404
+          },
+          {
+            "t": "tstr",
+            "v": "2026-08-18T00:00:00Z"
+          },
+          {
+            "t": "uint",
+            "v": 4211
+          },
+          {
+            "t": "bstr",
+            "v": "4c6196a31ec5dbdeab57827428f67316aa27d6fc3cbd10c6e20755cda74960ed"
+          },
+          {
+            "t": "array",
+            "v": []
+          }
+        ]
+      },
+      "purpose": "the signed read-response payload shape of Section 6.4.3, which carries two 32-octet digests and is the structure a defect in DE-03 would corrupt in production"
+    }
+  ],
+  "version": "v0.2"
+}

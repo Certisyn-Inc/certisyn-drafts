@@ -1,24 +1,38 @@
 #!/usr/bin/env python3
-"""Checks the deterministic encoder against bytes it did not produce.
+"""Checks the deterministic encoder against bytes it did not compute.
 
     python3 runners/run_deterministic_encoding_vectors.py    # no arguments
 
-Every other class in this tree computes its expected bytes with `cbor()`
-imported from the implementation under test. An encoder defect is therefore
-shared by the subject and the checker, and nothing fires -- including an
-RFC 8949 Section 4.2.1 map-ordering violation, which is the defect most likely
-to be shipped by accident because both orderings are well-formed CBOR.
+Every other class in this tree computes its expected bytes with the encoder
+imported from the implementation under test, so an encoder defect is shared by
+the subject and the checker and nothing fires -- including an RFC 8949 Section
+4.2.1 map-ordering violation, which is the defect most likely to ship by
+accident because both orderings are well-formed CBOR and neither raises.
 
-This runner derives nothing. Every expected value is read from
-vectors/arp-deterministic-encoding-v0.1.json, where it was fixed once by the
-builder and committed. The runner has no third-party dependency, so the tree
-still runs unpacked with no arguments -- standing rule 10.
+This runner derives nothing. Every expected value is read from the vector file,
+where the builder computed it with cbor2 and its own argument-width and
+ordering logic, and asserted the subject against it.
 
-Two-sided by construction. A suite that only checks a correct encoder cannot
-be distinguished from one that checks nothing, so three defective encoders are
-implemented below and each must be refused by the row it targets. Standing
-rule 3, and standing rule 9: each defective encoder declares the row it is
-designed to trip and is credited only when that row is what caught it.
+Dependencies: none outside the standard library. It imports the encoder alone,
+from reference/arp_cbor.py, and not the HTTP reference endpoint -- v0.1 of this
+runner claimed no third-party dependency while importing a module whose first
+act is `from cryptography.hazmat...`, and blocking that package produced a bare
+traceback rather than the instruction standing rule 4 requires.
+
+Two-sided, and the negative side is held to a stricter test than v0.1 used:
+
+  * Each mutant encoder is written out in full here. It does not delegate any
+    part of its work to the subject, so it cannot be merely "defective
+    relative to the subject" -- under v0.1 a subject that was itself
+    length-first produced a mutant byte-identical to it, and the control was
+    still credited.
+  * A mutant that agrees with the subject on every row is a FAILURE of the
+    control, not a pass. A control that cannot distinguish itself from the
+    thing it is testing is testing nothing.
+  * Credit requires the caught-row set to EQUAL the designed set declared in
+    the vector file. Membership is not enough: a control credited because some
+    unrelated row happened to notice it is a suite claiming coverage it does
+    not have. Standing rules 9 and 11.
 """
 
 import hashlib
@@ -28,72 +42,111 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = os.path.join(ROOT, "reference", "arp_read_ref.py")
-VECTORS = os.path.join(ROOT, "vectors", "arp-deterministic-encoding-v0.1.json")
+sys.path.insert(0, os.path.join(ROOT, "runners"))
+import de_codec as C                                          # noqa: E402
 
-_spec = importlib.util.spec_from_file_location("arp_read_ref", REF)
+ENCODER = os.path.join(ROOT, "reference", "arp_cbor.py")
+VECTORS = os.path.join(ROOT, "vectors",
+                       "arp-deterministic-encoding-v0.2.json")
+RUN = os.path.join(ROOT, "runs", "deterministic_encoding_run.json")
+
+_spec = importlib.util.spec_from_file_location("arp_cbor", ENCODER)
 ref = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ref)
 
 
-# --------------------------------------------------------- defective encoders
-# Each reintroduces exactly one violation of Section 4.2.1 and nothing else.
+# --------------------------------------------------------- mutant encoders
+# Each is a complete encoder. None calls the subject.
 
-def enc_length_first(v):
-    """Section 4.2.3 ordering where Section 4.2.1 is required."""
-    if isinstance(v, dict):
-        items = sorted(((enc_length_first(k), enc_length_first(val))
-                        for k, val in v.items()),
-                       key=lambda kv: (len(kv[0]), kv[0]))
-        return ref._head(5, len(items)) + b"".join(k + x for k, x in items)
-    if isinstance(v, (list, tuple)):
-        return ref._head(4, len(v)) + b"".join(enc_length_first(x) for x in v)
-    return ref.cbor(v)
+def _head_ok(major, arg):
+    if arg < 24:
+        return bytes([major << 5 | arg])
+    for n, tag in ((1, 24), (2, 25), (4, 26), (8, 27)):
+        if arg < (1 << (8 * n)):
+            return bytes([major << 5 | tag]) + arg.to_bytes(n, "big")
+    raise ValueError("argument too large")
 
 
-def enc_non_shortest(v):
-    """Arguments in a wider field than needed."""
-    if isinstance(v, int) and 0 <= v < 24:
-        return bytes([0 << 5 | 24]) + v.to_bytes(1, "big")
-    if isinstance(v, (list, tuple)):
-        return ref._head(4, len(v)) + b"".join(enc_non_shortest(x) for x in v)
-    if isinstance(v, dict):
-        items = sorted(((enc_non_shortest(k), enc_non_shortest(val))
-                        for k, val in v.items()), key=lambda kv: kv[0])
-        return ref._head(5, len(items)) + b"".join(k + x for k, x in items)
-    return ref.cbor(v)
+def _make(head, order, indefinite=False):
+    def enc(v):
+        if v is None:
+            return b"\xf6"
+        if v is True:
+            return b"\xf5"
+        if v is False:
+            return b"\xf4"
+        if isinstance(v, int):
+            return head(0, v) if v >= 0 else head(1, -v - 1)
+        if isinstance(v, bytes):
+            return head(2, len(v)) + v
+        if isinstance(v, str):
+            b = v.encode("utf-8")
+            return head(3, len(b)) + b
+        if isinstance(v, (list, tuple)):
+            body = b"".join(enc(x) for x in v)
+            return (b"\x9f" + body + b"\xff") if indefinite else \
+                head(4, len(v)) + body
+        if isinstance(v, dict):
+            items = sorted(((enc(k), enc(val)) for k, val in v.items()),
+                           key=order)
+            body = b"".join(k + val for k, val in items)
+            return (b"\xbf" + body + b"\xff") if indefinite else \
+                head(5, len(items)) + body
+        raise TypeError("no deterministic encoding for %r" % type(v))
+    return enc
 
 
-def enc_indefinite(v):
-    """Indefinite-length containers, which Section 4.2.1 forbids."""
-    if isinstance(v, (list, tuple)):
-        return b"\x9f" + b"".join(enc_indefinite(x) for x in v) + b"\xff"
-    if isinstance(v, dict):
-        items = sorted(((enc_indefinite(k), enc_indefinite(val))
-                        for k, val in v.items()), key=lambda kv: kv[0])
-        return b"\xbf" + b"".join(k + x for k, x in items) + b"\xff"
-    return ref.cbor(v)
+def _head_nonshortest(major, arg):
+    """Every argument one field wider than needed."""
+    for n, tag in ((1, 24), (2, 25), (4, 26), (8, 27)):
+        if arg < (1 << (8 * n)):
+            nxt = {24: (2, 25), 25: (4, 26), 26: (8, 27), 27: (8, 27)}[tag]
+            return bytes([major << 5 | nxt[1]]) + arg.to_bytes(nxt[0], "big")
+    raise ValueError("argument too large")
 
 
-DEFECTIVE = {
-    "length-first-ordering": enc_length_first,
-    "non-shortest-argument": enc_non_shortest,
-    "indefinite-length": enc_indefinite,
+def _head_widestring(major, arg):
+    """Length arguments of bstr/tstr/array/map widened once they reach 24.
+
+    This is the defect that passed v0.1 of this class completely, because no
+    v0.1 row contained a byte string of 24 octets or more, or a container of
+    24 members or more. Every digest this document commits to is a 32-octet
+    byte string.
+    """
+    if major in (2, 3, 4, 5) and 24 <= arg < 256:
+        return bytes([major << 5 | 25]) + arg.to_bytes(2, "big")
+    return _head_ok(major, arg)
+
+
+BYTEWISE = lambda kv: kv[0]                                   # noqa: E731
+LENGTHFIRST = lambda kv: (len(kv[0]), kv[0])                  # noqa: E731
+
+MUTANTS = {
+    "length-first-ordering": _make(_head_ok, LENGTHFIRST),
+    "non-shortest-argument": _make(_head_nonshortest, BYTEWISE),
+    "indefinite-length": _make(_head_ok, BYTEWISE, indefinite=True),
+    "wide-string-length": _make(_head_widestring, BYTEWISE),
 }
 
 
 def evaluate(doc, encoder):
-    """Return (rows, mismatched_ids) for one encoder over every vector."""
-    rows, bad = [], []
+    """(caught_row_ids, unreachable) for one encoder over every row.
+
+    A row the encoder cannot reach is recorded as unreachable with its reason
+    and is NOT counted as caught. Silence is not a pass -- standing rule 4.
+    """
+    caught, unreachable = [], []
     for v in doc["vectors"]:
-        value = eval(v["input_repr"], {"__builtins__": {}}, {})
-        got = encoder(value)
-        ok = (got.hex() == v["expected_hex"]
-              and hashlib.sha256(got).hexdigest() == v["expected_sha256"])
-        rows.append({"id": v["id"], "match": ok, "got_hex": got.hex()})
-        if not ok:
-            bad.append(v["id"])
-    return rows, bad
+        try:
+            value = C.parse(v["input"])
+            got = encoder(value)
+        except Exception as exc:
+            unreachable.append({"id": v["id"],
+                                "reason": "%s: %s" % (type(exc).__name__, exc)})
+            continue
+        if got.hex() != v["expected_hex"]:
+            caught.append(v["id"])
+    return caught, unreachable
 
 
 def sha256_file(p):
@@ -105,92 +158,165 @@ def sha256_file(p):
 
 
 def main():
+    # A stale record left on disk after a crash reads as a result, so it is
+    # invalidated before the first row runs. Removal is preferred; where the
+    # filesystem forbids unlink -- a read-only mount, a bind mount, a
+    # permissions model that allows write but not delete -- the record is
+    # overwritten with a marker instead. Neither is allowed to abort the run
+    # with a traceback: standing rule 4 asks for an instruction, and a runner
+    # that dies before its first row on a filesystem quirk is the failure that
+    # rule is about.
+    if os.path.exists(RUN):
+        try:
+            os.remove(RUN)
+        except OSError as exc:
+            try:
+                with open(RUN, "w", newline="\n") as fh:
+                    json.dump({"deterministic_result": "INVALIDATED",
+                               "reason": "a run was started and has not yet "
+                                         "written its result; this file is "
+                                         "not a result",
+                               "unlink_error": str(exc)}, fh, indent=2,
+                              sort_keys=True)
+                    fh.write("\n")
+            except OSError as exc2:
+                sys.stderr.write(
+                    "WARNING: the previous run record could not be removed or "
+                    "overwritten:\n    %s\n    %s\n"
+                    "  If this run does not complete, that file is STALE and "
+                    "is not a result\n  for this tree. Check its "
+                    "vectors_sha256 against the vector file before\n"
+                    "  reading it.\n" % (exc, exc2))
+
     if not os.path.exists(VECTORS):
-        sys.stderr.write("vector file missing: %s\n" % VECTORS)
+        sys.stderr.write(
+            "The vector file is not where this runner expects it:\n\n    %s\n\n"
+            "It is generated by runners/build_deterministic_encoding_vectors.py"
+            ", which\nneeds cbor2. The runner does not.\n" % VECTORS)
         return 1
     with open(VECTORS, "r") as fh:
         doc = json.load(fh)
 
     w = sys.stdout.write
     w("ARP deterministic-encoding class %s\n" % doc["version"])
-    w("vectors   %s\n" % sha256_file(VECTORS))
-    w("reference %s\n\n" % sha256_file(REF))
+    w("vectors %s\nencoder %s\n\n" % (sha256_file(VECTORS),
+                                      sha256_file(ENCODER)))
 
     failed = False
 
-    # --- positive side: the harness against bytes it did not produce --------
-    rows, bad = evaluate(doc, ref.cbor)
-    for r in rows:
-        w("  %s %-8s expected bytes fixed in the vector file\n"
-          % ("ok  " if r["match"] else "FAIL", r["id"]))
-        if not r["match"]:
-            exp = next(v["expected_hex"] for v in doc["vectors"]
-                       if v["id"] == r["id"])
-            w("        expected %s\n        got      %s\n" % (exp, r["got_hex"]))
-    if bad:
-        failed = True
-
-    # --- negative side: each defective encoder must be caught, by its row ---
-    w("\n")
-    exercised, unexercised = [], []
-    for spec in doc["defective_encoders"]:
-        enc = DEFECTIVE[spec["defect"]]
-        _, dbad = evaluate(doc, enc)
-        designed = spec["discriminator"].split()[0]
-        fired = designed in dbad
-        refused = bool(dbad)
-        if not refused:
+    # --- positive side ------------------------------------------------------
+    caught, unreachable = evaluate(doc, ref.cbor)
+    rows = []
+    for v in doc["vectors"]:
+        un = next((u for u in unreachable if u["id"] == v["id"]), None)
+        if un:
+            state, note = "UNREACHABLE", un["reason"]
             failed = True
-        (exercised if (refused and fired) else unexercised).append(spec["id"])
-        w("  %s %-14s %-24s caught by %s\n"
-          % ("ok  " if (refused and fired) else
-             ("FAIL" if not refused else "gap "),
-             spec["id"], spec["defect"], ", ".join(dbad) or "NOTHING"))
-        if refused and not fired:
-            w("        ! designed discriminator %s did not fire\n" % designed)
+        elif v["id"] in caught:
+            state, note = "FAIL", "does not reproduce the expected bytes"
+            failed = True
+        else:
+            state, note = "ok", ""
+        rows.append({"id": v["id"], "state": state, "note": note})
+        w("  %-11s %-6s %s\n" % (state, v["id"], note))
+
+    # --- negative side ------------------------------------------------------
+    w("\n")
+    exercised, not_exercised, control_rows = [], [], []
+    for spec in doc["defective_encoders"]:
+        enc = MUTANTS.get(spec["defect"])
+        if enc is None:
+            not_exercised.append(spec["id"])
+            control_rows.append({"id": spec["id"], "state": "NOT-IMPLEMENTED",
+                                 "caught": [], "designed": spec["designed_rows"]})
+            w("  %-11s %-14s %s\n" % ("gap", spec["id"],
+                                      "declared in the vector file and not "
+                                      "implemented in this runner"))
+            continue
+        mcaught, munreach = evaluate(doc, enc)
+        # A mutant that agrees with the subject everywhere is not a control.
+        distinct = any(enc(C.parse(v["input"])) != ref.cbor(C.parse(v["input"]))
+                       for v in doc["vectors"]
+                       if v["id"] not in [u["id"] for u in munreach])
+        designed = spec["designed_rows"]
+        exact = sorted(mcaught) == sorted(designed)
+        if not distinct:
+            state = "FAIL"
+            failed = True
+            note = ("the mutant is byte-identical to the subject on every "
+                    "row, so this control cannot distinguish itself from the "
+                    "thing it tests")
+        elif exact:
+            state, note = "ok", "caught by exactly its designed rows"
+            exercised.append(spec["id"])
+        else:
+            state = "gap"
+            not_exercised.append(spec["id"])
+            extra = sorted(set(mcaught) - set(designed))
+            missing = sorted(set(designed) - set(mcaught))
+            note = ("caught set differs from designed: extra %s, missing %s"
+                    % (extra or "none", missing or "none"))
+        control_rows.append({"id": spec["id"], "state": state,
+                             "caught": sorted(mcaught), "designed": designed,
+                             "unreachable": munreach, "note": note})
+        w("  %-11s %-14s %-22s %s\n"
+          % (state, spec["id"], spec["defect"], note))
 
     md = doc["measured_divergence"]
-    w("\nmeasured divergence, recorded not adjudicated:\n")
+    w("\nrecorded divergence (measured by the builder, not here):\n")
     w("  Section 4.2.1   %s\n" % md["rfc8949_s421_hex"])
     w("  Section 4.2.3   %s\n" % md["rfc8949_s423_length_first_hex"])
-    w("  cbor2 canonical %s  (== 4.2.3: %s)\n"
-      % (md["cbor2_canonical_hex"], md["cbor2_canonical_matches_s423"]))
+    w("  cbor2 canonical %s\n" % md["cbor2_canonical_hex"])
 
-    aggregate = "FAIL" if failed else (
-        "PASS_WITH_DECLARED_GAPS" if unexercised else "PASS")
-    w("\ncontrols exercised     %d of %d\n"
-      % (len(exercised), len(exercised) + len(unexercised)))
-    w("DETERMINISTIC RESULT: %s\n" % aggregate)
+    gaps = doc.get("does_not_establish", [])
+    if failed:
+        aggregate = "FAIL"
+    elif not_exercised or gaps:
+        aggregate = "PASS_WITH_DECLARED_GAPS"
+    else:
+        aggregate = "PASS"
+
+    w("\nrows                 %d, %d reproduced the expected bytes\n"
+      % (len(rows), sum(1 for r in rows if r["state"] == "ok")))
+    w("controls exercised   %d of %d\n"
+      % (len(exercised), len(exercised) + len(not_exercised)))
+    w("declared non-coverage %d\n" % len(gaps))
+    w("\nDETERMINISTIC RESULT: %s\n" % aggregate)
+    if aggregate == "PASS_WITH_DECLARED_GAPS":
+        w("  No row failed. The result is not PASS because this class names\n"
+          "  %d things it does not establish, and they are stated in the\n"
+          "  vector file rather than left to a reader to infer.\n" % len(gaps))
 
     out = {
         "class": doc["class"],
         "version": doc["version"],
         "vectors_sha256": sha256_file(VECTORS),
-        "reference_sha256": sha256_file(REF),
+        "encoder_sha256": sha256_file(ENCODER),
         "runner_sha256": sha256_file(os.path.abspath(__file__)),
-        "positive_rows": rows,
+        "codec_sha256": sha256_file(os.path.join(ROOT, "runners",
+                                                 "de_codec.py")),
+        "rows": rows,
+        "controls": control_rows,
         "controls_exercised": exercised,
-        "controls_not_exercised": unexercised,
-        "measured_divergence": md,
-        "establishes": "that the deterministic encoder of the reference "
-                       "implementation reproduces byte strings fixed outside "
-                       "it, including the map key order of RFC 8949 Section "
-                       "4.2.1, and that a suite checking it refuses three "
-                       "named encoder defects.",
-        "does_not_establish": "that any OTHER class in this tree computes its "
-                              "expected bytes independently. Those classes "
-                              "still import the encoder under test. What this "
-                              "class establishes is that the imported encoder "
-                              "is itself pinned to fixed bytes, so a silent "
-                              "encoder defect would be caught here even though "
-                              "it remains invisible there.",
+        "controls_not_exercised": not_exercised,
+        "recorded_divergence": md,
+        "establishes": "that the deterministic encoder reproduces byte strings "
+                       "computed without it, across every argument width of "
+                       "every major type it emits, including nested map key "
+                       "ordering, and that four named encoder defects are each "
+                       "caught by exactly the rows designed to catch them.",
+        "does_not_establish": gaps + [
+            "that any OTHER class in this tree computes its expected bytes "
+            "independently. Those classes still import the encoder under test. "
+            "What this class establishes is that the imported encoder is "
+            "pinned to bytes it did not compute, so a silent encoder defect "
+            "would be caught here even though it remains invisible there."],
         "deterministic_result": aggregate,
     }
-    path = os.path.join(ROOT, "runs", "deterministic_encoding_run.json")
-    with open(path, "w", newline="\n") as fh:
+    with open(RUN, "w", newline="\n") as fh:
         json.dump(out, fh, indent=2, sort_keys=True)
         fh.write("\n")
-    w("written %s\n" % path)
+    w("written %s\n" % RUN)
     return 1 if failed else 0
 
 

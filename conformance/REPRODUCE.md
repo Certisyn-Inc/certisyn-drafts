@@ -21,10 +21,25 @@ reason this file changed:
 ## 1. Environment
 
     Python   3.11.15 (CPython, GCC 13.3.0)
-    cryptography  46.0.7        <- the ONLY third-party dependency
+    cryptography  46.0.7        <- the only dependency of the RUNNERS
+    cbor2         6.1.4         <- BUILDER ONLY, and version-significant
 
 Everything else is the Python standard library. `pip install cryptography`
-is sufficient. If `cryptography` is absent the harness still runs and says
+is sufficient to run every runner in section 3.
+
+`cbor2` is needed by `runners/build_deterministic_encoding_vectors.py` and by
+nothing else. Its version matters and is pinned rather than floated: the
+provenance recorded in `vectors/arp-deterministic-encoding-v0.2.json` includes
+a measurement of cbor2's canonical-mode map ordering, which is RFC 8949
+Section 4.2.3 length-first and not the Section 4.2.1 bytewise ordering this
+document requires. A different cbor2 might behave differently and the recorded
+measurement would then be about a version nobody could identify.
+
+`runners/run_deterministic_encoding_vectors.py` has no third-party dependency
+at all, not even `cryptography`. It imports `reference/arp_cbor.py`, which was
+split out of `reference/arp_read_ref.py` on 2026-08-18 for exactly that
+reason: the runner previously imported the HTTP endpoint and, through it,
+`cryptography`, while its own docstring claimed otherwise. If `cryptography` is absent the harness still runs and says
 so on its banner; signature legs then report as unverified rather than
 silently passing.
 
@@ -161,12 +176,35 @@ which is the intended behaviour and not a defect in the runner.
     #     is how the packaged tree failed for both reviewers who ran it.
     python3 runners/run_existence_oracle_vectors.py --timing-samples 60
 
-    # (i) check this file against the tree it describes. Two digests here
+    # (i) the deterministic-encoding class. No arguments, no third-party
+    #     dependency, about a second. Thirteen rows whose expected bytes were
+    #     computed WITHOUT the encoder under test, and four defective encoders
+    #     each of which must be caught by exactly the rows designed for it.
+    python3 runners/run_deterministic_encoding_vectors.py
+
+    # (j) the Section 4.9 Merkle equivalence, executed rather than asserted.
+    #     Standing rule 12. About two minutes, no arguments, no dependency.
+    python3 runners/merkle_equiv.py
+
+    # (k) check this file against the tree it describes. Two digests here
     #     were stale before this existed, and nothing caught them.
     python3 runners/verify_manifest.py
 
-Two vector files are generated, not hand-written. To regenerate each and
+Three vector files are generated, not hand-written. To regenerate each and
 confirm it is byte-identical:
+
+    # needs cbor2==6.1.4; the runner does not
+    python3 runners/build_deterministic_encoding_vectors.py && \
+      git diff --exit-code vectors/arp-deterministic-encoding-v0.2.json
+
+`build_deterministic_encoding_vectors.py` computes every expected byte string
+with cbor2 and its own argument-width and ordering logic, then ASSERTS the
+encoder under test against them. A mismatch stops the build and names the row;
+it does not rewrite the expectation. Version 0.1 of that class did rewrite it
+-- the builder emitted `ref.cbor(value)` into the file -- so regenerating
+against a deliberately broken encoder produced a byte-identical file and the
+diff above detected nothing. To confirm the assertion is live, widen a length
+argument in `reference/arp_cbor.py` and re-run; the build must stop.
 
     python3 runners/build_outcome_vectors_v02.py --caid-repo <emilia-protocol> \
       --out /tmp/regen.json && diff /tmp/regen.json vectors/arp-outcome-vectors-v0.2.json
@@ -237,7 +275,11 @@ No other fixture is used. Everything else is read from the pinned corpora.
       sha256 37c3921fb1ff16a455bb4f2fed0b76dac17433750c18f331cea1ac27cdae4ece
     runs/eatf_run_anchor.json
       sha256 3f81214a0131c48e63d6b585952ce842ab4675aca6dff7ece918929cd83d32d7
-    runs/existence_oracle_run.json  PASS_WITH_DECLARED_GAPS, 6 of 8
+    runs/deterministic_encoding_run.json    PASS_WITH_DECLARED_GAPS
+                                            13 rows, 4 of 4 controls,
+                                            4 declared non-coverage items
+      sha256 0ccbac01c2027bc3b6d46d43ceaa762d7bb836de45f84ed8692ec7f5a9a66fc6
+    runs/existence_oracle_run.json  PASS_WITH_DECLARED_GAPS, 7 of 7
                                     controls exercised, 6 declared gaps
       sha256 74df0c9aae6a6d230c1ecc1a9fc92be2ace571be411c50666e7cf8bfb5199869
 
@@ -284,10 +326,16 @@ two rows; see CHANGES-v2.1.md.
     b1056fa365900b196ad186e4a07fac2939d4c75843d0280629f21c0828e3b621  runners/run_typed_ref_vectors.py
     8726e9f178ea94bb2b255af808bd0761e3f2f46473fcd403413fce5ab1db1b35  vectors/arp-outcome-vectors-v0.2.json
     88153dd1c4b62cfd313cd890ae84fc65de1f67bcd6db7556fce00b7893ce673d  vectors/arp-typed-ref-cpb01-v0.1.json
-    feeb632d9e95d9dc798e28a66ecd060c31da25ac151654f8e18ab3580eb4613c  reference/arp_read_ref.py
+    28615cc8ef023373b19157a871860418f0f0584a68b5fe849142340ab5c3bbbe  reference/arp_read_ref.py
+    e6813a46496ac119532264a72c1ee7bd7d6fe5953355e59008a245cfd4bae48a  reference/arp_cbor.py
+    5b9527cd05d407fba59a809a890fec428d8315ebe84a1e28ae5f0a8c83973f0b  runners/de_codec.py
+    6f3fe1293fe5cd8ce54e8a105a8d685ccad997166d2dbe24862bf915cc991cc4  runners/build_deterministic_encoding_vectors.py
+    8ba9f87b45a139c931f388615b7418686084b76576d2546e68ae71a4f9b2c781  runners/run_deterministic_encoding_vectors.py
+    366b3868c60758468e40f83de61a74389a2639cd720ac5df7674f0286617c294  runners/merkle_equiv.py
+    8d23244fc7227de1de52bb1af2d2d63729ebe5754b98a3e64d62503706812e15  vectors/arp-deterministic-encoding-v0.2.json
     8ce61405fc02755c4950c44bdacada84e3379356e20cd552ffd2d43d41393a36  reference/fixture-eo-v0.1.json
-    1b2ff11dcb46f42bdab4e2eba34a996d91f7bbe174e768ec9d55c8e04cc888f6  runners/run_existence_oracle_vectors.py
-    e57cc42be4d126c760ff4556c9b136016c83583784b30a2594e4233e70b2d455  vectors/arp-existence-oracle-v0.1.json
+    6e50ea9014fc348d8ddd632fb8b36a0103c44a965d26af4be1607b5107651af7  runners/run_existence_oracle_vectors.py
+    e75e9e594c589aa449ed8b816a9e42c75ded2e4107789d44dbf45fc5a8ee7d66  vectors/arp-existence-oracle-v0.1.json
     1e5d6a6b156f956e846ef3f4a5df6fa35efbe8197b5556106d2e060c70f59f2e  vectors/arp-aeb-adapter-v0.1.json   (EMILIA's, as received)
 
 The v1 harness that produced the first posted run remains byte-identical and

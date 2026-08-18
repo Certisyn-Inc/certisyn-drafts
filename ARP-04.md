@@ -169,6 +169,12 @@ The two that are not:
 retiring it and saying why; and rebuilding the `NV-ARP-EO-04` fixture so the
 endpoint reaches its budget before answering.
 
+Rule 11 names the cause of `NV-ARP-EO-04` rather than only its symptom: the
+suite indexes that control by the stage that catches the violation rather than
+by the predicate violated, so a fixture whose 404 fires before the budget
+counter is charged refuses through the wrong gate and the budget-ordering
+channel is never reached. Rebuild it against the predicate.
+
 ### 2.4 The class is one-sided
 
 Every negative control is fault injection into an endpoint written by the
@@ -202,6 +208,15 @@ observation is not evidence about a deployed path.
 
 **Close it by:** leaving it alone unless a timing claim is added. If a claim is
 added, it needs a test on a deployed path, not on loopback.
+
+**CHECKED 2026-08-18, no change.** Swept the whole draft for timing language.
+Section 6.4.4 continues to state that response timing is a separate claim from
+the deterministic requirements and MUST be stated separately, that an
+implementation claiming resistance to timing-based existence inference MUST
+publish its measurement population, sample count, network placement, decision
+rule and acceptance threshold, and that an implementation making no such claim
+is not for that reason non-conforming. Section 7.8 makes no timing claim. `-04`
+adds none. The item stays closed by inaction, which is what it asked for.
 
 ### 2.7 The register binding
 
@@ -304,6 +319,25 @@ Section 4.22, which says the chain is unbroken across a rotation without saying
 what a re-digest of historical bytes must do, and Section 4.21. **Either a
 Divergence Axis or an explicit statement that suite transition belongs to the
 verifier contract.**
+
+**2.8.5 The head-linkage projection was a live head oracle. CLOSED 2026-08-18,
+the same day it was introduced.** Section 4.23.2 obliges a relying party to link
+two ledger heads, and a relying party is entitled to no read that would let it,
+so a `fields=linkage` projection was added to Section 6.4.2 returning one
+entry's sequence number and its two hashes to any signed requester. Unbounded,
+that is a live head oracle: the Ledger is contiguous, so a requester
+binary-searches the current head between publications and polls it for the write
+rate. That is exactly the disclosure Section 4.18 publishes the Ledger Head
+Statement only once per notarisation interval to prevent, and the new read would
+have defeated it. The projection is now bounded at the head of the most recently
+published Statement, and a request above it is refused `404` whether or not the
+entry exists. Section 6.4.4 states why a projection answering `200` where the
+full read answers `404` is not an existence oracle, and what would make it one.
+
+Worth naming the pattern: **a new entitlement is a new disclosure surface, and
+the surface it opens is not always the one it was reasoned about.** This one was
+reasoned about as "digests disclose nothing readable", which is true, and missed
+that the sequence numbers disclose the head.
 
 **2.8.4 The response freshness tolerance is decided across two clocks. OPEN.**
 Raised indirectly by **Emek Can Doğru**, 17 August, from his own draft, where a
@@ -687,13 +721,14 @@ That check has not been done yet.
 | 2026-08-14 | Opened, the day `-03` posted. Sections 1 to 9. |
 | 2026-08-16 | Added sections 10 to 12. Closed the 9 August CPB wording commitment in the runner and the record, and the stale-record citation, both verified from the remote. Recorded the line-ending finding. Sections 10.3 and 10.4 remain open. |
 | 2026-08-17 | 2.1 closed. RFC 9162 correction, equivalence re-measured to 4200 leaves, `merkle_equiv.py` added to `runners/`. 2.8.1 opened and closed the same day on Nenad Vasic's finding. |
-| 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. |
+| 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. Two red-team passes, 28 then 9 findings, all closed. Committed `67723fc`. |
+| 2026-08-18 | A4 and A6 checked, closed with no text change. 2.8.5 opened and closed. |
 
 ### Current Stage A digests
 
 | artefact | sha256 | size |
 |---|---|---|
-| `draft-hillier-scitt-arp.md` | `d6e16ede69c6579d36a1fe90c7735872e67faf5a42b6cc77d3db3ffc63a9e6d1` | 331,005 B |
+| `draft-hillier-scitt-arp.md` | `8403896faa356a269fce441a74687689e5ee735d84dae7a2ca667ef1e6e7f64a` | 333,442 B |
 | `conformance/runners/merkle_equiv.py` | `366b3868c60758468e40f83de61a74389a2639cd720ac5df7674f0286617c294` | |
 | `conformance/README.md` | `6d65e1cada2134a11603cfa811263c120832a721b172927b0332d67df04fddf3` | |
 

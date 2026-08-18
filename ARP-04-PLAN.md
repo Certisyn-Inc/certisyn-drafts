@@ -164,8 +164,15 @@ STAGE A — draft text, all of it, no runs
       inclusion-proof claim; ceiling-halving; 4.10 typos    [DONE]
   A12 4.23 red-team repairs: witness encoding, discovery, control
       exclusion, consistency linkage, Agreement Hash types  [DONE]
-  A4  2.6  timing: confirm no claim added; no text change
-  A6  Note to the RFC Editor: recheck the SCRAPI paragraph
+  A4  2.6  timing: no claim added, no text change              [CHECKED]
+  A6  Note to the RFC Editor: SCRAPI paragraph                 [CHECKED]
+      -- scrapi is IESG state "RFC Ed Queue", RFC Editor state
+         "Awaiting First editor", no number assigned, checked
+         2026-08-18. The Note's paragraph is accurate as written.
+         Re-check at D1: if a number lands, that paragraph and the
+         I-D.ietf-scitt-scrapi normative reference both change.
+  A13 6.4.2 fields=linkage projection, bounded at the published
+      head; 6.4.4 states why it is not an oracle               [DONE]
   A7  reference implementation citation -- see §10, NOT in ARP-04.md
   A9  DECIDE: digest-suite transition -- axis, or verifier contract?
       (Vasic item 2; sits between 4.21 and 4.22)      [OPEN, §9a]

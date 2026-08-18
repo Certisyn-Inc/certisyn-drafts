@@ -3326,11 +3326,17 @@ that a party holding no entitlement at all can still observe a head.
   parameter. Any requester whose signature verifies under {{read-signing}} is
   additionally entitled to the three-element array of the Entry Sequence Number,
   the Prior-Entry Hash and the Self-Entry Hash, by the `fields=linkage` query
-  parameter, for the head linkage of {{quorum-rule}}. That projection carries no
-  Reconciliation Hash and no structural metadata, so it discloses nothing beyond
-  the chain shape between two heads the Ledger Head Statement of
-  {{settlement-ledger}} already publishes unauthenticated. It is rate-limited as
-  {{read-errors}} provides.
+  parameter, for the head linkage of {{quorum-rule}}, **and only for an Entry
+  Sequence Number at or below the head of the most recently published Ledger
+  Head Statement**. A request under that parameter naming a higher sequence
+  number MUST be refused with `404` whether or not the entry exists. Without
+  that bound the projection is a live head oracle: the Ledger is contiguous, so
+  a requester could binary-search the current head between publications and poll
+  it for the write rate, which is the disclosure {{settlement-ledger}} publishes
+  the head once per notarisation interval to prevent. Bounded, the projection
+  carries no Reconciliation Hash and no structural metadata and discloses nothing
+  beyond the chain shape below a head that is already published
+  unauthenticated. It is rate-limited as {{read-errors}} provides.
 - `GET /arp/post-seal-records/{post-seal-evaluation-record-hash}` returns the
   Post-Seal Evaluation Record of {{post-seal}}. Entitlement: as for the
   Continuation entry that carries the hash.
@@ -3519,6 +3525,17 @@ implementation that makes no such claim is not for that reason non-conforming:
 the requirements above are met or not met independently of it, and conflating
 the two would let a deterministic conformance failure be excused as a
 measurement artefact, or a measurement result be read as protocol conformance.
+
+The `fields=linkage` projection of {{read-operations}} answers `200` for an
+entry whose full read the same requester would be refused, and is not an
+existence oracle for two reasons that both have to hold. The Ledger carries a
+contiguous Entry Sequence Number and {{settlement-ledger}} publishes the head
+unauthenticated, so existence at or below that head is already public and the
+projection discloses no fact about which entries exist. And the projection is
+bounded at that published head, so it cannot answer the one existence question
+that is not already public, which is where the head is now. A projection that
+widened either -- serving a non-contiguous ledger, or serving above the
+published head -- would be an oracle, and neither is permitted.
 
 A server MUST rate-limit these operations, per authenticated principal, at the
 most permissive rate any of its Bilateral Register Agreements declares, and MUST answer `429` when the limit
@@ -4932,6 +4949,25 @@ Agreement is a test the party obliged to run it cannot read.
 are declared and not proven; the exclusion is normative and the detection of a
 false declaration is not provided for. A met quorum is proof that observer
 diversity was declared, by a named party, in a term that party can be held to.
+
+### The head-linkage projection
+
+{{read-operations}} gains a `fields=linkage` projection returning the Entry
+Sequence Number, Prior-Entry Hash and Self-Entry Hash of one entry, entitled to
+any requester whose signature verifies, because {{quorum-rule}} obliges a
+relying party to link two heads and a relying party is entitled to no other read
+that would let it. The projection is bounded at the head of the most recently
+published Ledger Head Statement. Unbounded it would be a live head oracle --
+the Ledger is contiguous, so a requester could binary-search the current head
+between publications and poll it for the write rate, which is the disclosure
+{{settlement-ledger}} publishes the head only once per notarisation interval to
+prevent. {{read-errors}} states why a projection answering `200` where the full
+read answers `404` is not an existence oracle, and what would make it one.
+
+No timing claim is added by this revision and none is tested. {{read-errors}}
+continues to state that response timing is a separate claim which an
+implementation must either make with its measurement conditions published or not
+make at all, and that making none is not non-conformance.
 
 ### Mechanical
 

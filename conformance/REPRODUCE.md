@@ -185,8 +185,11 @@ which is the intended behaviour and not a defect in the runner.
 
     # (j2) which ARP digests survive an ECDSA signature substitution. Needs
     #      cryptography, 200 trials, a few seconds. It measures BOTH
-    #      constructions: the -03 Prior-Entry Hash stable 0 of 200, and the
-    #      -04 Signing Input Digest stable 200 of 200.
+    #      constructions and derives every value by PARSING the two served
+    #      envelopes: -03 Prior-Entry Hash stable 0 of 200, -04 Signing Input
+    #      Digest 200 of 200, Self-Entry Hash 200 of 200, and the -03
+    #      Reconciliation Hash 0 of 200 -- which is why that one had to be
+    #      repaired too.
     python3 runners/ecdsa_malleability_probe.py
 
     # (j) the Section 4.9 Merkle equivalence, executed rather than asserted.
@@ -341,7 +344,7 @@ two rows; see CHANGES-v2.1.md.
     554cceb33b95ca7027300d600be108437c346b82ab732774d33de6c415006b6d  runners/build_deterministic_encoding_vectors.py
     9313e91e3066ce09a353d977a5a580004646556fa7610bdf04f3503193117d8e  runners/run_deterministic_encoding_vectors.py
     366b3868c60758468e40f83de61a74389a2639cd720ac5df7674f0286617c294  runners/merkle_equiv.py
-    7ad2973b237a8446b1797b704b4f04c5749dada78c5579e550d15d3b7f1537f5  runners/ecdsa_malleability_probe.py
+    a5c48706747b88fcd0ceeca8d2ad8baf0bd1301d7f1a065877e4db2756efcf27  runners/ecdsa_malleability_probe.py
     b5cf28d058beb6d235a6f1a168658c66bc4da4c53aa994027ae7afcc1b34045b  vectors/arp-deterministic-encoding-v0.2.json
     8ce61405fc02755c4950c44bdacada84e3379356e20cd552ffd2d43d41393a36  reference/fixture-eo-v0.1.json
     6e50ea9014fc348d8ddd632fb8b36a0103c44a965d26af4be1607b5107651af7  runners/run_existence_oracle_vectors.py

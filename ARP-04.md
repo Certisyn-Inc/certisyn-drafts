@@ -319,8 +319,9 @@ changed is that the imported encoder is now pinned to fixed bytes elsewhere in
 the tree, so a silent defect would be caught. The existence-oracle run record
 says exactly that under `covered_elsewhere` rather than deleting the gap.
 
-**2.8.7 Three ARP digests were taken over bytes that include a signature, and
-under ECDSA those bytes are not unique. CLOSED 2026-08-18.**
+**2.8.7 Digests taken over bytes that include a signature, which under ECDSA are
+not unique. Declared closed 2026-08-18 at three constructions; red team found
+that closed nothing and it is CLOSED 2026-08-19 at five.**
 
 Anton Sokolov posted the reproduction to the SCITT list on 2026-08-18: for an
 ECDSA signature `(r, s)`, the pair `(r, n - s)` verifies against the same key
@@ -389,21 +390,65 @@ primitives and nothing in the document forbids an ECDSA one. "Our
 implementation is fine" and "the specification is fine" are different claims
 and only the first was true.
 
-**Closed the same day.** A new definition, **Signing Input Digest**, is added to
-Section 3: the SHA-256 digest over the deterministically encoded COSE
+**The first closure was incomplete and its evidence was not evidence.** Red team
+on 19 August found five things:
+
+- **The Reconciliation Hash defeats the fix at one remove.** Section 3 excludes
+  the *Sealing* Signature. Section 4.14 embeds *the register's signed Partial
+  Attestation* in every Query Binding Record and the register's signature in
+  every Non-Answer Statement, so the preimage still carried a signature.
+  Measured: stable in **0 of 200**. And the Reconciliation Hash is a field of
+  every Ledger entry, so it sits inside the Entry Signature payload and inside
+  the new Prior-Entry Hash. Section 7.9 had asserted the opposite as fact.
+- **The probe's `-04` leg computed `sha256(X) == sha256(X)`.** It rebuilt the
+  `Sig_structure` from the same local it had signed, so the substitution never
+  reached the value under test, and two further rows were printed from hardcoded
+  literals. It reported 200 of 200 for measurements never taken — including the
+  Reconciliation Hash row that finding 1 shows is false.
+- **The 4.23.2 witness linkage became unsatisfiable.** It tests that a triple's
+  Prior-Entry Hash equals the Self-Entry Hash below it. Those are now digests
+  over different preimages and are never equal, so every higher-head Head
+  Consistency Statement would be rejected — the only case the linkage exists for.
+- **The Post-Seal retrieval check became unimplementable.** "verify that the
+  retrieved bytes digest to the Post-Seal Evaluation Record Hash" — they never
+  will, so a conforming implementation discards every record.
+- **Section 4.18 kept the paragraph asserting the property the fix removed** —
+  *"so that Entry Signatures are inside the chain"*. They are not. Both rules at
+  once, again, in the same section.
+
+Plus: the replication invariant and the redaction clause still stated the old
+rule; a fourth unconverted instance in Appendix C (the tagged-transparency
+authority-reference digest is a SHA-256 over a COSE_Sign1 receipt); nothing
+*required* `alg` or `kid` in a protected header though the whole definition
+depends on it; `external_aad` was named and never defined; 4.22's "re-serialise"
+was the wrong operation and its weaker/stronger comparison was backwards; the
+SEC1 4.1.3 citation was not supported; and the Ed25519 claim was stronger than
+RFC 8032 says.
+
+**All fixed, and re-measured honestly.** The probe now recovers every reported
+value by *parsing the two served envelopes*, so a leg that does not apply the
+substitution cannot report stability:
+
+| construction | stable |
+|---|---|
+| Prior-Entry Hash, `-03` | **0 of 200** |
+| Prior-Entry Hash, `-04` Signing Input Digest | **200 of 200** |
+| Self-Entry Hash | 200 of 200 |
+| Reconciliation Hash, `-03` | **0 of 200** |
+
+A new definition, **Signing Input Digest**, is added to Section 3: the SHA-256 digest over the deterministically encoded COSE
 `Sig_structure` of RFC 9052 Section 4.4 — the array of `"Signature1"`, the
 protected header, the external AAD and the payload. It is a digest of what the
 signer signed and not of the envelope carrying it, so it does not depend on the
 signature bytes and does depend on the protected header, which in ARP carries
 the key identifier and the algorithm identifier.
 
-All three constructions now use it: **Prior-Entry Hash** (4.18), **Post-Seal
-Evaluation Record Hash** (4.17), and the **Merkle leaf** (4.10). Re-measured:
-
-| construction | stable |
-|---|---|
-| Prior-Entry Hash, `-03`, over the entry including its Entry Signature | **0 of 200** |
-| Prior-Entry Hash, `-04`, Signing Input Digest | **200 of 200** |
+Four constructions now use it: **Prior-Entry Hash** (4.18), **Post-Seal
+Evaluation Record Hash** (4.17), the **Merkle leaf** (4.10) and the
+tagged-transparency **authority-reference digest** (Appendix C). The
+**Reconciliation Hash** takes the fifth and different repair: it replaces each
+embedded register signature with that signature's Signing Input Digest, rather
+than becoming one itself.
 
 New **Section 7.9, Signature Malleability and Artefact Identity**, states the
 mechanism, names the specifications that permit it, records the measurement,
@@ -823,6 +868,24 @@ Repositories. `scitt-arp-f39` is its own repository at
 
 ## 9. Open elsewhere, not `-04`
 
+### NAESB procurement contract language, public comment closes 1 September 2026
+
+Dick Brooks posted, and Iman Schrock confirmed against the 18 August clean
+text, that NAESB has opened revised **product cybersecurity procurement
+contract language** for critical infrastructure operators to public comment.
+Informal comments go to `naesb@naesb.org` by **1 September 2026**.
+
+Bearing on ARP: procurement terms are where an independently verifiable
+evidence boundary becomes contractual rather than aspirational. Iman named the
+useful gap as distinguishing **vendor attestation from independent
+verification** -- which is the distinction ARP's conformance classes exist to
+make operational, and the one a procurement clause cannot currently express.
+
+Not `-04` work. It is a two-week window with a named submission address, and it
+is the kind of citation that changes what an adoption call is arguing about.
+Decide before 1 September.
+
+
 Standards-adjacent, carried so a new session does not have to rediscover them:
 
 - W3C CCG prior-art post.
@@ -1001,7 +1064,10 @@ That check has not been done yet.
 | 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. Two red-team passes, 28 then 9 findings, all closed. Committed `67723fc`. |
 | 2026-08-18 | A4 and A6 checked, closed with no text change. 2.8.5 opened and closed. |
 | 2026-08-18 | 2.5 declared closed at class v0.1. |
-| 2026-08-18 | 2.8.7 opened and closed: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
+| 2026-08-19 | 2.8.7 reopened by red team and closed properly at five constructions. The probe's `-04` leg had been `sha256(X) == sha256(X)`; every value is now parsed from the served envelopes. |
+| 2026-08-19 | Reconciliation Hash repaired: it carried the malleable signature bytes one level above the entry hashes and measured 0 of 200 stable. Sixteen draft edits across three batches. `external_aad` fixed at zero length, protected header MUST NOT be re-encoded, Section 6.1 now requires `alg` and `kid` protected. No section number outside Document History moved. |
+| 2026-08-19 | List swept to 23:12 UTC. Four replies queued unsent. NAESB procurement comment window logged in section 9, closes 1 September. |
+| 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |
 | 2026-08-18 | 2.3 closed. `NV-ARP-EO-04` defect rebuilt against the predicate, `NV-ARP-EO-05` retired as a control, aggregate widened over method limits and standing evidence gaps. Controls six of eight to seven of seven. |
@@ -1010,9 +1076,11 @@ That check has not been done yet.
 
 | artefact | sha256 | size |
 |---|---|---|
-| `draft-hillier-scitt-arp.md` | `8403896faa356a269fce441a74687689e5ee735d84dae7a2ca667ef1e6e7f64a` | 333,442 B |
+| `draft-hillier-scitt-arp.md` | `8e2d9b58ba5ab4cf0e02fd51d8c45d131d066ffa5f4344d84dfd731efb0824d9` | 350,591 B |
 | `conformance/runners/merkle_equiv.py` | `366b3868c60758468e40f83de61a74389a2639cd720ac5df7674f0286617c294` | |
-| `conformance/README.md` | `6d65e1cada2134a11603cfa811263c120832a721b172927b0332d67df04fddf3` | |
+| `conformance/runners/ecdsa_malleability_probe.py` | `a5c48706747b88fcd0ceeca8d2ad8baf0bd1301d7f1a065877e4db2756efcf27` | |
+| `conformance/README.md` | `fbeb7b3d4cf851aaa0ac7b2c74b254e19d08779935889f1e958cb4351420420c` | |
+| `conformance/REPRODUCE.md` | `12dd61e2821565a4804b0070d3d76503440d7a0f452232e163afd3a30b44d446` | |
 
 `-03` filed at `e8cb3b93...`, 291,282 B. Stage A is not frozen and these move.
 `runs/existence_oracle_run.json` still pins `e8cb3b93...` and the manifest will
@@ -1089,6 +1157,45 @@ he cites ARP unpinned at 6.4.3 and 6.4.4, and he has just proposed a document
 that ARP fits without being bent. Co-authoring a shared substrate with Hawkins,
 Sirkkavaara and Gibson is a stronger position going into IETF 127 than
 presenting ARP alone, and it is a live offer with a two-day-old date on it.
+
+### 19 August, later traffic
+
+Checked at 23:12 UTC; nothing on the list after 21:33.
+
+| from | subject | bearing |
+|---|---|---|
+| Nenad Vasic | CHAP thread, to Henri | Ran both of Henri's checks same-day. Found one: a WASM export's never-throw path hand-wrote `verdict: "FAILED"` and its glyph as string literals instead of calling the enum authorities. No live drift, repaired at commit `6f6d929c`. Also reports the same class at the deployment layer -- a process-global binding armed in one binary's `main` but not another's, so a second emitting process produced structurally-valid-but-unbound output. |
+| Tiago Marques -> Hawkins | Review of draft-hawkins-scitt-attested-agent-payment (re-verification against -01) | Sequencing rule worth taking: repairs to the prose first, vectors second. A vector that lands before the text names the hash function, the sub representation, the sequence-number label and the executor binding encodes the reviewer's reading of ambiguous prose as though it were the specification. Directly applicable to ARP's own vector-before-text ordering. |
+| Dick Brooks / Iman Schrock | FYI: Today's NAESB meeting - SCITT | NAESB has opened critical-infrastructure **procurement contract language** for public comment **until 1 September 2026**. See section 9. |
+
+**Nenad's law, taken one layer up.** *The authority must be impossible to
+bypass accidentally* holds for the checker as well as the checked. A
+verification step that cannot fail is indistinguishable, in a run transcript,
+from one that passed. A literal written where an enum call belonged is the same
+shape as a check written against a value derived from the thing it is checking.
+That is standing rule 12 and the mutant-crediting mechanism behind it, stated
+in someone else's words and arrived at from someone else's incident, which is
+the strongest form the rule has had so far. Replied on the list.
+
+**Tiago's sequencing rule, applied to ARP.** ARP ships vectors alongside
+normative text and the ordering has been text-first throughout, but the rule
+should be written down rather than merely observed: where a vector encodes a
+reading of prose that is ambiguous, the vector freezes the ambiguity instead of
+resolving it. The v0.2 deterministic-encoding rebuild was exactly this failure
+in its v0.1 form -- the builder emitted expected bytes from the subject, so the
+vector encoded the implementation rather than the specification. Add to section
+5 as a candidate standing rule once a second instance appears.
+
+### Replies queued 19 August, unsent
+
+| to | thread | state |
+|---|---|---|
+| Anton Sokolov, list | ECDSA signature identity | Third revision. Reports the second sweep finding a fifth instance; both citations corrected to SEC1 v2.0 4.1.4 and RFC 8032 8.4. |
+| Nenad Vasic, list | ARP reconciliation run against the EMILIA and Noa corpora | Item 4 closed as a defect in ARP; 4.9.1 leaf binding is the fix. |
+| Hawkins, Sirkkavaara, Gibson, list | Closing omission from the receiver's vantage | Support plus the fourth question and the third vantage. Witness-quorum limit now stated in the same breath as the mechanism: independence is declared, not proven from the bytes. |
+| Nenad Vasic, Sirkkavaara, list | CHAP | Nenad's law taken up a layer, plus support for the empty-check-set branch being explicit in the shared definition. |
+
+---
 
 ---
 

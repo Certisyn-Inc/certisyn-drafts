@@ -79,26 +79,30 @@ def one_trial():
     entry_a = cbor(body + [self_entry_hash, _envelope(signed_payload, raw_a)])
     entry_b = cbor(body + [self_entry_hash, _envelope(signed_payload, raw_b)])
 
+    # -03: over the whole entry INCLUDING the Entry Signature.
+    old = (hashlib.sha256(entry_a).digest() == hashlib.sha256(entry_b).digest())
+    # -04: the Signing Input Digest -- over the Sig_structure, which excludes
+    # the signature by construction and still covers the protected header.
+    new_a = hashlib.sha256(sig_structure).digest()
+    new_b = hashlib.sha256(cbor(["Signature1", PROTECTED, b"",
+                                 signed_payload])).digest()
     return {
         "both_verify": verifies(raw_a) and verifies(raw_b),
         "bytes_differ": entry_a != entry_b,
-        # over the whole entry INCLUDING the Entry Signature -- Section 4.18
-        "prior_entry_hash_stable":
-            hashlib.sha256(entry_a).digest() == hashlib.sha256(entry_b).digest(),
-        # signature position nulled -- Section 4.18, and it is already right
+        "prior_entry_hash_03_stable": old,
+        "prior_entry_hash_04_stable": new_a == new_b,
         "self_entry_hash_stable": True,
-        # over the signing input -- the shape Reconciliation Hash already uses
-        "sig_structure_digest_stable": True,
     }
 
 
 def main():
-    both = differ = prior_stable = 0
+    both = differ = old_stable = new_stable = 0
     for _ in range(TRIALS):
         t = one_trial()
         both += t["both_verify"]
         differ += t["bytes_differ"]
-        prior_stable += t["prior_entry_hash_stable"]
+        old_stable += t["prior_entry_hash_03_stable"]
+        new_stable += t["prior_entry_hash_04_stable"]
 
     w = sys.stdout.write
     w("ARP digest stability under ECDSA signature substitution\n")
@@ -106,9 +110,12 @@ def main():
     w("  both byte-strings verify            %d of %d\n" % (both, TRIALS))
     w("  entry bytes differ                  %d of %d\n" % (differ, TRIALS))
     w("\n")
-    w("  Prior-Entry Hash        (S4.18, over the entry INCLUDING the\n"
-      "                           Entry Signature)          stable %d of %d\n"
-      % (prior_stable, TRIALS))
+    w("  Prior-Entry Hash  -03   over the entry INCLUDING the Entry\n"
+      "                          Signature                  stable %d of %d\n"
+      % (old_stable, TRIALS))
+    w("  Prior-Entry Hash  -04   Signing Input Digest, over the\n"
+      "                          Sig_structure              stable %d of %d\n"
+      % (new_stable, TRIALS))
     w("  Self-Entry Hash         (S4.18, signature position nulled)\n"
       "                                                     stable %d of %d\n"
       % (TRIALS, TRIALS))
@@ -116,18 +123,13 @@ def main():
       "                                                     stable %d of %d\n"
       % (TRIALS, TRIALS))
     w("\n")
-    w("  Post-Seal Evaluation Record Hash (S4.17, 'in its entirety,\n"
-      "    signature included') has the same shape as Prior-Entry Hash and is\n"
-      "    exposed on the same argument.\n")
-    w("  The Merkle leaf of S4.10 is the canonical hash of a Partial\n"
-      "    Attestation, which is signed by the register. Where that hash is\n"
-      "    taken over the envelope it is exposed too, and S4.9.1 then turns a\n"
-      "    substituted leaf into a REFUSED valid proof rather than a silent\n"
-      "    difference.\n")
-    w("\nCONCLUSION: %s\n"
-      % ("every digest is stable" if prior_stable == TRIALS else
-         "the digests taken over a signature are not stable; the digests taken "
-         "over the signing input are"))
+    w("  The Post-Seal Evaluation Record Hash of S4.17 and the Merkle leaf of\n"
+      "    S4.10 had the same shape as the -03 Prior-Entry Hash and are Signing\n"
+      "    Input Digests in -04 for the same reason. S7.9 states it.\n")
+    w("\nCONCLUSION: the -03 construction is stable in %d of %d trials and the\n"
+      "-04 Signing Input Digest in %d of %d. The substitution is not detectable\n"
+      "by either; what changes is whether the digest moves when it happens.\n"
+      % (old_stable, TRIALS, new_stable, TRIALS))
     return 0
 
 

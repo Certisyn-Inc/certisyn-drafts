@@ -58,6 +58,7 @@ normative:
 
 informative:
   RFC6350:        # vCard 4.0
+  RFC8032:        # EdDSA; S8.4 is why EdDSA is outside {{signature-malleability}}
   RFC9162:        # Certificate Transparency 2.0; {{merkle-construction}} states its relationship to Section 2.1.1
   RFC6962:        # Certificate Transparency, obsoleted by RFC 9162 and cited deliberately: it is what deployed CT logs implement
   I-D.schrock-canonical-action-identifier:
@@ -404,6 +405,17 @@ Reconciliation Hash:
   Reconciliation Output excluding its Sealing Signature and Sealing-Key
   Identifier, as specified in {{reconciliation-output}}.
 
+Signing Input Digest:
+: The SHA-256 digest over the deterministically encoded CBOR `Sig_structure` of
+  a COSE_Sign1, as Section 4.4 of {{RFC9052}} constructs it: the array of the
+  context string `"Signature1"`, the protected header, the external additional
+  authenticated data, and the payload. It is a digest of what the signer signed
+  and not of the envelope carrying it, so it does not depend on the signature
+  bytes and does depend on the protected header, which in this document carries
+  the key identifier and the algorithm identifier. Every digest in this document
+  that identifies or chains a signed artefact is a Signing Input Digest, for the
+  reason {{signature-malleability}} gives.
+
 Divergence Axis:
 : A controlled descriptor identifying a structural qualification on a verdict.
   Most identify the reason for a non-match; those recorded by the reconciliation
@@ -500,7 +512,8 @@ Verdict Arithmetic:
 
 Hash-Linkage Aggregation:
 : An aggregation of Partial Attestations in which the per-register
-  attestations are canonical-hashed, ordered, committed to a Merkle tree,
+  attestations are reduced to their Signing Input Digests, ordered, committed to a
+   Merkle tree,
   and emitted with a Merkle root and a per-register verdict band. The Merkle
   commitment and its inclusion proofs MAY be encoded as COSE Receipts
   {{RFC9942}}.
@@ -1330,7 +1343,7 @@ than treat a root it can reproduce as a root that commits to something.
 
 The leaf a proof carries is a convenience and is not evidence. A verifier MUST
 compute the leaf from the object whose inclusion is being proved -- the
-canonical hash of the Partial Attestation for a Merkle Root under
+Signing Input Digest of the Partial Attestation for a Merkle Root under
 {{aggregation}}, the Claim Hash for an Examined-Set Root under
 {{sweep-statements}} -- and MUST use that computed value, and no value taken
 from the proof, as the input to the sibling walk. Where the proof carries a
@@ -1358,9 +1371,12 @@ this one.
 ## Aggregation {#aggregation}
 
 The aggregation subsystem operates in Hash-Linkage Aggregation. Each
-Partial Attestation is canonical-hashed and committed to a Merkle tree as
-{{merkle-construction}} defines it, and the resulting Merkle Root is carried in
-the Reconciliation Output. Its
+Partial Attestation is committed to a Merkle tree as {{merkle-construction}}
+defines it, under the leaf value that is its Signing Input Digest, and the
+resulting Merkle Root is carried in the Reconciliation Output. The leaf is the
+Signing Input Digest and not a digest of the attestation as received, so that
+the leaf a verifier computes under {{leaf-binding}} does not depend on which of
+several byte-strings carrying one register signature it happens to hold. Its
 per-register inclusion proofs MAY be encoded as COSE Receipts {{RFC9942}},
 enabling any SCITT-aware verifier to check inclusion without a bespoke proof
 format. Each leaf commits one register's attestation individually, so an
@@ -1996,9 +2012,13 @@ Each is recorded in a Post-Seal Evaluation Record comprising:
 
 A Post-Seal Evaluation Record is encoded as a CBOR array in the field order
 above, an absent conditionally-absent field encoded as CBOR null so that position
-is preserved. The Post-Seal Evaluation Record Hash of {{settlement-ledger}} is
-the SHA-256 digest over that array in its entirety, signature included, so that
-the digest is over the artefact as served under {{ledger-read}}.
+is preserved. The Post-Seal Evaluation Record Hash of {{settlement-ledger}} is the Signing
+Input Digest of that record's signature. Earlier revisions took it over the
+array in its entirety with the signature included, on the ground that the digest
+should be over the artefact as served under {{ledger-read}}. That ground does
+not hold: under a signature primitive whose encoding is not byte-unique the
+artefact as served is not one byte-string, and a digest over it names whichever
+copy the reader was handed. {{signature-malleability}} states the measurement.
 
 A Post-Seal Evaluation Record MUST be retained by the reconciliation server for
 the period of {{delivery}}, and a Continuation entry of type
@@ -2049,10 +2069,14 @@ Every entry, of either kind, comprises these fields and in this order:
 - Claim Hash, the index of {{architecture}}
 - Reconciliation Hash of the Reconciliation Output the entry concerns
 - Entry Timestamp ({{RFC3339}} UTC), the time at which the entry was appended
-- Prior-Entry Hash, being the SHA-256 digest over the deterministically encoded
-  CBOR serialisation of the immediately preceding entry in its entirety,
-  including that entry's Entry Signature; in the first entry of a chain, which
-  has no preceding entry, thirty-two zero octets
+- Prior-Entry Hash, being the Signing Input Digest of the immediately preceding
+  entry's Entry Signature; in the first entry of a chain, which has no preceding
+  entry, thirty-two zero octets. It is taken over that entry's signing input and
+  not over the entry as served, so that a reader handed any byte-string carrying
+  that entry's signature computes one value. It still commits to every field of
+  the preceding entry, including that entry's Self-Entry Hash, and to the
+  Sealing-Key Identifier and the algorithm identifier in the protected header,
+  because the `Sig_structure` covers all of them
 
 followed by the type-specific fields enumerated below, followed by:
 
@@ -2700,13 +2724,21 @@ a verifier MUST resolve the Sealing-Key Identifier carried by each entry rather
 than assume one key across the chain. An entry signed under a superseded
 primitive remains verifiable under the key that identifier resolves. The chain
 is unbroken across a rotation, but not because it is independent of the
-primitive: the Prior-Entry Hash of {{settlement-ledger}} is taken over the whole
-preceding entry including its Entry Signature, so it depends on that signature's
-bytes and on the algorithm identifier in its protected header. It is unbroken
-because those bytes are fixed at the moment the entry is appended and are never
-rewritten. A verifier recomputing a Prior-Entry Hash across a rotation boundary
-MUST therefore be able to re-serialise a signature made under a primitive it does
-not itself implement, which is a weaker requirement than verifying it.
+primitive: the Prior-Entry Hash of {{settlement-ledger}} is the Signing Input
+Digest of the preceding entry's Entry Signature, so it depends on the algorithm
+identifier in that signature's protected header, which the `Sig_structure`
+covers. It does not depend on the signature bytes, and that is deliberate.
+Earlier revisions took the Prior-Entry Hash over the whole preceding entry
+including its Entry Signature and argued the chain was unbroken because those
+bytes "are fixed at the moment the entry is appended and are never rewritten".
+Fixed for the operator, and not unique: {{signature-malleability}} measures a
+primitive under which one signing act has many verifying encodings, so the bytes
+a reader is handed are not the bytes the operator appended and a chain keyed on
+them breaks for that reader alone. A verifier recomputing a Prior-Entry Hash
+across a rotation boundary MUST be able to re-serialise the protected header and
+payload of a signature made under a primitive it does not itself implement,
+which is a weaker requirement than verifying it and a weaker one than
+re-serialising the signature.
 
 ## The Bilateral Register Agreement {#bra}
 
@@ -4015,6 +4047,51 @@ patterns to fingerprint individual subjects. The Predicate Taxonomy SHOULD
 be designed such that the set of permitted narrowings is small enough that
 narrowing observation does not materially weaken subject privacy.
 
+## Signature Malleability and Artefact Identity {#signature-malleability}
+
+A digest taken over a signed artefact as served identifies that artefact only
+where the signature has one valid encoding, and not every primitive this
+document admits has that property.
+
+For ECDSA, a signature `(r, s)` and the signature `(r, n - s)`, where `n` is the
+order of the curve's base point, both verify against the same key over the same
+message. Section 4.1.3 of SEC1 v2.0 permits the substitution in terms; Section
+6.4.2 of FIPS 186-5 and Section 4.1.4 of SEC1 range-check `r` and `s` only; and
+Section 2.1 of {{RFC9053}} constrains neither. No specification is violated and
+nothing is forged: the signing authority is identical in both encodings, and a
+party holding no key can produce the second from the first while it is in
+transit. Measured over two hundred randomly generated P-256 keys and ES256
+signatures, two hundred substitutions verified and two hundred changed the
+enveloped bytes.
+
+EdDSA is not exposed. Section 8.4 of {{RFC8032}} puts the check that the decoded
+`S` is less than `l` inside verification, so an Ed25519 or Ed448 signature has
+one valid encoding. A deployment that declares only EdDSA signature primitives
+under item 2 of {{bra-items}} is therefore not reachable by this. Nothing in
+this document requires that, and a deployment declaring an ECDSA primitive is
+conforming, so the constructions and not the primitive choice are where this is
+addressed.
+
+Every digest in this document that identifies or chains a signed artefact is
+accordingly a Signing Input Digest: the Prior-Entry Hash of
+{{settlement-ledger}}, the Post-Seal Evaluation Record Hash of {{post-seal}},
+and the Merkle leaf of {{aggregation}}. The `Sig_structure` excludes the
+signature by construction, which is why this is total where a low-S
+canonicalisation rule is partial -- low-S removes one encoding from a set with
+more than one member, while the signing input has one value for one signing act
+however many encodings of the signature exist. The Reconciliation Hash of
+{{terminology}} and the Self-Entry Hash of {{settlement-ledger}} were already
+outside the signature and are unchanged.
+
+The consequence of getting this wrong is not a forgery and is easy to
+misdiagnose as one. A reader served a substituted entry computes a Prior-Entry
+Hash that does not match the following entry's, and concludes the chain is
+broken when the operator equivocated about nothing. Under {{leaf-binding}} a
+substituted Partial Attestation makes a verifier refuse a valid inclusion proof
+for the same reason. Both are failures of verification rather than of
+authenticity, and a deployment that reports them as detected tampering will be
+reporting something that did not happen.
+
 # Privacy Considerations {#privacy}
 
 This protocol operates over beneficial-ownership registers, corporate registries,
@@ -4298,6 +4375,21 @@ the inclusion-proof requirements of {{merkle-construction}}, and established
 that a document defining a Merkle construction without stating its relationship
 to Certificate Transparency leaves an implementer arriving from RFC 6962 unable
 to tell whether the two agree.
+
+Anton Sokolov established that a digest taken over a signed artefact as served
+does not identify that artefact under a signature primitive whose encoding is
+not byte-unique, and that ECDSA is such a primitive without violating SEC1,
+FIPS 186-5 or {{RFC9053}}. {{signature-malleability}}, and the reconstruction of
+the Prior-Entry Hash of {{settlement-ledger}}, the Post-Seal Evaluation Record
+Hash of {{post-seal}} and the Merkle leaf of {{aggregation}} as Signing Input
+Digests, follow from his measurement.
+
+Henri Sirkkavaara established that a document may carry both the sound and the
+unsound rule at once, each defensible on its own reading, and that the check is
+therefore to sweep every identity rule in a tree rather than to correct the one
+that was reported. Applied to this document it found that the Self-Entry Hash of
+{{settlement-ledger}} already excluded the signature while the Prior-Entry Hash
+two paragraphs below it did not.
 
 Nenad Vasic established that an inclusion proof whose carried leaf is lifted
 unchanged from another object's valid proof folds to the correct root under a
@@ -4866,6 +4958,57 @@ paragraph exists to pin down. And {{composition-scitt}} described COSE Receipts 
 "the same inclusion-proof format", which they are not: an RFC 9942 inclusion
 proof carries no leaf and is defined over the RFC 9162 tree whose empty root
 this document rejects. {{aggregation}} also loses a stray duplicated clause.
+
+### Every digest that identifies a signed artefact
+
+{{signature-malleability}} is new, and three constructions changed with it. -03
+took the Prior-Entry Hash of {{settlement-ledger}} over the whole preceding
+entry including its Entry Signature, the Post-Seal Evaluation Record Hash of
+{{post-seal}} over its record "in its entirety, signature included", and the
+Merkle leaf of {{aggregation}} over a canonical hash of a register-signed
+Partial Attestation. All three are now Signing Input Digests, taken over the
+COSE `Sig_structure` of the artefact's signature.
+
+The reason is a measurement. For ECDSA, `(r, s)` and `(r, n - s)` both verify
+against the same key over the same message; SEC1 v2.0 Section 4.1.3 permits the
+substitution in terms and neither FIPS 186-5 nor Section 2.1 of {{RFC9053}}
+constrains it. Nothing is forged and no authority is bypassed -- a party holding
+no key produces the second encoding from the first, in transit. Over two hundred
+random P-256 keys, two hundred substitutions verified and two hundred changed
+the entry bytes; the Prior-Entry Hash was stable in none of them, and the
+Self-Entry Hash and Reconciliation Hash in all of them. The finding is Anton
+Sokolov's.
+
+That last line is the point. **This document carried the sound rule and the
+unsound one in the same bulleted list, two paragraphs apart**: the Self-Entry
+Hash already encoded the signature position as CBOR null and the Prior-Entry
+Hash below it did not, and each was defensible read on its own. The instruction
+to sweep every identity rule in a document rather than correct the one that was
+reported is Henri Sirkkavaara's, from finding the same split in his own
+implementation on the same day.
+
+{{crypto-upgrade}} is rewritten where it rested on this. It argued the ledger
+chain survives a primitive rotation because the preceding entry's bytes "are
+fixed at the moment the entry is appended and are never rewritten" -- fixed for
+the operator, and not unique for a reader. The conclusion survives and the
+reason changes: the chain holds because the Prior-Entry Hash is over the signing
+input, which the `Sig_structure` makes one value per signing act while still
+covering the protected header and so the algorithm identifier the section
+depends on.
+
+The consequence of the old constructions was a failure of verification rather
+than of authenticity, which is the harder kind to diagnose. A reader served a
+substituted entry concludes the chain is broken when the operator equivocated
+about nothing; under {{leaf-binding}} it refuses a valid inclusion proof. A
+deployment reporting either as detected tampering reports something that did not
+happen.
+
+{{RFC8032}} is added as an informative reference, for Section 8.4 alone: EdDSA
+puts the low-S check inside verification, so an Ed25519 signature has one valid
+encoding and a deployment declaring only EdDSA primitives under item 2 of
+{{bra-items}} is not reachable by any of this. Nothing in this document requires
+that, which is why the constructions and not the primitive choice are where it
+is addressed.
 
 ### The Bilateral Register Agreement
 

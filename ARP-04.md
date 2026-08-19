@@ -319,9 +319,8 @@ changed is that the imported encoder is now pinned to fixed bytes elsewhere in
 the tree, so a silent defect would be caught. The existence-oracle run record
 says exactly that under `covered_elsewhere` rather than deleting the gap.
 
-**2.8.7 Three ARP digests are taken over bytes that include a signature, and
-under ECDSA those bytes are not unique. OPEN, and the largest remaining `-04`
-item.**
+**2.8.7 Three ARP digests were taken over bytes that include a signature, and
+under ECDSA those bytes are not unique. CLOSED 2026-08-18.**
 
 Anton Sokolov posted the reproduction to the SCITT list on 2026-08-18: for an
 ECDSA signature `(r, s)`, the pair `(r, n - s)` verifies against the same key
@@ -390,8 +389,46 @@ primitives and nothing in the document forbids an ECDSA one. "Our
 implementation is fine" and "the specification is fine" are different claims
 and only the first was true.
 
-Sections to change: 4.10, 4.17, 4.18, 4.22. This is normative and it is Stage A,
-so it lands before the freeze.
+**Closed the same day.** A new definition, **Signing Input Digest**, is added to
+Section 3: the SHA-256 digest over the deterministically encoded COSE
+`Sig_structure` of RFC 9052 Section 4.4 — the array of `"Signature1"`, the
+protected header, the external AAD and the payload. It is a digest of what the
+signer signed and not of the envelope carrying it, so it does not depend on the
+signature bytes and does depend on the protected header, which in ARP carries
+the key identifier and the algorithm identifier.
+
+All three constructions now use it: **Prior-Entry Hash** (4.18), **Post-Seal
+Evaluation Record Hash** (4.17), and the **Merkle leaf** (4.10). Re-measured:
+
+| construction | stable |
+|---|---|
+| Prior-Entry Hash, `-03`, over the entry including its Entry Signature | **0 of 200** |
+| Prior-Entry Hash, `-04`, Signing Input Digest | **200 of 200** |
+
+New **Section 7.9, Signature Malleability and Artefact Identity**, states the
+mechanism, names the specifications that permit it, records the measurement,
+and says why this is total where a low-S canonicalisation rule is partial: low-S
+removes one encoding from a set with more than one member, while the signing
+input has one value per signing act however many encodings exist.
+
+**Section 4.22 is rewritten where it rested on the false premise.** Its
+conclusion survives and its reason changes. It argued the ledger chain survives
+a primitive rotation because the preceding entry's bytes "are fixed at the
+moment the entry is appended and are never rewritten" — fixed for the operator,
+not unique for a reader. The chain now holds because the Prior-Entry Hash is
+over the signing input, which is one value per signing act while still covering
+the protected header and so the algorithm identifier the section depends on.
+
+**Nothing anyone cites moved.** New sections are 4.9.1, 4.23 and 7.9, all
+appended at points that add rather than insert. 4.9 is 4.9, 6.4.3 is 6.4.3,
+6.4.4 is 6.4.4, 7.8 is still Side-Channel Considerations. The only numbers that
+changed are inside Document History, which the RFC Editor removes. Verified by
+computing both heading trees and diffing them.
+
+RFC 8032 is added as an informative reference for Section 8.4 alone. A
+deployment declaring only EdDSA primitives under item 2 of the Agreement is not
+reachable by any of this — but nothing requires that, which is why the
+constructions and not the primitive choice are where it is addressed.
 
 ---
 
@@ -964,7 +1001,7 @@ That check has not been done yet.
 | 2026-08-18 | 2.2 and 2.7 closed as Section 4.23. 2.8.2 closed. 2.8.3 and 2.8.4 opened. Rules 11 and 12 added. Sections 13 and 14 added. Two red-team passes, 28 then 9 findings, all closed. Committed `67723fc`. |
 | 2026-08-18 | A4 and A6 checked, closed with no text change. 2.8.5 opened and closed. |
 | 2026-08-18 | 2.5 declared closed at class v0.1. |
-| 2026-08-18 | 2.8.7 opened: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
+| 2026-08-18 | 2.8.7 opened and closed: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |
 | 2026-08-18 | 2.3 closed. `NV-ARP-EO-04` defect rebuilt against the predicate, `NV-ARP-EO-05` retired as a control, aggregate widened over method limits and standing evidence gaps. Controls six of eight to seven of seven. |
@@ -995,6 +1032,63 @@ Three threads. What each is worth to `-04` is in 2.8 and 10.6; this is the index
 
 Taking Vasic's patch is the cheapest available move on 2.4 and the strongest
 single thing that could be said at an adoption call.
+
+### 18-19 August
+
+| from | subject | bearing |
+|---|---|---|
+| Anton Sokolov | Signed Statement identity when the ECDSA signature is not byte-unique | 2.8.7, opened and closed. The reproduction, the proposal, and the seam. |
+| Henri Sirkkavaara | (same thread) | The method that found it here: sweep every identity rule in a tree, because one file being right is no evidence about the next. He found the same split in his own implementation the same day. |
+| Nenad Vasic | CHAP thread, to Henri | Two independent confirmations of this week's work. *"A verifier that proved nothing must never read as green"* is word for word the invariant added to the existence-oracle aggregate. *"The authority must be impossible to bypass accidentally, or every copy is a future divergence"* is Sirkkavaara's sweep rule stated as a law. |
+| **Walter Hawkins** | **Closing omission from the receiver's vantage** | **New thread, and an opportunity — see below.** |
+
+### The Hawkins substrate proposal, and why ARP should be in it
+
+Walter opened a thread on 19 August, off his own draft and Henri's and Todd
+Gibson's, proposing a **shared substrate** rather than a fourth competing
+draft: a short statement of the receiver as a distinct evidence vantage, the
+three things a record must let that party resolve, a completeness component
+with its stated limit, and what a rail profile must say for the rail's records
+to serve enumeration.
+
+**ARP already has both halves and hit the same limit, in a document with no
+payments in it.** The Examined-Set Root of Section 4.21.1 is an
+issuer-assigned completeness component that catches a record removed from a
+set and says nothing about a record never created — for exactly the reason
+Walter gives about Henri's, that the set is assigned by the party who benefits
+from the omission, and that limit is already written into the document. The
+distinct vantage is the requester, who holds a Reconciliation Identifier and a
+signed acknowledgment and cannot be made to un-know that an output was owed;
+Section 4.21.1 already lets an Audience Member require proof that its own
+reconciliation was in the examined set.
+
+That is Todd's receiver in a setting with no money in it, which is the
+argument for the substrate being a substrate: **the vantage is a property of
+being the party that knows an answer was owed, not a property of payments.**
+
+Two things ARP can contribute that the three payment drafts cannot:
+
+- **A fourth question** between "what bound was in force" and "is the set
+  complete": *what corpus was the answer computed against.* ARP separates a
+  verdict changing because the policy changed from one changing because the
+  published corpus changed, and carries a source-data version taken from the
+  publisher rather than from the answering party. Without it a later
+  re-evaluation producing a different answer is unattributable, and
+  unattributable is the state an omitting party is content to leave you in.
+- **A third vantage.** The witness quorum of 4.23.2 catches an operator
+  serving two chains and will never catch an operator omitting from one. The
+  receiver catches the omission and cannot see the fork. Walter's "two failure
+  modes, two parties" is right and the substrate wants three: issuer,
+  independent observer, and the party owed the answer, each with what it cannot
+  see stated.
+
+**Why this matters beyond the technical contribution.** Section 5 of
+`ARP-04-PLAN.md` says the adoption constituency is the named reviewers and that
+an adoption call is decided by who posts support. Walter is one of the seven,
+he cites ARP unpinned at 6.4.3 and 6.4.4, and he has just proposed a document
+that ARP fits without being bent. Co-authoring a shared substrate with Hawkins,
+Sirkkavaara and Gibson is a stronger position going into IETF 127 than
+presenting ARP alone, and it is a live offer with a two-day-old date on it.
 
 ---
 

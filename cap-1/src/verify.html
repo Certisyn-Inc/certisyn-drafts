@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>CAP-1 Verifier — Certisyn</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--
+  CAP-1 CONFORMANCE VERIFIER — SINGLE FILE, OFFLINE.
+
+  No network. No script loaded from anywhere. No analytics, no fonts, no CDN.
+  Save this file to disk and open it. It works on a machine that has never had
+  a package manager and will never be allowed one.
+
+  The verifier logic below is the reference implementation verbatim.
+-->
+<style>
+  :root{--navy:#0C447C;--mid:#185FA5;--ice:#E6F1FB;--ink:#1a2535;--grey:#888780;
+        --rule:#D3D1C7;--paper:#F8F7F4;--ok:#2A7A2A;--no:#9A2A24}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font:400 15px/1.5 Inter,'DM Sans','Helvetica Neue',Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:40px 24px 80px}
+  header{border-bottom:1px solid var(--rule);padding-bottom:20px;margin-bottom:28px}
+  .mark{display:flex;align-items:flex-end;gap:14px}
+  .logo{width:74px;height:56px}
+  .wordmark{font-size:26px;letter-spacing:5px;font-weight:300;color:var(--ink)}
+  .sub{font-size:11px;letter-spacing:3px;color:var(--grey);margin-top:2px}
+  h1{font-size:26px;font-weight:400;margin:26px 0 6px}
+  .lede{color:var(--grey);font-size:14px;margin:0 0 22px;max-width:70ch}
+  .drop{border:1px dashed var(--rule);background:#fff;border-radius:2px;padding:34px;text-align:center;
+        color:var(--grey);font-size:14px;cursor:pointer;transition:.15s}
+  .drop:hover,.drop.over{border-color:var(--mid);background:var(--ice);color:var(--navy)}
+  textarea{width:100%;min-height:180px;margin-top:14px;padding:14px;border:1px solid var(--rule);
+           background:#fff;border-radius:2px;font:13px/1.45 'Courier New',monospace;color:var(--ink);resize:vertical}
+  button{margin-top:12px;background:var(--navy);color:#fff;border:0;padding:11px 22px;border-radius:2px;
+         font:400 13px Inter,Arial,sans-serif;letter-spacing:1px;cursor:pointer}
+  button:hover{background:var(--mid)}
+  .verdict{margin-top:26px;padding:20px 22px;border-left:3px solid var(--navy);background:var(--ice);display:none}
+  .verdict.show{display:block}
+  .verdict h2{margin:0 0 4px;font-size:19px;font-weight:400;letter-spacing:1px}
+  .conform h2{color:var(--ok)} .refuse h2{color:var(--no)}
+  .verdict.conform{border-left-color:var(--ok)} .verdict.refuse{border-left-color:var(--no);background:#FEF2F1}
+  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+  th{text-align:left;font-weight:400;letter-spacing:2px;font-size:10px;text-transform:uppercase;
+     color:var(--navy);border-bottom:1px solid var(--rule);padding:8px 10px 8px 0}
+  td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+  .mono{font-family:'Courier New',monospace;font-size:12px}
+  .fail{margin-top:12px;padding:12px 14px;background:#fff;border:1px solid var(--rule);border-radius:2px}
+  .fail .r{color:var(--navy);font-family:'Courier New',monospace;font-size:12px}
+  .fail .g{margin:3px 0 6px} .fail .e{color:var(--grey);font-size:12px;font-family:'Courier New',monospace;word-break:break-all}
+  footer{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;color:var(--grey);font-size:11px;letter-spacing:1px}
+</style>
+<div class="wrap">
+<header>
+  <div class="mark">
+    <svg class="logo" viewBox="0 0 100 80" aria-label="Certisyn">
+      <polygon points="5,72 20,2 35,72" fill="#0C447C"/>
+      <polygon points="32,72 45,14 57,72" fill="#185FA5" opacity=".82"/>
+      <polygon points="53,72 63,30 72,72" fill="#378ADD" opacity=".65"/>
+      <rect x="5" y="74" width="67" height="2" rx="1" fill="#0C447C"/>
+    </svg>
+    <div><div class="wordmark">CERTISYN</div><div class="sub">VERIFICATION INFRASTRUCTURE</div></div>
+  </div>
+</header>
+
+<h1>CAP-1 Conformance Verifier</h1>
+<p class="lede">Drop a coverage attestation, or paste one below. Eight normative rules.
+A refusal names the rule and the evidence. This page makes no network request of any kind —
+save it to disk and it runs on an isolated machine.</p>
+
+<div class="drop" id="drop">Drop a <span class="mono">.json</span> attestation here, or click to choose a file</div>
+<input type="file" id="file" accept=".json,application/json" hidden>
+<textarea id="ta" placeholder="…or paste the attestation JSON here" spellcheck="false"></textarea>
+<button id="go">VERIFY</button>
+
+<div class="verdict" id="out"></div>
+
+<footer>CERTISYN, INC. &nbsp;·&nbsp; CAP-1 reference verifier &nbsp;·&nbsp; offline, no dependencies</footer>
+</div>
+
+<script>
+
+
+const DISPOSITIONS = new Set(['not_applicable','disabled_by_policy','unsupported_input',
+  'resource_exhausted','failed','unavailable','out_of_scope','withheld']);
+const BASIS = new Set(['catalogue','enumeration','declared']);
+const HEX = /^[0-9a-f]{32,128}$/;
+
+function verify(doc) {
+  const fail = [];
+  const F = (rule, grounds, evidence) => fail.push({ rule, grounds, evidence });
+
+  // R0 — shape. A document that is not a CAP-1 document is refused, not coerced.
+  if (!doc || typeof doc !== 'object') return { ok:false, failures:[{rule:'R0-shape',grounds:'not an object'}] };
+  if (doc.profile !== 'cap/1') F('R0-shape','profile is not cap/1',{profile:doc.profile ?? null});
+  if (!doc.subject || typeof doc.subject.ref !== 'string') F('R0-shape','subject.ref absent',{});
+  if (!Array.isArray(doc.strata) || doc.strata.length === 0) F('R0-shape','no strata',{});
+  if (!doc.integrity || typeof doc.integrity.complete !== 'boolean') F('R0-shape','integrity.complete absent',{});
+  if (fail.length) return { ok:false, failures:fail };
+
+  const ids = new Set();
+  for (const s of doc.strata) {
+    const at = `strata[${s.id ?? '?'}]`;
+
+    if (typeof s.id !== 'string' || ids.has(s.id)) F('R0-shape','stratum id absent or duplicated',{at});
+    ids.add(s.id);
+
+    // R1 — NO SILENT REMAINDER.
+    // eligible must equal examined plus every individually accounted unexamined unit.
+    // A remainder that reconciles only by arithmetic is a population of units whose
+    // fate is unrecorded, and unrecorded units are exactly where a negative hides.
+    const un = Array.isArray(s.unexamined) ? s.unexamined : null;
+    if (!un) { F('R1-no-silent-remainder','unexamined is not an array',{at}); continue; }
+    const sum = s.examined + un.length;
+    if (sum !== s.eligible)
+      F('R1-no-silent-remainder','eligible does not equal examined plus accounted unexamined',
+        {at, eligible:s.eligible, examined:s.examined, accounted:un.length, remainder:s.eligible - sum});
+
+    // R2 — CLOSED DISPOSITION VOCABULARY.
+    // An open reason string is where an uncomfortable disposition goes to hide.
+    for (const u of un) {
+      if (!DISPOSITIONS.has(u.disposition))
+        F('R2-closed-disposition','disposition outside the closed vocabulary',{at, unit:u.unit, disposition:u.disposition});
+      if (typeof u.unit !== 'string' || !u.unit.length)
+        F('R2-closed-disposition','unexamined entry names no unit',{at});
+
+      // R3 — WITHHOLDING IS DIGEST-BOUND.
+      // A withheld unit that carries no digest of what was withheld cannot later be
+      // shown to be the unit withheld rather than one substituted afterwards.
+      if (u.disposition === 'withheld' && !HEX.test(String(u.withheld_digest ?? '')))
+        F('R3-withholding-digest-bound','withheld unit carries no digest of the withheld value',{at, unit:u.unit});
+    }
+
+    // R4 — DENOMINATOR HAS A BASIS.
+    // A catalogue basis must name the catalogue by digest; an enumeration must name
+    // its method; a declared basis is admissible but must be marked as the weakest.
+    const b = s.basis ?? {};
+    if (!BASIS.has(b.kind)) F('R4-denominator-basis','basis.kind absent or outside vocabulary',{at, kind:b.kind ?? null});
+    else if (b.kind === 'catalogue' && !HEX.test(String(b.catalogue_digest ?? '')))
+      F('R4-denominator-basis','catalogue basis without a catalogue digest',{at});
+    else if (b.kind === 'enumeration' && !String(b.enumeration_method ?? '').length)
+      F('R4-denominator-basis','enumeration basis without a stated method',{at});
+
+    // R5 — COUNTS ARE NON-NEGATIVE AND EXAMINED CANNOT EXCEED ELIGIBLE.
+    if (!(Number.isInteger(s.eligible) && Number.isInteger(s.examined)) || s.eligible < 0 || s.examined < 0)
+      F('R5-counts-well-formed','eligible or examined is not a non-negative integer',{at});
+    else if (s.examined > s.eligible)
+      F('R5-counts-well-formed','examined exceeds eligible',{at, eligible:s.eligible, examined:s.examined});
+  }
+
+  // R6 — ABSENCE IS SCOPED.
+  // An assertion that something was not observed, made without naming the population
+  // it was not observed in, is unfalsifiable and is refused.
+  for (const a of (doc.absence_assertions ?? [])) {
+    if (!a.stratum || !ids.has(a.stratum))
+      F('R6-absence-is-scoped','absence assertion names no stratum, or an unknown one',
+        {assertion:String(a.assertion ?? '').slice(0,90), stratum:a.stratum ?? null});
+  }
+
+  // R7 — INCOMPLETE EXECUTION MAY NOT BE REPORTED AS CLEAN.
+  // If any dispatched unit failed, was exhausted, or could not be dispatched, the
+  // run did not complete, and a verdict resting on it must be capped and say so.
+  const hardStops = doc.strata.flatMap(s => (s.unexamined ?? [])
+    .filter(u => u.disposition === 'failed' || u.disposition === 'resource_exhausted' || u.disposition === 'unavailable')
+    .map(u => `${s.id}:${u.unit}:${u.disposition}`));
+  if (hardStops.length && doc.integrity.complete === true)
+    F('R7-incomplete-not-clean','integrity.complete is true while units failed, exhausted or were unavailable',
+      {stops:hardStops.slice(0,6), count:hardStops.length});
+  if (doc.integrity.complete === false && !String(doc.integrity.capped_to ?? '').length)
+    F('R7-incomplete-not-clean','integrity.complete is false and no capped_to verdict is stated',{});
+
+  // R8 — SUPPORTS IS A BOUND, NOT A DECORATION.
+  // Where a stratum is cited by an absence assertion it must state what claim classes
+  // its coverage supports, so a reader can see whether the citation is in bounds.
+  const cited = new Set((doc.absence_assertions ?? []).map(a => a.stratum));
+  for (const s of doc.strata) {
+    if (cited.has(s.id) && !(Array.isArray(s.supports) && s.supports.length))
+      F('R8-supports-bounds-citation','stratum is cited by an absence assertion but states no supported claim classes',{at:`strata[${s.id}]`});
+  }
+
+  return { ok: fail.length === 0, failures: fail };
+}
+
+function summarise(doc) {
+  const rows = (doc.strata ?? []).map(s => {
+    const by = {};
+    for (const u of (s.unexamined ?? [])) by[u.disposition] = (by[u.disposition] ?? 0) + 1;
+    return { id:s.id, population:s.population, eligible:s.eligible, examined:s.examined,
+             fraction: s.eligible ? (s.examined / s.eligible) : 0, dispositions: by };
+  });
+  return rows;
+}
+
+
+// ── page wiring ─────────────────────────────────────────────────────────────
+const $ = (i) => document.getElementById(i);
+const esc = (s) => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function show(text) {
+  const out = $('out'); out.className = 'verdict show';
+  let doc;
+  try { doc = JSON.parse(text); }
+  catch (e) { out.classList.add('refuse');
+    out.innerHTML = '<h2>REFUSED</h2><div class="fail"><div class="r">R0-shape</div>' +
+      '<div class="g">unreadable or invalid JSON</div><div class="e">' + esc(e.message) + '</div></div>';
+    return; }
+  const r = verify(doc);
+  out.classList.add(r.ok ? 'conform' : 'refuse');
+  let h = '<h2>' + (r.ok ? 'CONFORMS' : 'REFUSED') + '</h2><div style="color:#888780;font-size:13px">cap/1</div>';
+  const rows = r.ok || (doc.strata && doc.strata.length) ? summarise(doc) : [];
+  if (rows.length) {
+    h += '<table><tr><th>Stratum</th><th>Population</th><th>Examined</th><th>Eligible</th><th>Coverage</th><th>Dispositions</th></tr>';
+    for (const s of rows) {
+      const d = Object.entries(s.dispositions).map(([k,v]) => k + '=' + v).join(', ') || '—';
+      h += '<tr><td class="mono">' + esc(s.id) + '</td><td>' + esc(s.population || '') +
+           '</td><td class="mono">' + s.examined + '</td><td class="mono">' + s.eligible +
+           '</td><td class="mono">' + (100 * s.fraction).toFixed(1) + '%</td><td class="mono">' + esc(d) + '</td></tr>';
+    }
+    h += '</table>';
+  }
+  for (const f of r.failures) {
+    h += '<div class="fail"><div class="r">' + esc(f.rule) + '</div><div class="g">' + esc(f.grounds) +
+         '</div><div class="e">' + esc(JSON.stringify(f.evidence || {})) + '</div></div>';
+  }
+  out.innerHTML = h;
+}
+
+$('go').onclick = () => show($('ta').value);
+$('drop').onclick = () => $('file').click();
+$('file').onchange = (e) => { const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader(); fr.onload = () => { $('ta').value = fr.result; show(fr.result); }; fr.readAsText(f); };
+['dragenter','dragover'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave','drop'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (!f) return;
+  const fr = new FileReader(); fr.onload = () => { $('ta').value = fr.result; show(fr.result); }; fr.readAsText(f); });
+</script>

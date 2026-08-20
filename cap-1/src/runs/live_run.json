@@ -1,0 +1,43 @@
+{
+ "profile": "cap/1",
+ "demonstration": "cap-1-live/2.0.0",
+ "subject_ref": "4344a3ef0d5706f3",
+ "before": {
+  "conforms": false,
+  "refused_by": [
+   "R1-no-silent-remainder"
+  ],
+  "remainder": 221
+ },
+ "after": {
+  "conforms": true,
+  "strata": [
+   {
+    "id": "modules",
+    "population": "detector modules dispatched for this subject class",
+    "eligible": 23,
+    "examined": 5,
+    "fraction": 0.21739130434782608,
+    "dispositions": {
+     "not_applicable": 13,
+     "disabled_by_policy": 5
+    }
+   },
+   {
+    "id": "checks",
+    "population": "catalogued check identifiers",
+    "eligible": 227,
+    "examined": 6,
+    "fraction": 0.02643171806167401,
+    "dispositions": {
+     "not_applicable": 186,
+     "disabled_by_policy": 35
+    }
+   }
+  ]
+ },
+ "defect_closed": "apps/core/src/lib/forensics/index.ts now emits coverage.not_run_units, one entry per unexecuted catalogued check, and throws rather than emit a remainder that reconciles only by arithmetic.",
+ "establishes": "That the profile detects an unaccounted remainder in a real production engine, and that closing it is a bounded change which the profile then accepts.",
+ "does_not_establish": "Specification adequacy. Producer and verifier share an author. It becomes two-sided the first time the verifier refuses a document its author did not write.",
+ "record_digest": "ed244614c8387aee599b8f9141e0739f1ae5a28d5c3de45b8609d23ac06bece8"
+}

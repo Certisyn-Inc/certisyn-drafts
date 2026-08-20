@@ -1,0 +1,59 @@
+{
+ "class": "cap-1-mutation/1.0.0",
+ "rules": 8,
+ "killed": 8,
+ "survived": 0,
+ "results": [
+  {
+   "rule": "R1-no-silent-remainder",
+   "killed": true,
+   "failed_checks": 2,
+   "passed": 13
+  },
+  {
+   "rule": "R2-closed-disposition",
+   "killed": true,
+   "failed_checks": 1,
+   "passed": 14
+  },
+  {
+   "rule": "R3-withholding-digest-bound",
+   "killed": true,
+   "failed_checks": 1,
+   "passed": 14
+  },
+  {
+   "rule": "R4-denominator-basis",
+   "killed": true,
+   "failed_checks": 1,
+   "passed": 14
+  },
+  {
+   "rule": "R5-counts-well-formed",
+   "killed": true,
+   "failed_checks": 1,
+   "passed": 14
+  },
+  {
+   "rule": "R6-absence-is-scoped",
+   "killed": true,
+   "failed_checks": 1,
+   "passed": 14
+  },
+  {
+   "rule": "R7-incomplete-not-clean",
+   "killed": true,
+   "failed_checks": 2,
+   "passed": 13
+  },
+  {
+   "rule": "R8-supports-bounds-citation",
+   "killed": true,
+   "failed_checks": 1,
+   "passed": 14
+  }
+ ],
+ "establishes": "Every normative rule is load-bearing: silencing any one of them makes the conformance class fail, so no rule is present without a control exercising it.",
+ "does_not_establish": "That the rules are sufficient. A rule absent from the specification entirely cannot be mutated, and would not be detected by this method.",
+ "record_digest": "9a9a5e243423cdbc224a76e592ae86ce701a9f37298d5c10762a0a3643804fdc"
+}

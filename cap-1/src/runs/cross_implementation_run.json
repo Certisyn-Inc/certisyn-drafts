@@ -1,0 +1,166 @@
+{
+ "class": "cap-1-cross-implementation/1.0.0",
+ "implementations": [
+  "verify.mjs (JavaScript, Node built-ins)",
+  "verify.py (Python, standard library)"
+ ],
+ "vectors": 15,
+ "disagreements": [],
+ "incorrect": [],
+ "agreement": true,
+ "establishes": "Implementation independence: two implementations in two languages, written from the specification text rather than ported, agree on every vector and every targeted rule.",
+ "does_not_establish": "Author independence. Both implementations and the vectors originate with the same party, so a misreading shared between them is invisible to this check. The class becomes two-sided the first time it refuses a document written elsewhere.",
+ "results": [
+  {
+   "id": "PV-01",
+   "kind": "positive",
+   "expect": "conform",
+   "js": "conform",
+   "py": "conform",
+   "rule_targeted": null,
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "PV-02",
+   "kind": "positive",
+   "expect": "conform",
+   "js": "conform",
+   "py": "conform",
+   "rule_targeted": null,
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "PV-03",
+   "kind": "positive",
+   "expect": "conform",
+   "js": "conform",
+   "py": "conform",
+   "rule_targeted": null,
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "PV-04",
+   "kind": "positive",
+   "expect": "conform",
+   "js": "conform",
+   "py": "conform",
+   "rule_targeted": null,
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "PV-05",
+   "kind": "positive",
+   "expect": "conform",
+   "js": "conform",
+   "py": "conform",
+   "rule_targeted": null,
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-01",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R1-no-silent-remainder",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-02",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R2-closed-disposition",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-03",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R3-withholding-digest-bound",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-04",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R4-denominator-basis",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-05",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R5-counts-well-formed",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-06",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R6-absence-is-scoped",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-07",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R7-incomplete-not-clean",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-08",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R8-supports-bounds-citation",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-09",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R1-no-silent-remainder",
+   "agree": true,
+   "ok": true
+  },
+  {
+   "id": "NC-10",
+   "kind": "negative",
+   "expect": "refuse",
+   "js": "refuse",
+   "py": "refuse",
+   "rule_targeted": "R7-incomplete-not-clean",
+   "agree": true,
+   "ok": true
+  }
+ ],
+ "record_digest": "87144c3b521d78f11684b4fd51777e8a5ca21eb9175fa4b7a8d919b22d6ddf15"
+}

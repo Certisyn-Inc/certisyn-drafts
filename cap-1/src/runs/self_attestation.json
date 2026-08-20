@@ -1,0 +1,119 @@
+{
+ "profile": "cap/1",
+ "producer": {
+  "name": "CAP-1 conformance class",
+  "version": "cap-1-conformance/1.0.0",
+  "policy": "cap-1-self-attestation/1.0.0"
+ },
+ "subject": {
+  "kind": "specification",
+  "ref": "CAP-1 normative rules",
+  "digest": {
+   "algorithm": "SHA-256",
+   "value": "0fd0ab9f8ba7c51715fe9abd09de545656dfae1441cd5f5a4affdbda69ad1df3"
+  }
+ },
+ "strata": [
+  {
+   "id": "normative-rules",
+   "population": "normative rules of the profile",
+   "basis": {
+    "kind": "enumeration",
+    "enumeration_method": "the eight rules enumerated in the specification and enforced by the reference verifier"
+   },
+   "eligible": 8,
+   "examined": 8,
+   "unexamined": [],
+   "supports": [
+    "absence-of-unexercised-rule"
+   ]
+  },
+  {
+   "id": "shape-rules",
+   "population": "structural rules refusing a malformed document",
+   "basis": {
+    "kind": "enumeration",
+    "enumeration_method": "the shape checks performed before any normative rule is evaluated"
+   },
+   "eligible": 5,
+   "examined": 0,
+   "unexamined": [
+    {
+     "unit": "R0-profile",
+     "disposition": "resource_exhausted",
+     "detail": "exercised only incidentally by malformed input; no control isolates this shape rule"
+    },
+    {
+     "unit": "R0-subject-ref",
+     "disposition": "resource_exhausted",
+     "detail": "exercised only incidentally by malformed input; no control isolates this shape rule"
+    },
+    {
+     "unit": "R0-strata-present",
+     "disposition": "resource_exhausted",
+     "detail": "exercised only incidentally by malformed input; no control isolates this shape rule"
+    },
+    {
+     "unit": "R0-integrity-complete",
+     "disposition": "resource_exhausted",
+     "detail": "exercised only incidentally by malformed input; no control isolates this shape rule"
+    },
+    {
+     "unit": "R0-stratum-id-unique",
+     "disposition": "resource_exhausted",
+     "detail": "exercised only incidentally by malformed input; no control isolates this shape rule"
+    }
+   ],
+   "supports": [
+    "absence-of-isolated-shape-control"
+   ]
+  },
+  {
+   "id": "implementations",
+   "population": "implementations the class has been executed against",
+   "basis": {
+    "kind": "enumeration",
+    "enumeration_method": "implementations held and executed in this directory, plus any known external implementation"
+   },
+   "eligible": 4,
+   "examined": 3,
+   "unexamined": [
+    {
+     "unit": "any implementation not authored by Certisyn",
+     "disposition": "unavailable",
+     "detail": "no independently authored implementation exists yet; the class is one-sided until one does"
+    }
+   ],
+   "supports": [
+    "absence-of-independent-refutation"
+   ]
+  }
+ ],
+ "absence_assertions": [
+  {
+   "assertion": "No normative rule is present without a control that fires on it.",
+   "stratum": "normative-rules",
+   "qualifier": "Bounded by the eight enumerated rules. Not a statement about rules the specification does not contain."
+  },
+  {
+   "assertion": "No shape rule has been individually isolated by a control.",
+   "stratum": "shape-rules",
+   "qualifier": "Stated as a shortfall, not as a finding of adequacy."
+  },
+  {
+   "assertion": "The class has not been refused by an implementation authored elsewhere.",
+   "stratum": "implementations",
+   "qualifier": "This is the condition on which specification adequacy turns and it is not yet met."
+  }
+ ],
+ "integrity": {
+  "complete": false,
+  "uncapped_verdict": "conformance-class-green",
+  "capped_to": "implementation-independent-only",
+  "unaccounted": [
+   "author independence"
+  ],
+  "statement": "Eight of eight normative rules exercised and eight of eight mutants killed, across 3 implementations in agreement, one of them executed in a browser engine with every network request recorded. Author independence is not established, so the verdict is capped: this class establishes that the rules are implementable and load-bearing, not that the specification is adequate."
+ },
+ "as_of": "b9308ee10a369bad"
+}

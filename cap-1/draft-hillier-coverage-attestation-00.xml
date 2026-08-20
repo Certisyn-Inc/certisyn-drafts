@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" version="3"
+     ipr="trust200902" submissionType="IETF" category="info"
+     docName="draft-hillier-coverage-attestation-00"
+     consensus="false" tocInclude="true" sortRefs="true" symRefs="true">
+
+  <front>
+    <title abbrev="Coverage Attestation Profile">The Coverage Attestation Profile (CAP-1)</title>
+    <seriesInfo name="Internet-Draft" value="draft-hillier-coverage-attestation-00"/>
+    <author fullname="Joel David Hillier" initials="J. D." surname="Hillier">
+      <organization>Certisyn, Inc.</organization>
+      <address>
+        <postal>
+          <country>United States of America</country>
+        </postal>
+        <email>jhillier@certisyn.com</email>
+        <uri>https://certisyn.com</uri>
+      </address>
+    </author>
+    <date year="2026"/>
+    <area>Security</area>
+    <keyword>coverage</keyword>
+    <keyword>attestation</keyword>
+    <keyword>conformance</keyword>
+    <keyword>digital forensics</keyword>
+    <keyword>evidence</keyword>
+
+    <abstract>
+      <t>A report can be complete and still silent about its own scope. A statement
+      that something was not observed is routinely recorded in a form that reads as a
+      claim about the world, when what was established was a claim about a bounded
+      population examined to a stated depth. Nothing in the record distinguishes the
+      two, and no relying party can recover the difference after the fact.</t>
+
+      <t>This document specifies the Coverage Attestation Profile, CAP-1: a
+      tool-agnostic vocabulary for stating what an examination examined, what it did
+      not, and why. A conforming document declares one or more populations, a
+      denominator for each whose basis is itself declared, and an individual
+      accounting for every unit that was not examined, drawn from a closed set of
+      dispositions. A remainder that reconciles only by arithmetic is refused.</t>
+
+      <t>The construct is not novel outside this application. Coverage accounting with
+      a declared denominator is settled practice in configuration assessment and in
+      vulnerability scanning, and this document states that relationship in
+      <xref target="priorwork"/> before making any claim of its own.</t>
+    </abstract>
+  </front>
+
+  <middle>
+
+    <section anchor="intro"><name>Introduction</name>
+
+      <section><name>The problem</name>
+      <t>Consider an examination that reports "this message is not present". As
+      recorded, that is a claim about the universe of messages. What was actually
+      established is narrower: that within some set of artefacts, examined by some
+      set of techniques, to some depth, no such message was observed. The bound
+      exists in every case. It is almost never written down.</t>
+
+      <t>The consequence is that an absence claim is unfalsifiable. A reader cannot
+      distinguish an examination that covered the relevant population and found
+      nothing from one that never looked, because both produce the same sentence. A
+      relying party who wishes to test the claim has nothing to test.</t>
+
+      <t>The gap has been named before. Turner observed at DFRWS in 2006 that "no
+      method has existed that captured the criteria or method used by the examiner in
+      deciding what to acquire" <xref target="TURNER2006"/>. Twenty years later that
+      remains true of the record formats in use.</t>
+
+      <t>A second failure mode compounds it. Where a partial count is reported at all,
+      it is commonly reported as a bare fraction: so many units examined of so many
+      eligible. The remainder is then implied by subtraction. Such a remainder
+      reconciles perfectly and carries no information, because the units inside it are
+      unlike each other. A unit not examined because it was out of scope, a unit not
+      examined because the tool crashed, and a unit not examined because policy
+      forbade it are three different facts about the examination. Arithmetic flattens
+      them into one number.</t>
+      </section>
+
+      <section anchor="priorwork"><name>Relationship to existing practice</name>
+      <t>Coverage accounting with a declared denominator is established practice in
+      adjacent fields. This section states that relationship at the outset so that
+      the contribution of this document can be read against it.</t>
+
+      <t>Seven of the eight dispositions defined in <xref target="dispositions"/> have
+      a direct counterpart in the <tt>resultEnumType</tt> of XCCDF 1.2
+      <xref target="XCCDF"/>, published by NIST in 2012. The Payment Card Industry
+      Approved Scanning Vendor programme <xref target="PCIASV"/> has required, since
+      2006, a coverage attestation carrying a declared denominator, an enumerated
+      out-of-scope set, and a rule that an incomplete scan is reported as inconclusive
+      rather than as clean.</t>
+
+      <t>This document contributes that construct in a form other record and evidence
+      formats can carry, together with a conformance class that makes each rule
+      testable rather than advisory. Where alignment to an existing vocabulary is
+      preferable to a parallel one, this document intends to align.</t>
+      </section>
+
+      <section><name>Scope and non-goals</name>
+      <t>CAP-1 accounts for coverage. It is deliberately narrow.</t>
+      <ul>
+        <li>It does not record actions. An append-only log of what an operator or an
+        automated agent did is a different object with different requirements, and is
+        not specified here.</li>
+        <li>It does not seal transformations. Binding an input, a transforming
+        artefact and an output together so that a third party can re-run the
+        transformation is a different problem, and is not specified here.</li>
+        <li>It does not assess quality. CAP-1 says nothing about whether what was
+        examined was examined well.</li>
+        <li>It does not establish trust in the producer. A conforming document may be
+        entirely false. What conformance establishes is that the document states its
+        own bounds in a form a reader can test for internal consistency.</li>
+      </ul>
+      </section>
+    </section>
+
+    <section><name>Conventions and Definitions</name>
+      <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+      "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
+      document are to be interpreted as described in BCP 14
+      <xref target="RFC2119"/> <xref target="RFC8174"/> when, and only when, they
+      appear in all capitals, as shown here.</t>
+    </section>
+
+    <section><name>Terminology</name>
+      <dl>
+        <dt>Population</dt><dd>A set of units over which coverage is claimed. Units may
+        be detector routines, records, containers, pages, time windows, or anything
+        else countable, provided the choice is stated.</dd>
+        <dt>Stratum</dt><dd>One population together with its denominator and its
+        accounting. Coverage is declared per stratum and is never pooled across
+        strata.</dd>
+        <dt>Denominator</dt><dd>The count of units eligible for examination within a
+        stratum.</dd>
+        <dt>Basis</dt><dd>How the denominator was determined. A denominator without a
+        basis is an assertion rather than a measurement.</dd>
+        <dt>Unit</dt><dd>One member of a population, individually nameable.</dd>
+        <dt>Disposition</dt><dd>The reason a unit was not examined, drawn from a
+        closed set.</dd>
+        <dt>Absence assertion</dt><dd>A claim that something was not observed, which
+        under this profile MUST name the stratum that bounds it.</dd>
+      </dl>
+    </section>
+
+    <section anchor="document"><name>The Coverage Attestation Document</name>
+      <t>A CAP-1 document is a JSON object. The normative shape is given by the
+      accompanying JSON Schema; this section describes it and
+      <xref target="rules"/> states the rules a verifier enforces.</t>
+
+      <t>The top-level members are <tt>profile</tt>, which MUST be the string
+      <tt>cap/1</tt>; <tt>subject</tt>, identifying what was examined;
+      <tt>strata</tt>, an array of one or more populations; <tt>integrity</tt>,
+      describing whether execution completed; and the optional members
+      <tt>absence_assertions</tt>, <tt>producer</tt> and <tt>as_of</tt>.</t>
+
+      <section><name>Strata</name>
+      <t>Each stratum carries an <tt>id</tt>, a <tt>population</tt> naming what is
+      being counted, a <tt>basis</tt>, an <tt>eligible</tt> count, an
+      <tt>examined</tt> count, and an <tt>unexamined</tt> array. The
+      <tt>unexamined</tt> array is the heart of the profile: it holds one entry per
+      unit not examined, each naming the unit and carrying a disposition. A count
+      alone is not an accounting.</t>
+      </section>
+
+      <section anchor="basis"><name>Basis of the denominator</name>
+      <t>The <tt>basis.kind</tt> member MUST be one of three values.</t>
+      <dl>
+        <dt>catalogue</dt><dd>The denominator was taken from an external, versioned
+        catalogue of record. A catalogue basis MUST carry a catalogue digest, so that
+        a reader can determine which revision was counted against.</dd>
+        <dt>enumeration</dt><dd>The denominator was produced by enumerating the
+        population directly. An enumeration basis MUST state the method, because the
+        method determines what the enumeration could not see.</dd>
+        <dt>declared</dt><dd>The denominator was asserted by the producer without
+        either of the above. This is the weakest basis and is marked as such by its
+        own name.</dd>
+      </dl>
+      <t>The three kinds are ordered by how much a reader can do with them. The
+      profile does not forbid the weakest; it forbids concealing which one was
+      used.</t>
+      </section>
+
+      <section><name>Integrity</name>
+      <t>The <tt>integrity</tt> object states whether every dispatched unit reached a
+      recorded outcome. Where it did not, the producer MUST state the verdict a reader
+      may rely on given incomplete execution, in <tt>capped_to</tt>, and SHOULD
+      enumerate what remains unaccounted.</t>
+      </section>
+    </section>
+
+    <section anchor="rules"><name>Normative Rules</name>
+      <t>A verifier MUST refuse a document that violates any of the following. Refusal
+      is the only conforming response; a verifier MUST NOT coerce a non-conforming
+      document into a conforming one.</t>
+
+      <dl>
+        <dt>R0, shape</dt><dd>The document MUST be an object, MUST declare
+        <tt>profile</tt> as <tt>cap/1</tt>, MUST name a subject, MUST carry at least
+        one stratum, and MUST carry an integrity object with a boolean
+        <tt>complete</tt>. Stratum identifiers MUST be present and unique.</dd>
+
+        <dt>R1, no silent remainder</dt><dd>For every stratum, <tt>eligible</tt> MUST
+        equal <tt>examined</tt> plus the number of individually accounted unexamined
+        units. A remainder that reconciles only by subtraction MUST be refused.</dd>
+
+        <dt>R2, closed disposition</dt><dd>Every unexamined entry MUST name a unit and
+        MUST carry a disposition drawn from the closed vocabulary in
+        <xref target="dispositions"/>. Free-text reasons MUST NOT be accepted in place
+        of a disposition, because free text does not aggregate.</dd>
+
+        <dt>R3, withholding is digest-bound</dt><dd>A unit disposed as
+        <tt>withheld</tt> MUST carry a digest binding the withheld material. A
+        withheld unit is accounted for without being disclosed; a withheld unit
+        without a digest is indistinguishable from a gap.</dd>
+
+        <dt>R4, denominator basis</dt><dd>Every stratum MUST declare
+        <tt>basis.kind</tt> from the closed set in <xref target="basis"/>. A
+        <tt>catalogue</tt> basis MUST carry a catalogue digest. An
+        <tt>enumeration</tt> basis MUST state its method.</dd>
+
+        <dt>R5, counts well formed</dt><dd>Counts MUST be non-negative integers and
+        <tt>examined</tt> MUST NOT exceed <tt>eligible</tt>.</dd>
+
+        <dt>R6, absence is scoped</dt><dd>Every absence assertion MUST name an
+        existing stratum that bounds it. An absence claim that names no population
+        MUST be refused.</dd>
+
+        <dt>R7, incomplete is not clean</dt><dd>Where any unit is disposed as
+        <tt>failed</tt>, <tt>resource_exhausted</tt> or <tt>unavailable</tt>,
+        <tt>integrity.complete</tt> MUST NOT be true. Where
+        <tt>integrity.complete</tt> is false, <tt>capped_to</tt> MUST state the
+        verdict a reader may rely on.</dd>
+
+        <dt>R8, supports bounds citation</dt><dd>A stratum cited by an absence
+        assertion MUST state which classes of claim it supports. A denominator that
+        bounds a claim it was never intended to bound is a category error the reader
+        cannot otherwise detect.</dd>
+      </dl>
+    </section>
+
+    <section anchor="dispositions"><name>Disposition Vocabulary</name>
+      <t>The vocabulary is closed. A profile that permits extension at this point
+      permits the reintroduction of free text, and the property that makes
+      attestations aggregate is lost.</t>
+      <dl>
+        <dt>not_applicable</dt><dd>The unit does not apply to this subject.</dd>
+        <dt>disabled_by_policy</dt><dd>The unit was available and was deliberately not
+        run. A decision not to examine is recorded as a decision, with its scope,
+        rather than as an absence.</dd>
+        <dt>unsupported_input</dt><dd>The unit does not support this input.</dd>
+        <dt>resource_exhausted</dt><dd>The unit was dispatched and ran out of a
+        resource.</dd>
+        <dt>failed</dt><dd>The unit was dispatched and errored.</dd>
+        <dt>unavailable</dt><dd>The unit could not be dispatched at all, for want of a
+        dependency, a licence or a network.</dd>
+        <dt>out_of_scope</dt><dd>Excluded by the authorisation under which the
+        examination was conducted.</dd>
+        <dt>withheld</dt><dd>Examined, but the result is not disclosed in this
+        document. See R3.</dd>
+      </dl>
+      <t>Seven of these correspond directly to values in XCCDF 1.2's
+      <tt>resultEnumType</tt> <xref target="XCCDF"/>. The eighth,
+      <tt>withheld</tt>, addresses a case that arises when the producer and the
+      relying party are in different trust domains.</t>
+    </section>
+
+    <section anchor="conformance"><name>Conformance</name>
+      <t>A conformance class accompanies this specification. It is described here
+      because a specification that asserts its own rigour without exhibiting the
+      controls is exactly the object this profile exists to make harder to write.</t>
+
+      <section><name>Vectors</name>
+      <t>Fifteen vectors: five positive and ten negative controls. Each negative
+      control is the positive base with exactly one mutation, and each MUST be refused
+      by the rule it targets rather than by some other rule. A negative control that
+      is refused for the wrong reason demonstrates nothing about the rule it was
+      written for.</t>
+      </section>
+
+      <section><name>Mutation testing of the verifier</name>
+      <t>Rules that are never exercised are decoration. Each of the eight rules is
+      silenced in turn and the class is re-run; the class MUST fail in each case.
+      Eight rules, eight mutants, eight kills.</t>
+      </section>
+
+      <section anchor="independence"><name>Implementations</name>
+      <t>Three implementations accompany this document and agree on all fifteen
+      vectors: one in Node built-ins, one in the Python standard library written from
+      the prose rather than ported, and one single-file HTML verifier that runs in a
+      browser and issues no network request of any kind. Agreement across three
+      languages establishes that the specification is implementable from its own
+      text.</t>
+
+      <t>All three are the work of the author, so the class is implementation
+      independent rather than author independent, and the reference implementation
+      reports its own verdict as such. An implementation by an unaffiliated party is
+      the most useful contribution a reader could make to this work.</t>
+      </section>
+
+      <section><name>Validation against a production system</name>
+      <t>The profile has been exercised against a production examination engine over
+      real evidence, at a scale of 227 catalogued check identifiers in a single
+      stratum. Both a non-conforming document, carrying a count with no accounting and
+      correctly refused under R1, and the conforming document that replaced it are
+      published as fixtures, so that an implementer can test a verifier against real
+      output rather than against synthetic vectors alone.</t>
+      </section>
+    </section>
+
+    <section><name>Relationship to Other Formats</name>
+      <t>CAP-1 is designed to be carried by an existing record format rather than to
+      replace one. Two measurements motivate this.</t>
+
+      <t>Transcoding one production verdict document, expressed over five evidence
+      artefacts, into CASE/UCO 1.5 <xref target="CASEUCO"/> produced 5,077 losses
+      across 1,028 distinct source paths. Of those, 4,939 losses and 995 paths, 97.3
+      and 96.8 per cent respectively, mapped to no coverage construct in the target at
+      all. The per-leaf and per-path measures agree, which is the only reason either
+      is quoted; a per-leaf share alone moves with the verbosity of the emitter. For
+      OSCAL assessment results <xref target="OSCAL"/> the figures are 99.2 per cent
+      per leaf and 98.9 per cent per path. SARIF <xref target="SARIF"/> has no
+      coverage construct to lose against, so no share is computed for it.</t>
+
+      <t>Classifying a loss as "no vocabulary for coverage" is a judgement about the
+      target ontology. Input from the maintainers of these formats on that
+      classification is welcome.</t>
+    </section>
+
+    <section anchor="security"><name>Security Considerations</name>
+      <t>A CAP-1 document enumerates what an examination did not examine. In an
+      adversarial setting this is information an opponent may use. The profile takes
+      the position that the enumeration exists either way: either the producer states
+      it in advance with a closed reason against each entry, or an opponent assembles
+      it later from what the report failed to mention. The first is a scope statement
+      and the second is an impeachment. Producers operating in adversarial settings
+      should nonetheless consider which stratum granularity is appropriate to
+      disclose, and may use the <tt>withheld</tt> disposition, which accounts for a
+      unit without disclosing it.</t>
+
+      <t>Conformance establishes internal consistency, not truthfulness. A producer
+      who fabricates an accounting can produce a conforming document. What conformance
+      removes is the ability to leave the bound unstated while implying it does not
+      exist, and the ability to report a remainder that no one can interrogate.</t>
+
+      <t>The digest requirements in R3 and R4 rely on the collision resistance of the
+      digest algorithm chosen by the producer. This document does not mandate an
+      algorithm; producers SHOULD use an algorithm that is unbroken at time of
+      production and MUST state which was used.</t>
+    </section>
+
+    <section><name>Privacy Considerations</name>
+      <t>Unit identifiers may themselves be sensitive, for example where a unit names
+      a person, an account or a device. The <tt>withheld</tt> disposition exists so
+      that such a unit can be accounted for without being named in the document, at
+      the cost of requiring a digest that binds it.</t>
+    </section>
+
+    <section><name>IANA Considerations</name>
+      <t>This document has no IANA actions. A future revision may request registration
+      of a media type for the document format described in
+      <xref target="document"/>.</t>
+    </section>
+
+  </middle>
+
+  <back>
+    <references><name>Normative References</name>
+      <reference anchor="RFC2119" target="https://www.rfc-editor.org/info/rfc2119">
+        <front><title>Key words for use in RFCs to Indicate Requirement Levels</title>
+        <author initials="S." surname="Bradner"/><date year="1997" month="March"/></front>
+        <seriesInfo name="BCP" value="14"/><seriesInfo name="RFC" value="2119"/>
+      </reference>
+      <reference anchor="RFC8174" target="https://www.rfc-editor.org/info/rfc8174">
+        <front><title>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</title>
+        <author initials="B." surname="Leiba"/><date year="2017" month="May"/></front>
+        <seriesInfo name="BCP" value="14"/><seriesInfo name="RFC" value="8174"/>
+      </reference>
+    </references>
+
+    <references><name>Informative References</name>
+      <reference anchor="XCCDF" target="https://csrc.nist.gov/publications/detail/nistir/7275/rev-4/final">
+        <front><title>Specification for the Extensible Configuration Checklist Description Format (XCCDF) Version 1.2</title>
+        <author><organization>National Institute of Standards and Technology</organization></author>
+        <date year="2012" month="March"/></front>
+        <seriesInfo name="NISTIR" value="7275 Revision 4"/>
+      </reference>
+      <reference anchor="PCIASV" target="https://www.pcisecuritystandards.org/">
+        <front><title>Approved Scanning Vendors Program Guide</title>
+        <author><organization>PCI Security Standards Council</organization></author>
+        <date year="2006"/></front>
+      </reference>
+      <reference anchor="TURNER2006" target="https://dfrws.org/">
+        <front><title>Selective and intelligent imaging using digital evidence bags</title>
+        <author initials="P." surname="Turner"/><date year="2006"/></front>
+        <refcontent>Digital Investigation, Proceedings of DFRWS 2006</refcontent>
+      </reference>
+      <reference anchor="CASEUCO" target="https://caseontology.org/">
+        <front><title>Cyber-investigation Analysis Standard Expression (CASE) and the Unified Cyber Ontology (UCO)</title>
+        <author><organization>CASE Community</organization></author><date year="2026"/></front>
+      </reference>
+      <reference anchor="OSCAL" target="https://pages.nist.gov/OSCAL/">
+        <front><title>Open Security Controls Assessment Language (OSCAL)</title>
+        <author><organization>National Institute of Standards and Technology</organization></author>
+        <date year="2026"/></front>
+      </reference>
+      <reference anchor="SARIF" target="https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html">
+        <front><title>Static Analysis Results Interchange Format (SARIF) Version 2.1.0</title>
+        <author><organization>OASIS</organization></author><date year="2020"/></front>
+      </reference>
+    </references>
+
+    <section><name>Acknowledgements</name>
+      <t>The formulation that an examination should state "how many records out of the
+      total set of interest" it examined, and that a negative finding means "I did not
+      observe this in this set of artifacts", is due to Cameron Kelley, stated at
+      DFRWS USA 2026. The framing of coverage as the category that generates no error
+      log and therefore escapes existing quality systems was sharpened in discussion
+      with practitioners at that meeting.</t>
+    </section>
+  </back>
+</rfc>

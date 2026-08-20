@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "CAP-1: The Coverage Attestation Profile"
+message: "If you use this specification, please cite it."
+type: software
+authors:
+  - family-names: Hillier
+    given-names: Joel David
+    name-suffix: PhD MBA
+    affiliation: "Certisyn, Inc."
+abstract: >-
+  A tool-agnostic vocabulary for stating what an examination examined, what it
+  did not, and why. Eight normative rules, eight closed dispositions,
+  stratified populations, and a denominator that must state its own basis.
+keywords:
+  - digital forensics
+  - coverage
+  - attestation
+  - conformance
+license: Apache-2.0

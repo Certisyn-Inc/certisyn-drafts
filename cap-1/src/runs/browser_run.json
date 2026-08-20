@@ -1,0 +1,22 @@
+{
+ "class": "cap-1-browser-implementation/1.0.0",
+ "implementation": "verify.html (single file, browser engine)",
+ "engine": "chromium, headless, request interception enabled",
+ "subject_digest": {
+  "algorithm": "SHA-256",
+  "value": "62ede737312cefc4e74dbf9e7ad19f65505e47386479d84e8c84b74a68afbf2c"
+ },
+ "vectors": 15,
+ "disagreements": [],
+ "incorrect": [],
+ "agreement": true,
+ "network": {
+  "requests_observed": 1,
+  "external_requests": 0,
+  "external_detail": [],
+  "method": "BrowserContext request events, every resource type, recorded before dispatch"
+ },
+ "establishes": "The single-file HTML verifier agrees with the reference implementation on every vector and refuses each negative control by the rule it targets, and issues no request beyond the local document. Isolation is observed at the interception layer rather than inferred from the source text.",
+ "does_not_establish": "Author independence. All three implementations and the vectors originate with the same party. It also does not establish behaviour in engines other than the one recorded above.",
+ "record_digest": "41b1d7e2370e691b37b387ef6076bbac92cf2e1521554988cfaaeb23e9b011cd"
+}

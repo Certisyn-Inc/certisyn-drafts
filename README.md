@@ -1,3 +1,20 @@
+# Certisyn Internet-Draft sources
+
+xml2rfc and markdown sources for Internet-Drafts authored by Joel David Hillier, Certisyn, Inc.
+
+| Draft | Directory | Datatracker |
+|---|---|---|
+| Attestation Reconciliation Protocol | this directory | https://datatracker.ietf.org/doc/draft-hillier-scitt-arp/ |
+| The Coverage Attestation Profile (CAP-1) | `cap-1/` | https://datatracker.ietf.org/doc/draft-hillier-coverage-attestation/ |
+
+## CAP-1, the Coverage Attestation Profile
+
+A tool-agnostic vocabulary for stating what an examination examined, what it did not, and why. Eight normative rules, eight closed dispositions, and a denominator that has to state its own basis.
+
+`cap-1/` holds the draft source and the complete runnable conformance class in `cap-1/src`: three independent verifier implementations, fifteen vectors, the mutation harness and the run records. Specification text is CC BY 4.0, code is Apache-2.0. See `cap-1/README.md`.
+
+---
+
 # Attestation Reconciliation Protocol (ARP)
 
 `draft-hillier-scitt-arp` — IETF Internet-Draft, individual submission
@@ -116,3 +133,4 @@ the Certisyn patent estate.
 ## Maintainer
 
 Joel David Hillier · Certisyn, Inc. · jhillier@certisyn.com
+

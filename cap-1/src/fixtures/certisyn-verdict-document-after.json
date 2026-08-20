@@ -1,0 +1,1629 @@
+{
+ "schema": "certisyn.verdict-document/1.0.0",
+ "organ": "forensis",
+ "organ_version": "unknown",
+ "subject": {
+  "kind": "artefact",
+  "ref": "4344a3ef0d5706f3",
+  "digest": {
+   "algorithm": "SHA-256",
+   "value": "4344a3ef0d5706f3e89c52648d3b8e56d9d61e3ee7c085bdd84f214d84e2a1be"
+  },
+  "size_bytes": 9951,
+  "media_type": "jpeg"
+ },
+ "assessed_at": "2026-08-12T01:56:28.051Z",
+ "verdict": {
+  "vocabulary": "forensis.overall",
+  "token": "pass",
+  "confidence": {
+   "value": 89,
+   "scale": "certisyn.reconciliation-confidence/0-100"
+  }
+ },
+ "adversity": "none",
+ "findings": [
+  {
+   "id": "img.exif_fields",
+   "status": "pass",
+   "severity": "info",
+   "detail": "Walked 2 IFD(s): IFD0 → IFD1. Capture time (absent); lens (absent); thumbnail present; MakerNote absent.",
+   "namespace": "img",
+   "label": "EXIF field inventory",
+   "evidence": {
+    "ifds": [
+     "IFD0",
+     "IFD1"
+    ],
+    "make": "Canon",
+    "model": "Canon EOS 5D",
+    "software": null,
+    "date_time": null,
+    "date_time_original": null,
+    "create_date": null,
+    "lens_model": null,
+    "has_thumbnail": true,
+    "has_maker_note": false,
+    "maker_note_bytes": 0,
+    "gps": null
+   }
+  },
+  {
+   "id": "img.has_exif",
+   "status": "pass",
+   "severity": "info",
+   "detail": "EXIF block present (camera: Canon Canon EOS 5D).",
+   "namespace": "img",
+   "label": "EXIF metadata presence"
+  },
+  {
+   "id": "img.no_datetime",
+   "status": "warning",
+   "severity": "low",
+   "detail": "EXIF present but no DateTime, DateTimeOriginal or CreateDate tag in IFD0, the ExifIFD or IFD1 — capture time cannot be verified.",
+   "namespace": "img",
+   "label": "Capture timestamp"
+  },
+  {
+   "id": "universal.assessable",
+   "status": "pass",
+   "severity": "info",
+   "detail": "This artefact was assessed on its BYTES, not its name. Content identifies as \"jpeg\"; the file carries no extension. No format is unsupported — an artefact from unknown software still receives a verdict.",
+   "namespace": "universal",
+   "label": "Content-based assessment",
+   "evidence": {
+    "content_type": "jpeg",
+    "declared_extension": null,
+    "size_bytes": 9951
+   }
+  },
+  {
+   "id": "universal.entropy",
+   "status": "pass",
+   "severity": "info",
+   "detail": "Shannon entropy 7.91/8.00 (compressed).",
+   "namespace": "universal",
+   "label": "Byte entropy",
+   "evidence": {
+    "entropy": 7.909,
+    "band": "compressed"
+   }
+  },
+  {
+   "id": "evasion.not_assessed",
+   "status": "warning",
+   "severity": "medium",
+   "detail": "No opacity probe applies to an artefact of type 'jpeg', so this artefact has NOT been established as inspectable. Absence of an opacity finding here means the question was not asked, not that the answer was no.",
+   "namespace": "evasion",
+   "label": "Opacity not assessed",
+   "evidence": {
+    "probes_skipped": [
+     "encrypted_pdf",
+     "encrypted_office",
+     "encrypted_archive",
+     "encrypted_zip",
+     "opaque_blob",
+     "polyglot_hints",
+     "xml_entities"
+    ]
+   }
+  }
+ ],
+ "coverage": {
+  "executed": 6,
+  "catalogued": 227,
+  "statement": "6 of 227 catalogued checks executed.",
+  "not_run": 221,
+  "not_run_units": [
+   {
+    "id": "archive.decompression_bomb",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "attribution.match",
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "attribution.mismatch",
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "attribution.persona_mismatch",
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "attribution.suspicious_domain",
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "audio.dc_offset_zero",
+    "module": "audio.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "audio.narrow_dynamic_range",
+    "module": "audio.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "audio.parse_partial",
+    "module": "audio.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "audio.perfect_silence_floor",
+    "module": "audio.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "audio.tts_rate_signature",
+    "module": "audio.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "authenticity.authenticated_but_incoherent",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.c2pa_marker_only",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_absent",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_alg_unsupported",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_body_length_limited",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_failed",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_multi_signature",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_unaligned",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_unresolvable",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.dkim_verified",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "authenticity.unsigned_sender",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "container.child_scan_capped",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "container.correlation_capped",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "container.correlation_edges_present",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "container.nested_artefacts_present",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "container.structural_anomalies",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "container.traversal_performed",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "container.traversal_refused",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "content.pii_detected",
+    "module": "secrets.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "content.secrets_detected",
+    "module": "secrets.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "content.unicode_control",
+    "module": "secrets.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "evasion.encrypted_archive",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "evasion.encrypted_office",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "evasion.encrypted_pdf",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "evasion.opaque_blob",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "evasion.polyglot",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "evasion.probe_error",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "evasion.transparent",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "evasion.xml_entity_expansion",
+    "module": "evasion.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "executable.rejected",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "file.extension_mismatch",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "file.oversized",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "file.polyglot_detected",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "file.too_small",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "file.unrecognised_format",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "identity.likeness_match",
+    "module": "identity-registry.ts, identity-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "identity.low_information_plane",
+    "module": "identity-registry.ts, identity-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "identity.registry_diagnostics_failed",
+    "module": "identity-registry.ts, identity-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "identity.registry_entries_rejected",
+    "module": "identity-registry.ts, identity-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "identity.registry_scan",
+    "module": "identity-registry.ts, identity-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "identity.registry_unavailable",
+    "module": "identity-registry.ts, identity-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "image.edited_camera_capture",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.editor_provenance",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.multi_picture",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.noise_residual_anomaly",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.noise_residual_insufficient",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.noise_residual_skipped",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.noise_residual_uniform",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.provenance_consistent",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.structural_anomaly",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "image.trailing_data_after_eoi",
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "img.camera_claim_unsupported",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.edit_software",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.exif_parse_incomplete",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.gif_structure",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.gif_walk_failed",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.heif_structure_unparsed",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.no_exif",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.post_idat_chunks",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.software_tag",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.tiff",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.trailing_bytes",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.trailing_bytes_unknown",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.unknown_type",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.webp_structure",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "img.webp_walk_failed",
+    "module": "image.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "knowledge.artefact_identified",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "knowledge.base_digest_mismatch",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "knowledge.base_unavailable",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "knowledge.base_verified",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "knowledge.misleading_artefact",
+    "module": "index.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "malware.clean",
+    "module": "malware-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "malware.detected",
+    "module": "malware-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "malware.partial_detection",
+    "module": "malware-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "malware.unscanned",
+    "module": "malware-scan.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "ole.authorship",
+    "module": "ole-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ole.fabrication_freshness",
+    "module": "ole-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ole.macros",
+    "module": "ole-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ole.parse",
+    "module": "ole-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ole.timestamp_sanity",
+    "module": "ole-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.activex_present",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.authorship",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.external_dependencies",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.external_references",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.fabrication_freshness",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.macros",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.macros_present",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.ole_embedded",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.ole_embeddings",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.parse",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.remote_credential_theft",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.template_lineage",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "ooxml.timestamp_sanity",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.annotations_present",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.claim_date_mismatch",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.claim_date_ok",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.creation_date_unanchored",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.dates_consistent",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.embedded_files",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.encrypted",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.form_exfiltration",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.future_creation_date",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.gotor_action",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.incremental_save",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.issuer_producer_mismatch",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.javascript_embedded",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.jbig2_filter",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.jpx_filter",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.launch_action",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.many_uris",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.mod_before_creation",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.modified_after_creation",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.no_eof",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.object_count_mismatch",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.objstm_budget_exceeded",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.objstm_recovered",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.objstm_unreadable",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.objstm_with_actions",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.producer_missing",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.producer_reputable",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.producer_suspect",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.producer_unknown",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.rich_media",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.signature_present",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.structural_integrity",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.uri_credential_theft",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdf.xfa_form",
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.flattened_raster",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.font_inventory",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.id_pair",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.lineage",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.object_redefinition",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.objstm_unavailable",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.revisions",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.signature_integrity",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.timezone",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "pdfdeep.xmp_docinfo",
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "provenance.c2pa_verified",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "provenance.image_origin_withheld",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "provenance.reliance_withheld",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "provenance.time_anchor_corroborated",
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "recapture.double_quantisation",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.exif_unreadable",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.no_device_claim",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.not_applicable",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.quant_consistent_with_device",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.quant_fingerprint",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.quant_inconsistent_with_device",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.quant_tables_partial",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.quant_tables_unreadable",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.signature_absent",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "recapture.suspected",
+    "module": "recapture.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "rights.consent_registry_cleared",
+    "module": "identity-registry.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "rights.consent_registry_hit",
+    "module": "identity-registry.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "rights.consent_registry_referral",
+    "module": "identity-registry.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "rights.copyright_match",
+    "module": "identity-registry.ts",
+    "outcome": "not_dispatched",
+    "reason": "module_not_dispatched_for_subject_class"
+   },
+   {
+    "id": "secrets.reputation_context",
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "supplychain.capability_",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.code_artefact",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.code_signed",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.firmware",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.packed",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.reputation",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.reputation_known_bad",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.reputation_known_good",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.reputation_unknown",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.script_danger",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "supplychain.unsigned_code",
+    "module": "executable-risk.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "synth.c2pa_absent_on_high_stakes",
+    "module": "synthetic-media-detection.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "synth.c2pa_present",
+    "module": "synthetic-media-detection.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "synth.c2pa_unverified",
+    "module": "synthetic-media-detection.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "synth.c2pa_verifier_unavailable",
+    "module": "synthetic-media-detection.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "synth.voice_clone.undeclared",
+    "module": "synthetic-media-detection.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "time.anchor_divergence",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "time.claim_backdated",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "time.claim_predated",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "time.future_relative_to_ingest",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "time.implausible_clock",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "time.no_independent_anchor",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "time.no_timestamps",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "time.ordering_violation",
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "universal.content_vs_declared",
+    "module": "universal.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "universal.embedded_artefacts",
+    "module": "universal.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "universal.embedded_executable",
+    "module": "universal.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "universal.embedded_identity",
+    "module": "universal.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "universal.trailing_data",
+    "module": "universal.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "universal.unknown_format",
+    "module": "universal.ts",
+    "outcome": "condition_not_met",
+    "reason": "owning_module_executed_condition_not_met"
+   },
+   {
+    "id": "veracity.contradiction",
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "veracity.corroborated_risk",
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.c2pa",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.capture_provenance",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.creation_timestamp",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.frame_rate_class",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.provenance",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.sensor_physics",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.telemetry_marker",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "video.telemetry_track",
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "workflow.benign_pattern",
+    "module": "workflow-context.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "workflow.context_error",
+    "module": "workflow-context.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled"
+   },
+   {
+    "id": "xlsx.dde_autoexec",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.compression_ratio",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.deep_nesting",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.directory_mismatch",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.directory_truncated",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.encrypted",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.entry_cap_reached",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.entry_unreadable",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.parse_error",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.parse_failed",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.path_traversal",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   },
+   {
+    "id": "zip.size_field_lie",
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable"
+   }
+  ],
+  "modules": [
+   {
+    "module": "image.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 3
+   },
+   {
+    "module": "secrets.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "pdf.ts#receipt-anchor",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "ooxml-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "ole-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "audio.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "synthetic-media-detection.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 0
+   },
+   {
+    "module": "containers/traverse.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0,
+    "detail": "sniffContainer reported a non-container kind for these bytes, so there is nothing nested to open."
+   },
+   {
+    "module": "containers/correlate.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0,
+    "detail": "sniffContainer reported a non-container kind for these bytes, so there is nothing nested to open."
+   },
+   {
+    "module": "knowledge/akb.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0,
+    "detail": "sniffContainer reported a non-container kind for these bytes, so there is nothing nested to open."
+   },
+   {
+    "module": "universal.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 2
+   },
+   {
+    "module": "evasion.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 1
+   },
+   {
+    "module": "executable-risk.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 0
+   },
+   {
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "recapture-gate.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "workflow-context.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   }
+  ],
+  "outcome_totals": {
+   "completed": 5,
+   "failed": 0,
+   "skipped": 18,
+   "timed_out": 0
+  },
+  "integrity": {
+   "complete": true,
+   "unaccounted_modules": [],
+   "uncapped_verdict": "pass",
+   "capped_to": null,
+   "statement": "Every dispatched detector module reached a recorded outcome; no module failed or timed out. The verdict rests on a battery that ran."
+  }
+ },
+ "provenance": {
+  "sealed": false
+ },
+ "extensions": {
+  "forensis_metadata": {
+   "declared_content_type": null,
+   "extension_mismatch": false,
+   "imageHasExif": true,
+   "imageMake": "Canon",
+   "imageModel": "Canon EOS 5D",
+   "polyglot_of": [],
+   "sha256_short": "4344a3ef0d5706f3"
+  },
+  "forensis_summary": {
+   "pass": 4,
+   "warning": 2,
+   "fail": 0,
+   "skipped": 0
+  },
+  "synthetic_media": {
+   "risk": 0,
+   "detected_producers": [],
+   "c2pa_present": false,
+   "undeclared_synthetic": false,
+   "modalities": []
+  }
+ }
+}

@@ -1,0 +1,335 @@
+{
+ "catalog_version": "3.2.0",
+ "ids": [
+  "archive.decompression_bomb",
+  "attribution.match",
+  "attribution.mismatch",
+  "attribution.persona_mismatch",
+  "attribution.suspicious_domain",
+  "audio.dc_offset_zero",
+  "audio.narrow_dynamic_range",
+  "audio.parse_partial",
+  "audio.perfect_silence_floor",
+  "audio.tts_rate_signature",
+  "authenticity.authenticated_but_incoherent",
+  "authenticity.c2pa_marker_only",
+  "authenticity.dkim_absent",
+  "authenticity.dkim_alg_unsupported",
+  "authenticity.dkim_body_length_limited",
+  "authenticity.dkim_failed",
+  "authenticity.dkim_multi_signature",
+  "authenticity.dkim_unaligned",
+  "authenticity.dkim_unresolvable",
+  "authenticity.dkim_verified",
+  "authenticity.unsigned_sender",
+  "container.child_scan_capped",
+  "container.correlation_capped",
+  "container.correlation_edges_present",
+  "container.nested_artefacts_present",
+  "container.structural_anomalies",
+  "container.traversal_performed",
+  "container.traversal_refused",
+  "content.pii_detected",
+  "content.secrets_detected",
+  "content.unicode_control",
+  "evasion.encrypted_archive",
+  "evasion.encrypted_office",
+  "evasion.encrypted_pdf",
+  "evasion.not_assessed",
+  "evasion.opaque_blob",
+  "evasion.polyglot",
+  "evasion.probe_error",
+  "evasion.transparent",
+  "evasion.xml_entity_expansion",
+  "executable.rejected",
+  "file.extension_mismatch",
+  "file.oversized",
+  "file.polyglot_detected",
+  "file.too_small",
+  "file.unrecognised_format",
+  "identity.likeness_match",
+  "identity.low_information_plane",
+  "identity.registry_diagnostics_failed",
+  "identity.registry_entries_rejected",
+  "identity.registry_scan",
+  "identity.registry_unavailable",
+  "image.edited_camera_capture",
+  "image.editor_provenance",
+  "image.multi_picture",
+  "image.noise_residual_anomaly",
+  "image.noise_residual_insufficient",
+  "image.noise_residual_skipped",
+  "image.noise_residual_uniform",
+  "image.provenance_consistent",
+  "image.structural_anomaly",
+  "image.trailing_data_after_eoi",
+  "img.camera_claim_unsupported",
+  "img.edit_software",
+  "img.exif_fields",
+  "img.exif_parse_incomplete",
+  "img.gif_structure",
+  "img.gif_walk_failed",
+  "img.has_exif",
+  "img.heif_structure_unparsed",
+  "img.no_datetime",
+  "img.no_exif",
+  "img.post_idat_chunks",
+  "img.software_tag",
+  "img.tiff",
+  "img.trailing_bytes",
+  "img.trailing_bytes_unknown",
+  "img.unknown_type",
+  "img.webp_structure",
+  "img.webp_walk_failed",
+  "knowledge.artefact_identified",
+  "knowledge.base_digest_mismatch",
+  "knowledge.base_unavailable",
+  "knowledge.base_verified",
+  "knowledge.misleading_artefact",
+  "malware.clean",
+  "malware.detected",
+  "malware.partial_detection",
+  "malware.unscanned",
+  "ole.authorship",
+  "ole.fabrication_freshness",
+  "ole.macros",
+  "ole.parse",
+  "ole.timestamp_sanity",
+  "ooxml.activex_present",
+  "ooxml.authorship",
+  "ooxml.external_dependencies",
+  "ooxml.external_references",
+  "ooxml.fabrication_freshness",
+  "ooxml.macros",
+  "ooxml.macros_present",
+  "ooxml.ole_embedded",
+  "ooxml.ole_embeddings",
+  "ooxml.parse",
+  "ooxml.remote_credential_theft",
+  "ooxml.template_lineage",
+  "ooxml.timestamp_sanity",
+  "pdf.annotations_present",
+  "pdf.claim_date_mismatch",
+  "pdf.claim_date_ok",
+  "pdf.creation_date_unanchored",
+  "pdf.dates_consistent",
+  "pdf.embedded_files",
+  "pdf.encrypted",
+  "pdf.form_exfiltration",
+  "pdf.future_creation_date",
+  "pdf.gotor_action",
+  "pdf.incremental_save",
+  "pdf.issuer_producer_mismatch",
+  "pdf.javascript_embedded",
+  "pdf.jbig2_filter",
+  "pdf.jpx_filter",
+  "pdf.launch_action",
+  "pdf.many_uris",
+  "pdf.mod_before_creation",
+  "pdf.modified_after_creation",
+  "pdf.no_eof",
+  "pdf.object_count_mismatch",
+  "pdf.objstm_budget_exceeded",
+  "pdf.objstm_recovered",
+  "pdf.objstm_unreadable",
+  "pdf.objstm_with_actions",
+  "pdf.producer_missing",
+  "pdf.producer_reputable",
+  "pdf.producer_suspect",
+  "pdf.producer_unknown",
+  "pdf.rich_media",
+  "pdf.signature_present",
+  "pdf.structural_integrity",
+  "pdf.uri_credential_theft",
+  "pdf.xfa_form",
+  "pdfdeep.flattened_raster",
+  "pdfdeep.font_inventory",
+  "pdfdeep.id_pair",
+  "pdfdeep.lineage",
+  "pdfdeep.object_redefinition",
+  "pdfdeep.objstm_unavailable",
+  "pdfdeep.revisions",
+  "pdfdeep.signature_integrity",
+  "pdfdeep.timezone",
+  "pdfdeep.xmp_docinfo",
+  "provenance.c2pa_verified",
+  "provenance.image_origin_withheld",
+  "provenance.reliance_withheld",
+  "provenance.time_anchor_corroborated",
+  "recapture.double_quantisation",
+  "recapture.exif_unreadable",
+  "recapture.no_device_claim",
+  "recapture.not_applicable",
+  "recapture.quant_consistent_with_device",
+  "recapture.quant_fingerprint",
+  "recapture.quant_inconsistent_with_device",
+  "recapture.quant_tables_partial",
+  "recapture.quant_tables_unreadable",
+  "recapture.signature_absent",
+  "recapture.suspected",
+  "rights.consent_registry_cleared",
+  "rights.consent_registry_hit",
+  "rights.consent_registry_referral",
+  "rights.copyright_match",
+  "secrets.reputation_context",
+  "supplychain.capability_",
+  "supplychain.code_artefact",
+  "supplychain.code_signed",
+  "supplychain.firmware",
+  "supplychain.packed",
+  "supplychain.reputation",
+  "supplychain.reputation_known_bad",
+  "supplychain.reputation_known_good",
+  "supplychain.reputation_unknown",
+  "supplychain.script_danger",
+  "supplychain.unsigned_code",
+  "synth.c2pa_absent_on_high_stakes",
+  "synth.c2pa_present",
+  "synth.c2pa_unverified",
+  "synth.c2pa_verifier_unavailable",
+  "synth.voice_clone.undeclared",
+  "time.anchor_divergence",
+  "time.claim_backdated",
+  "time.claim_predated",
+  "time.future_relative_to_ingest",
+  "time.implausible_clock",
+  "time.no_independent_anchor",
+  "time.no_timestamps",
+  "time.ordering_violation",
+  "universal.assessable",
+  "universal.content_vs_declared",
+  "universal.embedded_artefacts",
+  "universal.embedded_executable",
+  "universal.embedded_identity",
+  "universal.entropy",
+  "universal.trailing_data",
+  "universal.unknown_format",
+  "veracity.contradiction",
+  "veracity.corroborated_risk",
+  "video.c2pa",
+  "video.capture_provenance",
+  "video.creation_timestamp",
+  "video.frame_rate_class",
+  "video.provenance",
+  "video.sensor_physics",
+  "video.telemetry_marker",
+  "video.telemetry_track",
+  "workflow.benign_pattern",
+  "workflow.context_error",
+  "xlsx.dde_autoexec",
+  "zip.compression_ratio",
+  "zip.deep_nesting",
+  "zip.directory_mismatch",
+  "zip.directory_truncated",
+  "zip.encrypted",
+  "zip.entry_cap_reached",
+  "zip.entry_unreadable",
+  "zip.parse_error",
+  "zip.parse_failed",
+  "zip.path_traversal",
+  "zip.size_field_lie"
+ ],
+ "namespace_modules": {
+  "archive": [
+   "archive.ts"
+  ],
+  "attribution": [
+   "message-provenance.ts"
+  ],
+  "audio": [
+   "audio.ts"
+  ],
+  "authenticity": [
+   "c2pa-reliance.ts",
+   "message-authenticity.ts",
+   "message-provenance.ts"
+  ],
+  "container": [
+   "index.ts"
+  ],
+  "content": [
+   "secrets.ts"
+  ],
+  "evasion": [
+   "evasion.ts"
+  ],
+  "executable": [
+   "index.ts"
+  ],
+  "file": [
+   "index.ts"
+  ],
+  "identity": [
+   "identity-registry.ts",
+   "identity-scan.ts"
+  ],
+  "image": [
+   "image-forensics.ts"
+  ],
+  "img": [
+   "image.ts"
+  ],
+  "knowledge": [
+   "index.ts"
+  ],
+  "malware": [
+   "malware-scan.ts"
+  ],
+  "ole": [
+   "ole-provenance.ts"
+  ],
+  "ooxml": [
+   "archive.ts",
+   "ooxml-provenance.ts"
+  ],
+  "pdf": [
+   "pdf.ts"
+  ],
+  "pdfdeep": [
+   "pdf-deep.ts"
+  ],
+  "provenance": [
+   "c2pa-reliance.ts",
+   "image-forensics.ts",
+   "index.ts",
+   "time-anchor.ts"
+  ],
+  "recapture": [
+   "recapture.ts"
+  ],
+  "rights": [
+   "identity-registry.ts"
+  ],
+  "secrets": [
+   "message-provenance.ts"
+  ],
+  "supplychain": [
+   "executable-risk.ts",
+   "herd-immunity.ts"
+  ],
+  "synth": [
+   "synthetic-media-detection.ts"
+  ],
+  "time": [
+   "time-anchor.ts"
+  ],
+  "universal": [
+   "universal.ts"
+  ],
+  "veracity": [
+   "message-provenance.ts"
+  ],
+  "video": [
+   "video-provenance.ts"
+  ],
+  "workflow": [
+   "workflow-context.ts"
+  ],
+  "xlsx": [
+   "archive.ts"
+  ],
+  "zip": [
+   "archive.ts"
+  ]
+ }
+}

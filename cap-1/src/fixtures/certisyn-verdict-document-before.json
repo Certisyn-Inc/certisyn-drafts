@@ -1,0 +1,301 @@
+{
+ "schema": "certisyn.verdict-document/1.0.0",
+ "organ": "forensis",
+ "organ_version": "unknown",
+ "subject": {
+  "kind": "artefact",
+  "ref": "4344a3ef0d5706f3",
+  "digest": {
+   "algorithm": "SHA-256",
+   "value": "4344a3ef0d5706f3e89c52648d3b8e56d9d61e3ee7c085bdd84f214d84e2a1be"
+  },
+  "size_bytes": 9951,
+  "media_type": "jpeg"
+ },
+ "assessed_at": "2026-08-11T19:54:06.387Z",
+ "verdict": {
+  "vocabulary": "forensis.overall",
+  "token": "pass",
+  "confidence": {
+   "value": 89,
+   "scale": "certisyn.reconciliation-confidence/0-100"
+  }
+ },
+ "adversity": "none",
+ "findings": [
+  {
+   "id": "img.exif_fields",
+   "status": "pass",
+   "severity": "info",
+   "detail": "Walked 2 IFD(s): IFD0 → IFD1. Capture time (absent); lens (absent); thumbnail present; MakerNote absent.",
+   "namespace": "img",
+   "label": "EXIF field inventory",
+   "evidence": {
+    "ifds": [
+     "IFD0",
+     "IFD1"
+    ],
+    "make": "Canon",
+    "model": "Canon EOS 5D",
+    "software": null,
+    "date_time": null,
+    "date_time_original": null,
+    "create_date": null,
+    "lens_model": null,
+    "has_thumbnail": true,
+    "has_maker_note": false,
+    "maker_note_bytes": 0,
+    "gps": null
+   }
+  },
+  {
+   "id": "img.has_exif",
+   "status": "pass",
+   "severity": "info",
+   "detail": "EXIF block present (camera: Canon Canon EOS 5D).",
+   "namespace": "img",
+   "label": "EXIF metadata presence"
+  },
+  {
+   "id": "img.no_datetime",
+   "status": "warning",
+   "severity": "low",
+   "detail": "EXIF present but no DateTime, DateTimeOriginal or CreateDate tag in IFD0, the ExifIFD or IFD1 — capture time cannot be verified.",
+   "namespace": "img",
+   "label": "Capture timestamp"
+  },
+  {
+   "id": "universal.assessable",
+   "status": "pass",
+   "severity": "info",
+   "detail": "This artefact was assessed on its BYTES, not its name. Content identifies as \"jpeg\"; the file carries no extension. No format is unsupported — an artefact from unknown software still receives a verdict.",
+   "namespace": "universal",
+   "label": "Content-based assessment",
+   "evidence": {
+    "content_type": "jpeg",
+    "declared_extension": null,
+    "size_bytes": 9951
+   }
+  },
+  {
+   "id": "universal.entropy",
+   "status": "pass",
+   "severity": "info",
+   "detail": "Shannon entropy 7.91/8.00 (compressed).",
+   "namespace": "universal",
+   "label": "Byte entropy",
+   "evidence": {
+    "entropy": 7.909,
+    "band": "compressed"
+   }
+  },
+  {
+   "id": "evasion.not_assessed",
+   "status": "warning",
+   "severity": "medium",
+   "detail": "No opacity probe applies to an artefact of type 'jpeg', so this artefact has NOT been established as inspectable. Absence of an opacity finding here means the question was not asked, not that the answer was no.",
+   "namespace": "evasion",
+   "label": "Opacity not assessed",
+   "evidence": {
+    "probes_skipped": [
+     "encrypted_pdf",
+     "encrypted_office",
+     "encrypted_archive",
+     "encrypted_zip",
+     "opaque_blob",
+     "polyglot_hints",
+     "xml_entities"
+    ]
+   }
+  }
+ ],
+ "coverage": {
+  "executed": 6,
+  "catalogued": 227,
+  "statement": "6 of 227 catalogued checks executed.",
+  "not_run": 221,
+  "modules": [
+   {
+    "module": "image.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 3
+   },
+   {
+    "module": "secrets.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "pdf.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "pdf.ts#receipt-anchor",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "pdf-deep.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "archive.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "ooxml-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "ole-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "video-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "audio.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "message-provenance.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0
+   },
+   {
+    "module": "synthetic-media-detection.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 0
+   },
+   {
+    "module": "containers/traverse.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0,
+    "detail": "sniffContainer reported a non-container kind for these bytes, so there is nothing nested to open."
+   },
+   {
+    "module": "containers/correlate.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0,
+    "detail": "sniffContainer reported a non-container kind for these bytes, so there is nothing nested to open."
+   },
+   {
+    "module": "knowledge/akb.ts",
+    "outcome": "skipped",
+    "reason": "not_applicable",
+    "checks_emitted": 0,
+    "detail": "sniffContainer reported a non-container kind for these bytes, so there is nothing nested to open."
+   },
+   {
+    "module": "universal.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 2
+   },
+   {
+    "module": "evasion.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 1
+   },
+   {
+    "module": "executable-risk.ts",
+    "outcome": "completed",
+    "reason": "ok",
+    "checks_emitted": 0
+   },
+   {
+    "module": "c2pa-reliance.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "time-anchor.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "image-forensics.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "recapture-gate.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   },
+   {
+    "module": "workflow-context.ts",
+    "outcome": "skipped",
+    "reason": "flag_disabled",
+    "checks_emitted": 0
+   }
+  ],
+  "outcome_totals": {
+   "completed": 5,
+   "failed": 0,
+   "skipped": 18,
+   "timed_out": 0
+  },
+  "integrity": {
+   "complete": true,
+   "unaccounted_modules": [],
+   "uncapped_verdict": "pass",
+   "capped_to": null,
+   "statement": "Every dispatched detector module reached a recorded outcome; no module failed or timed out. The verdict rests on a battery that ran."
+  }
+ },
+ "provenance": {
+  "sealed": false
+ },
+ "extensions": {
+  "forensis_metadata": {
+   "declared_content_type": null,
+   "extension_mismatch": false,
+   "imageHasExif": true,
+   "imageMake": "Canon",
+   "imageModel": "Canon EOS 5D",
+   "polyglot_of": [],
+   "sha256_short": "4344a3ef0d5706f3"
+  },
+  "forensis_summary": {
+   "pass": 4,
+   "warning": 2,
+   "fail": 0,
+   "skipped": 0
+  },
+  "synthetic_media": {
+   "risk": 0,
+   "detected_producers": [],
+   "c2pa_present": false,
+   "undeclared_synthetic": false,
+   "modalities": []
+  }
+ }
+}

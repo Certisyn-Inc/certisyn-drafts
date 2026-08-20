@@ -672,6 +672,44 @@ question and not yet a defect. Ten minutes before the freeze.
 
 ---
 
+### 2.9 The type-table sweep. OPEN, candidates only
+
+Section 11 of `ARP-04-PLAN.md` carried an instruction that had not been
+executed: *"Apply the same test to every other digest this document defines
+before the freeze -- that check has not been done."* It has now been run.
+
+**The test** is the document's own, stated at the head of Section 4.23.3:
+determinism under RFC 8949 Section 4.2.1 fixes how a given value is encoded, and
+does not fix which CBOR type an item takes, nor the order of elements within an
+item that is a set. Extended to four questions per preimage item: major type;
+ordering rule where the item is a collection; omit-or-null where the item is
+OPTIONAL; transmitted bytes or a re-encoding where the item came from another
+party.
+
+**Three adversarial passes over fourteen constructions.** Roughly fifty
+candidate BLOCKING findings and twenty-seven LATENT. Recorded in `_audit/`.
+
+**None of them is a defect yet.** Every one is an unverified assertion by a
+reader instructed to find fault, and this cycle has already established that
+evidence written to close -- or to open -- a finding is not evidence until
+something has tried to break it. The verification pass is the work; the sweep
+was only the cheap part.
+
+What is already established, because a clean result is a result: the Merkle
+construction of 4.9 survived the pass intact, and the Agreement Hash table of
+4.23.3 is the only construction in the document that discharges the test in
+full. That table is the target shape for everything else -- item, CBOR type,
+ordering rule, absence rule, one row each.
+
+**Sequencing, taken from Tiago Marques on the payment thread:** the type table
+comes before the vectors. A vector written against untyped prose encodes the
+implementer's reading as though it were the specification, which freezes the
+ambiguity instead of resolving it. The v0.1 deterministic-encoding class failed
+in exactly this way.
+
+`-04` carries only survivors that are BLOCKING between two conforming
+implementations. Everything else is `-05`.
+
 ## 3. Family coherence
 
 The three drafts share one Verification Reconciliation Object, one issuing-partner
@@ -1067,6 +1105,7 @@ That check has not been done yet.
 | 2026-08-19 | 2.8.7 reopened by red team and closed properly at five constructions. The probe's `-04` leg had been `sha256(X) == sha256(X)`; every value is now parsed from the served envelopes. |
 | 2026-08-19 | Reconciliation Hash repaired: it carried the malleable signature bytes one level above the entry hashes and measured 0 of 200 stable. Sixteen draft edits across three batches. `external_aad` fixed at zero length, protected header MUST NOT be re-encoded, Section 6.1 now requires `alg` and `kid` protected. No section number outside Document History moved. |
 | 2026-08-19 | List swept to 23:12 UTC. Four replies queued unsent. NAESB procurement comment window logged in section 9, closes 1 September. |
+| 2026-08-20 | 2.9 opened. Type-table sweep run across all fourteen digest constructions, the check `ARP-04-PLAN.md` section 11 called for and had not had. Candidates only, none verified. Merkle construction survived intact; the Agreement Hash table is the target shape for the rest. List post drafted on the general rule. |
 | 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |

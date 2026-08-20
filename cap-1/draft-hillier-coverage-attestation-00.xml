@@ -83,12 +83,24 @@
       the contribution of this document can be read against it.</t>
 
       <t>Seven of the eight dispositions defined in <xref target="dispositions"/> have
-      a direct counterpart in the <tt>resultEnumType</tt> of XCCDF 1.2
-      <xref target="XCCDF"/>, published by NIST in 2012. The Payment Card Industry
-      Approved Scanning Vendor programme <xref target="PCIASV"/> has required, since
-      2006, a coverage attestation carrying a declared denominator, an enumerated
-      out-of-scope set, and a rule that an incomplete scan is reported as inconclusive
-      rather than as clean.</t>
+      a counterpart in the <tt>resultEnumType</tt> of XCCDF 1.2
+      <xref target="XCCDF"/>, published by NIST in 2012: one exactly, and six as
+      narrowings of a broader XCCDF value. The eighth, <tt>withheld</tt>, has none.
+      <xref target="xccdfmap"/> gives the mapping row by row so that a reader can
+      disagree with it individually.</t>
+
+      <t>The comparison also locates the contribution precisely. Three XCCDF values
+      each cover two distinct CAP-1 dispositions: <tt>notselected</tt> covers both a
+      policy decision and an authorisation boundary, <tt>notchecked</tt> covers both
+      an unsupported input and a unit that could not be dispatched, and
+      <tt>error</tt> covers both resource exhaustion and failure. CAP-1 does not
+      introduce a vocabulary so much as separate an existing one at the three points
+      where it loses information a relying party needs.</t>
+
+      <t>The Payment Card Industry Approved Scanning Vendor programme
+      <xref target="PCIASV"/> has required, since 2006, a coverage attestation
+      carrying a declared denominator, an enumerated out-of-scope set, and a rule that
+      an incomplete scan is reported as inconclusive rather than as clean.</t>
 
       <t>This document contributes that construct in a form other record and evidence
       formats can carry, together with a conformance class that makes each rule
@@ -258,8 +270,8 @@
         <dt>withheld</dt><dd>Examined, but the result is not disclosed in this
         document. See R3.</dd>
       </dl>
-      <t>Seven of these correspond directly to values in XCCDF 1.2's
-      <tt>resultEnumType</tt> <xref target="XCCDF"/>. The eighth,
+      <t>Seven of these have a counterpart in XCCDF 1.2's <tt>resultEnumType</tt>
+      <xref target="XCCDF"/>, mapped in <xref target="xccdfmap"/>. The eighth,
       <tt>withheld</tt>, addresses a case that arises when the producer and the
       relying party are in different trust domains.</t>
     </section>
@@ -408,6 +420,51 @@
         <author><organization>OASIS</organization></author><date year="2020"/></front>
       </reference>
     </references>
+
+
+    <section anchor="xccdfmap" numbered="true"><name>Mapping to XCCDF 1.2 resultEnumType</name>
+      <t>XCCDF 1.2 defines nine result values in section 6.6.4 of
+      <xref target="XCCDF"/>. Three of them, <tt>pass</tt>, <tt>fail</tt> and
+      <tt>fixed</tt>, report the outcome of an evaluation that took place. The
+      remaining six describe why an evaluation produced no outcome, and it is against
+      those that the CAP-1 dispositions are compared here.</t>
+
+      <t>Each row states whether the relationship is exact or a narrowing. A narrowing
+      means CAP-1 requires information the XCCDF value does not carry. Readers who
+      consider a row wrongly classified are invited to say so; the classification is a
+      judgement and is offered as one.</t>
+
+      <table anchor="maptable">
+        <name>CAP-1 dispositions against XCCDF 1.2 resultEnumType</name>
+        <thead>
+          <tr><th>CAP-1 disposition</th><th>XCCDF value</th><th>Relationship</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><tt>not_applicable</tt></td><td><tt>notapplicable</tt></td><td>exact</td>
+              <td>XCCDF: "the rule does not apply to the target system". Same meaning.</td></tr>
+          <tr><td><tt>disabled_by_policy</tt></td><td><tt>notselected</tt></td><td>narrowing</td>
+              <td>XCCDF records only that the rule was not selected. CAP-1 requires the exclusion to be a stated policy decision carrying its scope.</td></tr>
+          <tr><td><tt>out_of_scope</tt></td><td><tt>notselected</tt></td><td>narrowing</td>
+              <td>The same XCCDF value as the row above. CAP-1 separates an authorisation boundary from a configuration choice.</td></tr>
+          <tr><td><tt>unsupported_input</tt></td><td><tt>notchecked</tt></td><td>narrowing</td>
+              <td>XCCDF: "the rule was not evaluated", carrying no reason. CAP-1 names the reason.</td></tr>
+          <tr><td><tt>unavailable</tt></td><td><tt>notchecked</tt></td><td>narrowing</td>
+              <td>The same XCCDF value as the row above. CAP-1 separates a missing dependency, licence or network from an unsupported input.</td></tr>
+          <tr><td><tt>resource_exhausted</tt></td><td><tt>error</tt></td><td>narrowing</td>
+              <td>XCCDF: "the checking engine could not determine the result". CAP-1 separates exhaustion of a resource from other failure.</td></tr>
+          <tr><td><tt>failed</tt></td><td><tt>error</tt></td><td>narrowing</td>
+              <td>Maps to <tt>error</tt> and not to <tt>fail</tt>. XCCDF <tt>fail</tt> is a finding about the target; CAP-1 <tt>failed</tt> is a fact about the unit.</td></tr>
+          <tr><td><tt>withheld</tt></td><td>none</td><td>no counterpart</td>
+              <td>The unit is accounted for without being disclosed. XCCDF has no value for this, which is expected: it was not designed for producers and relying parties in different trust domains.</td></tr>
+        </tbody>
+      </table>
+
+      <t>One row is exact, six are narrowings, and one has no counterpart. The three
+      XCCDF values that each carry two CAP-1 dispositions, <tt>notselected</tt>,
+      <tt>notchecked</tt> and <tt>error</tt>, are where a reader of an XCCDF result
+      cannot recover a distinction that a relying party in an evidential setting
+      needs.</t>
+    </section>
 
     <section><name>Acknowledgements</name>
       <t>The formulation that an examination should state "how many records out of the

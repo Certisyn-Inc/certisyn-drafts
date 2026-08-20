@@ -68,14 +68,13 @@ register.
    a policy-version hash and notarises on an append-only ledger
    recording only hashes.
 
-## Patent reference
+## Intellectual property
 
-This Internet-Draft is the standards-track companion to Certisyn
-patent family **F39 — Attestation Reconciliation Protocol**. The two
-artefacts are independent: the IETF draft is the standards-track
-contribution; the patent is the IP-asset record. F39 was filed as a
-United States provisional and the Track One non-provisional conversion
-is queued for lodgement.
+These Internet-Drafts are Certisyn's standards-track contributions.
+Contributions to the IETF are governed by BCP 78 and BCP 79, and any
+applicable IPR disclosures are filed with the IETF alongside the
+submission. Rights not granted under those provisions are reserved by
+Certisyn, Inc.
 
 ## Composition
 
@@ -126,11 +125,13 @@ For editorial corrections, file a PR against
 
 The Internet-Draft itself is governed by the IETF Trust Provisions
 (BCP 78). The repository contents (build scripts, README, supporting
-material) are MIT-licensed. The patent rights are reserved by Certisyn,
-Inc. — see the IPR statement filed alongside the IETF submission and
-the Certisyn patent estate.
+material) are MIT-licensed. The `cap-1/` directory carries its own
+licences: specification text under CC BY 4.0 and code under Apache-2.0,
+see `cap-1/LICENSE` and `cap-1/LICENSE-SPEC`. Other rights are reserved by Certisyn,
+Inc.
 
 ## Maintainer
 
 Joel David Hillier · Certisyn, Inc. · jhillier@certisyn.com
+
 

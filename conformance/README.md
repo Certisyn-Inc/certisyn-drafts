@@ -144,3 +144,22 @@ difference is a finding, not noise.
     lives in `runners/`. An unexecuted equivalence in normative text is a gate
     reporting success over inputs it never examined, which is the class rules 9
     and 10 exist for. `merkle_equiv.py` is the first.
+
+## Self-claim checks
+
+| runner | what it does |
+|---|---|
+| `runners/check_self_claims.py` | Checks the draft's counts and cross-reference assertions against the draft. Ten checks. No arguments, standard library. |
+| `runners/mutate_self_claims.py` | Ten mutants, one per check, each credited only where it breaks its designed check and nothing else. Never writes to the draft. |
+
+**Standing rule 13.** A count stated in the specification is an assertion about
+the specification and MUST have a check that recomputes it. An assertion that
+another section carries a property MUST have a check that the section carries
+it. Both are mechanical, and every instance of this class found by a human this
+cycle was arithmetic a machine could have done.
+
+**Standing rule 14.** A check whose search window can match evidence belonging
+to a neighbouring construction is not a check. The ordering check here survived
+two mutants: once asking whether the named section sorted anything at all, once
+asking whether a sort rule sat nearby. Both would have reported green on the
+defect the check was written for. Bound the search to the clause.

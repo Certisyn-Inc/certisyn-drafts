@@ -1076,6 +1076,70 @@ implementation by someone who has never spoken to Joel, working from the text
 alone, and says that one independent run would move it further than another
 rule.
 
+### 2.15 The self-claim check. Doğru's corollary, built rather than promised
+
+Doğru, SCITT list, 20 August: *"the problem is not that our implementations
+skip the vocabulary. It is that neither of us has a check that would notice if
+they did."* He said he would come back with the check and what it caught rather
+than with a plan.
+
+**Generalised:** every count in a specification is an assertion about that
+specification, and it is checkable against the text that makes it, mechanically,
+with no reviewer. Three of the worst findings this week were exactly that class:
+the falsifiability count, the five-vs-six signature carriers, and the ordering
+assertion.
+
+`conformance/runners/check_self_claims.py`, ten checks, standard library, no
+arguments. `conformance/runners/mutate_self_claims.py`, ten mutants, each
+designed to break exactly one check and credited only where it broke that one
+and nothing else. Current: **10 checks 0 failing, 10 mutants 10 killed.**
+
+**What it caught on its first run, and the timing is the finding.** Two claims
+that were correct when written and false ninety minutes later, both broken by
+the round-three edit that added the fifth retroactive trigger:
+
+- the trigger enumeration inside `{#sweep-statements}` still named four while
+  the IANA registry named five, so the registry pointed at a defining section
+  that did not define one of its own initial values;
+- the falsifiability sentence still said three in four, when a fifth
+  *falsifiable* trigger had made it four in five.
+
+Ninety minutes old, in a document that had four adversarial passes run over it
+the same day. That is Doğru's four-times-over compressed into an afternoon.
+
+It also re-found the algorithm-array ordering assertion, recorded in round two
+from a reading pass and never actually repaired. A register is not a check.
+
+**The result worth carrying.** The ordering check **survived its own mutant
+twice**:
+
+1. First version asked whether the named section contains a bytewise sort rule
+   anywhere. Passes. Every named section contains one somewhere. It would have
+   reported green on the exact defect it was written for.
+2. Second version asked whether a sort rule sits near the named collection.
+   Also passes: the collection is inside an enumerated payload, and the sort
+   rule belonging to the *next* collection in the same sentence falls inside
+   any fixed window.
+3. Third version bounds the search to the clause the collection is named in.
+   Ten kills.
+
+That is Sokolov's rule at the check layer, and not over a preimage this time but
+over a **search window wide enough to find somebody else's evidence and count it
+as its own**. Neither wrong version was findable by reading, because reading is
+what produced both.
+
+**Stated limits, in the transcript rather than inferred from a pass:** reaches
+counts and cross-reference assertions; does not reach claims about the world, an
+implementation, or another document; does not reach claims of absence; cannot
+tell whether a correct count is the right count to state.
+
+**Open, from Doğru and unanswered.** `indeterminate` is cheap to write and
+expensive to keep, and the pressure to fold it into a coverage percentage
+arrives from outside engineering once the vocabulary is public and looks like a
+scoring system. A value that must not be averaged has to be structurally
+unaveragable rather than merely forbidden from being averaged, and ARP's is
+not. Recorded as an open problem rather than answered.
+
 ## 3. Family coherence
 
 The three drafts share one Verification Reconciliation Object, one issuing-partner
@@ -1479,6 +1543,7 @@ That check has not been done yet.
 | 2026-08-20 | Round two: the 2.10 open list verified and closed. Two refuted, nineteen repaired, including a seventh signature carrier, a decisive match on a broader predicate, an uncomputable chain condition, and the RFC 6973 and erasure sections. Register at `_audit/REGISTER.md`. |
 | 2026-08-20 | Round three: ten adversary candidates verified, four refuted, six repaired, including retroactive epoch repudiation by key status and the missing register-record-correction trigger. Five new mechanisms: Representation Invariance, Coverage Probes, the sweep identity, the Examined-Range Set, Declared Trade-offs. |
 | 2026-08-20 | `draft-hillier-coverage-attestation-00` posted, fourth I-D. Announcement drafted for the SCITT list with three specific attacks requested and its own weakest claim named first. Pairs with Coverage Probes as declaration-then-measurement; send a day apart. |
+| 2026-08-20 | Self-claim check built on Doğru's corollary. 10 checks, 10 mutants, 10 kills. Caught two claims made stale by the round-three edit ninety minutes earlier, and its own ordering check survived two mutants before it was worth anything. |
 | 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |

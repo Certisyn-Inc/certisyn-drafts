@@ -3190,9 +3190,9 @@ triggers into a single Statement and remain conformant while evaluating nothing
 in time. A Statement comprises:
 
 - the trigger, drawn from the registry of {{iana}} and initially one of
-  `pattern-library`, `policy-version`, `source-data-version` or
-  `credential-revocation`, and the identifier of the
-  artefact that triggered it
+  `pattern-library`, `policy-version`, `source-data-version`,
+  `credential-revocation` or `register-record-correction`, and the identifier
+  of the artefact that triggered it
 - the Policy-Version Hash and Pattern-Library Version Identifier applied
 - the Entry Sequence Number of the Ledger head when the sweep began and when it
   completed
@@ -3294,7 +3294,12 @@ applies, which makes those two triggers observable. A credential-revocation
 trigger is observable to the credential's issuer and to the affected principal
 and to nobody else, and this document does not make it more so.
 
-The falsifiability argument therefore holds for three triggers in four, and it
+The fifth trigger, `register-record-correction`, is a statement by a Register
+Operator under item 32 of {{bra-items}}, so the event that starts its clock is
+outside the reconciliation server in the same way a list publication is, and the
+argument reaches it.
+
+The falsifiability argument therefore holds for four triggers in five, and it
 holds for the second and third of them **only through the anchoring
 {{read-signing}} places on the Policy Parameters Document itself**, which is
 stated here because an earlier revision of this section claimed three in four
@@ -3306,8 +3311,16 @@ array started no clock, and no party could date the Document well enough to show
 that it had been. The Publication Timestamp, the notarisation, and the
 obligation to republish on the interval whether or not anything changed are
 what make the second and third arguments true, and a deployment whose Policy
-Parameters Document is not anchored as {{read-signing}} requires has one
-falsifiable trigger and not three. An operator that signs a Statement it did not earn is making a
+Parameters Document is not anchored as {{read-signing}} requires has two
+falsifiable triggers and not four.
+
+Both counts in this paragraph were stale within two hours of the fifth trigger
+being added, in opposite directions: the enumeration above still named four
+triggers while the registry of {{iana}} named five, and this sentence still said
+three in four. Neither needed a reader to catch. A count in a specification is
+an assertion about the specification, and the conformance class of
+{{coverage-probes}} now carries a runner that checks every such count against
+the text that makes it. An operator that signs a Statement it did not earn is making a
 false attributable claim, which is a different thing from an invisible omission,
 and the Examined-Set Root means an Audience Member can require it to prove that
 its own reconciliation was in the set it claims to have examined.
@@ -4090,7 +4103,8 @@ commissioning request of {{request-binding}}.
   its sealing key, under the media type registered in {{iana}}, whose payload is
   the six-element CBOR array of: a Publication Timestamp, in the form
   {{reconciliation-output}} fixes; the array of permitted signature algorithm
-  identifiers; the array of per-predicate entries, each a four-element array of
+  identifiers, sorted in bytewise lexicographic order of the deterministic CBOR
+  encoding of each element; the array of per-predicate entries, each a four-element array of
   the predicate, the admitted regime set sorted in bytewise lexicographic order,
   the two-element array of the resolved Verdict Arithmetic and its parameters,
   and the reliance interval, the entries themselves sorted by predicate; and the

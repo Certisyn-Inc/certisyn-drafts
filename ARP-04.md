@@ -1032,6 +1032,50 @@ Structural check after three rounds and roughly sixty edits: **no section number
 outside Document History has moved.** Seven new subsections, all appended within
 their parents.
 
+### 2.14 CAP-1 posted, and how it pairs with Coverage Probes
+
+`draft-hillier-coverage-attestation-00`, "The Coverage Attestation Profile
+(CAP-1)", Informational, posted 2026-08-20. Fourth I-D. No SCITT, COSE, receipt
+or transparency-log reference in it, which the announcement says plainly rather
+than letting anyone discover.
+
+**What it is.** A tool-agnostic vocabulary for stating what an examination
+examined, what it did not, and why. A conforming document declares one or more
+populations, a denominator per population whose *basis* is itself declared
+(`catalogue`, `enumeration` or `declared`), and an individual accounting for
+every unexamined unit from a closed set of eight dispositions. A remainder that
+reconciles only by arithmetic is refused. Eight normative rules, fifteen vectors
+(five positive, ten negative controls each carrying exactly one mutation and
+required to fail under its *targeted* rule), and mutation testing of the
+verifier: eight rules silenced in turn, eight kills.
+
+**Why it matters to the `-04` work rather than sitting beside it.** CAP-1 and
+Coverage Probes are two halves of one loop, and neither is worth much alone:
+
+- CAP-1 makes an examiner **declare** the population and the basis of its
+  denominator, before anybody measures anything.
+- Coverage Probes **measures** whether the declaration was honoured, by
+  recovery fraction against a pre-committed probe set.
+
+A declared denominator nobody tests is a promise. A recovery fraction with no
+declared denominator is a number over an unknown. Nobody on the SCITT list has
+either half, and the closing-omission thread has spent three days establishing
+that the gap they both address is real and structural.
+
+**The negative-control rule in CAP-1 is ARP's rule 9 arrived at independently**
+-- a control credited only where its designed discriminator fired. That is worth
+noting because it means the conformance discipline has now been reached twice
+from two directions, which is the same evidence-of-generality argument the
+Merkle equivalence and the four-arrivals-at-one-wall results carry.
+
+**The claim to watch, and the announcement says so first.** Three
+implementations agreeing on fifteen vectors is three implementations by one
+author from one reading agreeing that the author is self-consistent. That is
+item 2.4 in a different document. The announcement asks for a fourth
+implementation by someone who has never spoken to Joel, working from the text
+alone, and says that one independent run would move it further than another
+rule.
+
 ## 3. Family coherence
 
 The three drafts share one Verification Reconciliation Object, one issuing-partner
@@ -1434,6 +1478,7 @@ That check has not been done yet.
 | 2026-08-20 | Six-pass adversarial sweep. Twenty repairs including two fail-open paths to a decisive verdict, a sixth signature carrier in the Reconciliation Hash, the subject-mapping binding, the Head Consistency retrieval path, the Reconciliation Event Identifier, the Reconciliation Output type table, and a corrected falsifiability count that was already in an outgoing email. Register at `_audit/REGISTER.md`. |
 | 2026-08-20 | Round two: the 2.10 open list verified and closed. Two refuted, nineteen repaired, including a seventh signature carrier, a decisive match on a broader predicate, an uncomputable chain condition, and the RFC 6973 and erasure sections. Register at `_audit/REGISTER.md`. |
 | 2026-08-20 | Round three: ten adversary candidates verified, four refuted, six repaired, including retroactive epoch repudiation by key status and the missing register-record-correction trigger. Five new mechanisms: Representation Invariance, Coverage Probes, the sweep identity, the Examined-Range Set, Declared Trade-offs. |
+| 2026-08-20 | `draft-hillier-coverage-attestation-00` posted, fourth I-D. Announcement drafted for the SCITT list with three specific attacks requested and its own weakest claim named first. Pairs with Coverage Probes as declaration-then-measurement; send a day apart. |
 | 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |

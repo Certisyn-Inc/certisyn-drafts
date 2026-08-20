@@ -710,6 +710,110 @@ in exactly this way.
 `-04` carries only survivors that are BLOCKING between two conforming
 implementations. Everything else is `-05`.
 
+### 2.9.1 First survivors, verified against the text
+
+Verified by reading the text adversarially, trying to prove each finding wrong.
+These four survived. They are defects.
+
+**`authority origin` is used seventeen times and defined nowhere.** Not in
+terminology. No RFC 6454 and no RFC 9110 in the reference list; RFC 3986 is
+cited only for target normalisation, path percent-encoding and Operating-Party
+distinctness, never for origin form. It is a sort key in the Addressed-Registers
+Identifier Set, a field of ledger entries, item 20 of the Agreement Hash, and a
+path segment. `https://r.example`, `r.example` and `https://r.example:443` are
+all text strings. Section 4.23.3 requires the two parties to compute the
+Agreement Hash **independently from the negotiated terms** and forbids deriving
+it from any serialisation they exchange, so there is no shared byte string to
+fall back on. One undefined term moves four digests.
+
+**The algorithm array of the read-signing profile has no ordering rule.**
+Section 4.23.3 asserts "this document already requires that ordering of the
+Audience Set, of the algorithm array of {{read-signing}} and of the origin array
+of {{sealing-key-discovery}}". The Audience Set is sorted and the origin array is
+sorted. The algorithm array is not. An internal-consistency defect in the one
+section that exists to close this class.
+
+**The Pattern-Library Commitment Hash is named once in 5,801 lines.** No
+algorithm, no preimage, no ordering, no type, no IANA registration. The section
+asserts the library is bound; nothing in the document binds it.
+
+**The Self-Entry Hash preimage is not required to be deterministically encoded.**
+"The SHA-256 digest over the CBOR array of this same entry" -- where four sibling
+constructions say "deterministically encoded" or cite 4.2.1 inline. The section
+mentions 4.2.1 only to argue against using a map. Definite versus indefinite
+length is the divergence, and the document's own remedy for a Self-Entry Hash
+mismatch is to declare a fork.
+
+### 2.9.2 The Source-Data Version Identifier Set. BLOCKING, and now urgent
+
+Three defects, all in one component, verified:
+
+1. **No ordering rule.** Five other collections in the document carry an
+   explicit bytewise sort. This one is called a Set in its own section heading,
+   is carried into two signatures, and is never sorted.
+2. **A disjunctive state identifier with no discriminator.** "A published
+   version token, or a digest of the published corpus where the publisher
+   assigns none" -- text in one branch, digest bytes in the other, same
+   position, no algorithm named, and no statement of what the published corpus
+   is as a byte sequence.
+3. **Carried twice with no equality rule** -- protected header and Per-Register
+   Result Set. Section 4.7 has exactly the right sentence, *a value carried
+   twice with no equality rule is a value an implementation may read either
+   way*, and applies it to `arp-policy-version-hash` and
+   `arp-bilateral-agreement-hash` and not to this one.
+
+**Why this is urgent rather than merely open.** On 20 August both Sirkkavaara
+and Etcheverry stated on the list that they do not have this component and would
+have to add the field before they could point at one, and Sirkkavaara proposed
+the shared substrate cite components normatively rather than restate them. The
+component about to be lifted into shared text is the component the sweep found
+three defects in. Told them the same morning, before the lift. Repair before the
+substrate text hardens, not after.
+
+### 2.9.3 Sokolov's hardware files, run. Two new `-04` items
+
+Two 395-byte COSE_Sign1 files from a PIV slot-9c non-extractable P-256 key,
+plus the public key from the device attestation certificate. Digests verified
+against the ones he published before the files were opened. Transcript and
+script in `_audit/anton/`.
+
+Everything he claimed holds. One Sig_structure, one Signing Input Digest
+`e104e763...`. `-03` Prior-Entry Hash differs between the two files; `-04` is
+identical. Merkle leaf over the envelope gives two leaves for one act, over
+the Sig_structure gives one. The repair works on hardware-produced bytes.
+
+**The observation he did not make.** His original is high-S and the twin is
+low-S. The twin *is* the canonical low-S normalisation. So the second
+identifier needs no attacker: a middlebox normalising `s` on ingest
+manufactures it out of the honest signer's own bytes while believing it is
+hardening. Applied in flight, "mandate low-S" is one of the ways the gap gets
+opened. Carry into 7.9.
+
+**The wrong answer, and it is a `-04` item.** Section 4.9.1 says a verifier
+MUST refuse a proof whose carried leaf does not match the recomputed one, and
+stops. There is no reason code for *the object I hold and the object this
+proof commits to are the same signing act under two encodings*. ARP has codes
+for stale, unverifiable, unresponsive, exhausted and incomplete-notarisation
+and not for this. So a refusal caused by an `s` normalisation in transit and a
+refusal caused by a spliced proof are the same event in the error surface --
+which is Sirkkavaara's false split arriving in the vocabulary rather than in
+the digests. The construction is now stable and the report is still wrong.
+
+**The residual is in the one identity rule ARP does not own.** Evaluation
+Sweep Statements chain on the Transparency Service Identifier and EntryID of
+the previous notarisation. Where a Transparency Service keys EntryID on
+enveloped bytes, one Statement has two EntryIDs, and a party walking the chain
+from a pointer to one holds a pointer the other copy's chain never reaches.
+SCRAPI retrieves by EntryID and has no query surface, so that party cannot
+search. The published series is ARP's evidence that an obliged sweep happened,
+and a third party holding no key can make it look broken using bytes the
+honest signer produced. Not ARP's defect and not repairable here, but 4.20.1
+must state what it assumes of EntryID stability. This is the concrete
+consequence of the SCRAPI 2.3.1 ambiguity already raised on the list.
+
+**`-04` actions from this run:** a reason code for the same-act-two-encodings
+refusal; an assumption statement in 4.20.1; the low-S note in 7.9.
+
 ## 3. Family coherence
 
 The three drafts share one Verification Reconciliation Object, one issuing-partner
@@ -1106,6 +1210,9 @@ That check has not been done yet.
 | 2026-08-19 | Reconciliation Hash repaired: it carried the malleable signature bytes one level above the entry hashes and measured 0 of 200 stable. Sixteen draft edits across three batches. `external_aad` fixed at zero length, protected header MUST NOT be re-encoded, Section 6.1 now requires `alg` and `kid` protected. No section number outside Document History moved. |
 | 2026-08-19 | List swept to 23:12 UTC. Four replies queued unsent. NAESB procurement comment window logged in section 9, closes 1 September. |
 | 2026-08-20 | 2.9 opened. Type-table sweep run across all fourteen digest constructions, the check `ARP-04-PLAN.md` section 11 called for and had not had. Candidates only, none verified. Merkle construction survived intact; the Agreement Hash table is the target shape for the rest. List post drafted on the general rule. |
+| 2026-08-20 | 2.9.1 and 2.9.2 recorded: four survivors verified against the text, plus three BLOCKING defects in the Source-Data Version Identifier Set -- the component two other implementers proposed the same morning to lift into shared substrate text. Told them before the lift. |
+| 2026-08-20 | Sokolov's two hardware files run. `-04` confirmed stable, `-03` not. Twin is the low-S normalisation, so no attacker is needed. Two new `-04` items: no reason code for same-act-two-encodings, and no stated assumption about EntryID stability in the sweep chain. |
+| 2026-08-20 | Dogru's messages recovered from junk. Rung ladder correctly attributed to him. ARP's chain claim corrected: the chain covers a withdrawal from the middle and is blind to a truncated tail; the deadline is what reaches rung 3. Placement generalised to three. Weakest-rung rule identified as a fourth independent arrival at ARP's own verdict re-typing discipline. |
 | 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |
@@ -1233,6 +1340,161 @@ vector encoded the implementation rather than the specification. Add to section
 | Nenad Vasic, list | ARP reconciliation run against the EMILIA and Noa corpora | Item 4 closed as a defect in ARP; 4.9.1 leaf binding is the fix. |
 | Hawkins, Sirkkavaara, Gibson, list | Closing omission from the receiver's vantage | Support plus the fourth question and the third vantage. Witness-quorum limit now stated in the same breath as the mechanism: independence is declared, not proven from the bytes. |
 | Nenad Vasic, Sirkkavaara, list | CHAP | Nenad's law taken up a layer, plus support for the empty-check-set branch being explicit in the shared definition. |
+
+---
+
+### 20 August: the substrate forms, and ARP holds the piece nobody else has
+
+Swept to 13:40 UTC. Fifteen list messages overnight; four replies drafted.
+
+**The single most important fact for adoption.** Sirkkavaara and Etcheverry both
+stated publicly that they do **not** carry ARP's fourth item -- a publisher-
+assigned version of the corpus a verdict was computed against. Sirkkavaara: *"I
+would have to add the field before I could point at one."* Etcheverry: *"we
+don't have it either... I'd rather say that plainly than imply we cover it."*
+Sirkkavaara has proposed the substrate cite components normatively rather than
+restate them, which means ARP's component would be cited by name.
+
+That is the strongest adoption position ARP has held. Not a document asking to
+be considered alongside three others -- a document supplying one of the four
+things the shared statement is built from, by the request of the other authors.
+
+**Sirkkavaara corrected his own component and split it into rungs.** The
+seq-plus-running-count catches a hole in the middle and **fails on a set cut at
+the end**; Doğru cloned the tree at `befdced` and ran the three cases. Rung 1:
+signed seq, hole inside the held range. Rung 2: a pinned terminal seal,
+`{"sealed": true, "total": N}`, catches a dropped tail from the held set alone.
+Rung 3: a suffix that suppresses the seal needs an external anchor.
+
+**ARP sits at rung 3 by a mechanism neither of the others has.** Not an anchor
+over the record -- an anchor over **the obligation to produce a record**. One
+signed Evaluation Sweep Statement per trigger, within a bounded interval
+measured from the trigger event, each carrying the previous Statement's
+notarisation so the series is a chain. Where the trigger is a public event with
+a public timestamp, the clock is not the operator's, and a missing Statement is
+checkable by a party holding nothing. Three of ARP's four triggers; credential
+revocation has no external clock, and Section 4.20.1 already says so rather than
+rounding up.
+
+**Etcheverry's precedence rule, and the direction flip.** His
+`anchoring_precedence` requires the anchor strictly *earlier* than the outcome
+it covers. ARP's requires the Statement *later* than the trigger and inside a
+bound. Same requirement -- an anchor with no ordering constraint against what it
+covers is decorative -- and opposite orderings, because one anchors the proof
+and the other anchors the duty. Offered to the substrate in that form.
+
+**The type-table post did what it was written to do.** Sirkkavaara replied
+within six hours with a measurement beside each of the four gaps, conceded gap 2
+outright, disputed gap 3 with a real argument (omission avoids a flag day when
+an optional member is introduced; null makes every prior digest incomparable),
+and proposed a better version of the requirement than the one posted:
+**per digest, not per document** -- each defined digest names which of the four
+it fixes and which it hands to a profile.
+
+Counter drafted on gap 3: omission makes *held and withheld* and *predates the
+field* the same bytes, which is closing omission one layer down inside a
+preimage. Resolution offered: omission is safe where the preimage carries
+something that dates the member set. ARP gets this from the Policy-Version Hash
+by accident rather than design.
+
+**Sirkkavaara opened a public register for independent runs of his vectors**, at
+`vaara.io/conformance.html`, with disagreements published and no gate. This is
+the instrument item 2.4 has been open for. Committed to running them and filing
+the row including a disagreement, and to standing up the same register for ARP's
+vectors on the same terms.
+
+**The ECDSA thread found a third direction.** Sirkkavaara's `grant_fingerprint`
+content-addresses a credential dict carrying a signature member, under an
+accepted ES256 path that constrains neither `r` nor `s`. The exposure runs
+**opposite** to the two reported Tuesday: those let two byte-different artefacts
+claim one signing act; this lets one act produce two identities. False merge
+loses information; false split manufactures an accusation, because a verifier
+recomputing from the grant it holds fails to match a receipt for an
+authorization that did govern, and a false miss on identity reads as tampering.
+
+A sweep written for one direction does not find the other. Added as a standing
+rule candidate: sweep both directions, because the two questions do not answer
+each other.
+
+**Sokolov sent the two 395-byte files** -- high-S original
+`87044ba3...`, twin `d374e5d4...`, plus the P-256 public key taken from the
+device's attestation certificate rather than from a file that travelled. Run
+against ARP's ledger verifier is queued, not done. Sokolov also retracted the
+SEC1 4.1.3 locator independently, arriving at the same supportable form.
+
+He has asked to carry the harness finding in
+`draft-mih-sokolov-scitt-payload-binding`, credited by name. Accepted, with the
+credit going to the rule rather than the people: *a checker that rebuilds the
+preimage it was meant to perturb reports exactly the property it was written to
+demonstrate, and it passes.*
+
+---
+
+### Doğru's rung ladder, and a correction to ARP's own claim
+
+Three of Emek Doğru's messages were sitting in junk and were read late. The
+19 August 17:26 one matters, because the rung ladder that Sirkkavaara and
+Hawkins have both been carrying is **his**, not Sirkkavaara's, and because it
+catches a claim ARP had been making about itself.
+
+**The correction.** ARP's Evaluation Sweep Statements chain, each carrying the
+previous Statement's notarisation. The working note and the drafted reply both
+said this makes a withdrawn Statement detectable rather than merely absent.
+True for a Statement removed from the middle. **False for a run cut at the
+end.** Doğru shipped Conarium 0.2.4 under the title *"a hash chain is blind to
+a shorter tail"*, and it applies to ARP's series exactly as it applies to his:
+a truncated tail of Sweep Statements verifies precisely as it did before.
+
+So the chain is not what puts ARP at rung 3. The **deadline** is. Each
+Statement is due inside a bounded interval measured from its trigger, and where
+the trigger is a public event, the clock is not the operator's. The chain
+covers the middle and the deadline covers the tail. Those had been credited as
+one mechanism doing one job and they are two mechanisms doing two.
+
+**Doğru's placement distinction, generalised to three.** He observes that
+Sirkkavaara's seal is a record *inside the stream* while Conarium's pin is *an
+argument to the verifier*, so a third party holding only the receipt set has to
+be told the expected count by someone, and the obvious someone is the issuer,
+the party the audit is about. Two mechanisms can sit on the same rung and
+differ entirely in who must be asked. Three placements:
+
+1. **Inside the evidence.** Travels with the set, needs nobody. The seal.
+2. **Supplied by the audited party.** Conarium's pin.
+3. **Supplied by a party with no stake.** ARP's deadline: the clock is started
+   by a list publisher who has never heard of the reconciliation server.
+
+Third is strongest and least available, since it exists only where the
+obligation is triggered by something public. Not a free design choice.
+
+**The weakest-rung rule, and a fourth independent arrival.** Doğru: a result
+that does not say which rung it stands on has to be read at the weakest one,
+which is Hawkins' completeness ladder one level up, and is the rule his `-04`
+already applies to bounds. **ARP has the same rule under a different name** --
+verdict re-typing to `indeterminate`, the `attribution-indeterminate` qualifier
+that MUST name which causes were examined, and the `does_not_establish` field
+in run records. Four instances, four documents, arrived at separately: bounds,
+populations, verdicts, conformance claims.
+
+The corollary is the one every implementation skips. **The vocabulary has to
+reach the output.** Doğru says his exit codes predate the vocabulary and are
+still not a mapping of it. ARP's equivalent gap is 2.9.3: a verifier told to
+refuse a proof with no reason code to characterise the refusal.
+
+**His open question, and ARP's answer to it.** A boundary inside the record has
+nothing to drift from but is asserted by one party at issue time; a profile is
+weaker but is the only thing two parties can agree before a run. ARP's answer
+is to make the profile a signed bilateral instrument with a hash: the Agreement
+is agreed before any run, both parties compute the Agreement Hash independently
+and MUST obtain the same value, every reconciliation commits to it, and drift
+suspends rather than weakens. Keeps the agreed-not-asserted property of a
+profile and gains the nothing-to-drift-from property of an in-record boundary.
+Cost: bilateral only, so it does not reach a population that has never
+negotiated, which is most of Hawkins' setting.
+
+**Delivery note.** `conarium.dev` is failing in both directions. His mail lands
+in junk here; direct mail to him bounces at the Gmail hop under
+`certisyn.com`'s `p=reject` because MailChannels relays without re-signing.
+Both directions still work through the list.
 
 ---
 

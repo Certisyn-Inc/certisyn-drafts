@@ -1,0 +1,56 @@
+==========================================================================
+0. FILES AS RECEIVED
+==========================================================================
+  receipt.cose          395 B  sha256 87044ba351d8ce4aff9b3bd6c4b1a254a67b88cb43360acf2f42e66ae42b6d89
+  receipt-twin.cose     395 B  sha256 d374e5d49a5d68364cc2b1d0611e537c9477c29efcf3839e592c642e2cb81f09
+
+==========================================================================
+1. WHAT DIFFERS BETWEEN THEM
+==========================================================================
+  protected header identical : True
+  unprotected header identical: True
+  payload identical          : True
+  signature identical        : False
+  protected header (hex)     : a20126044f7069762d39632f3337353837353735
+  protected header (decoded) : {1: -7, 4: b'piv-9c/37587575'}
+  unprotected header         : {}
+  payload length             : 302 B
+
+  r equal                    : True
+  s2 == n - s1               : True
+  s1 low-S (s1 <= n/2)       : False
+  s2 low-S (s2 <= n/2)       : True
+
+==========================================================================
+2. DO BOTH VERIFY, AGAINST THE ATTESTATION-CERT KEY
+==========================================================================
+  original  VERIFIES
+  twin      VERIFIES
+
+  Sig_structure byte-identical : True
+  Signing Input Digest, orig   : e104e763c87f8bda5a731be370db00cd703274f43d806f14528925a34b1c14ce
+  Signing Input Digest, twin   : e104e763c87f8bda5a731be370db00cd703274f43d806f14528925a34b1c14ce
+
+==========================================================================
+3. ARP LEDGER CONSTRUCTIONS, -03 AND -04 SIDE BY SIDE
+==========================================================================
+  -03 Prior-Entry Hash     DIFFER
+      original 65f71b5f46a9dd2169a477b94a0d92b049ceffa26e898e2af6953c17c7b20e15
+      twin     4f9175163f829b869ac1c4edbf909972557710cba8a78e96e49a339c9b3332b0
+  -04 Prior-Entry Hash     SAME
+      original 0b329a6c2254ada0eb8f70ff631c27b12ee12a7b0c56d1e8e4a076751f53ed9d
+      twin     0b329a6c2254ada0eb8f70ff631c27b12ee12a7b0c56d1e8e4a076751f53ed9d
+
+==========================================================================
+4. WHAT ARP'S LEDGER VERIFIER DOES WITH THE TWIN
+==========================================================================
+  Merkle leaf under -03 (over the served envelope):
+      distinct leaves: True  -> two entries for one signing act
+  Merkle leaf under -04 (over the Sig_structure):
+      distinct leaves: False  -> one entry for one signing act
+
+  Section 4.9.1 leaf binding: a verifier recomputes the leaf from the
+  object rather than trusting the leaf a proof carries.
+    Holder has ORIGINAL, proof was issued over TWIN:
+      -03: recomputed 87044ba351d8ce4a... vs carried d374e5d49a5d6836...  MISMATCH -> proof REFUSED
+      -04: recomputed e104e763c87f8bda... vs carried e104e763c87f8bda...  MATCH -> proof ACCEPTED

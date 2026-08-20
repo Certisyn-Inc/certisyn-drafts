@@ -42,6 +42,8 @@ normative:
   RFC6838:        # Media type registration procedures
   RFC6839:        # Structured syntax suffixes
   RFC8949:        # CBOR, incl. the core deterministic encoding requirements
+  RFC6234:        # SHA-256, used by every digest this document defines
+  RFC2104:        # HMAC, used by the Reconstruction Proof of {{audit-path}}
   RFC9052:
   RFC9053:
   RFC9334:        # RATS Architecture
@@ -49,7 +51,7 @@ normative:
   RFC8785:        # JSON Canonicalization Scheme (JCS)
   RFC9943:        # SCITT Architecture (was I-D.ietf-scitt-architecture)
   RFC9942:        # COSE Receipts (was I-D.ietf-cose-merkle-tree-proofs)
-  I-D.ietf-scitt-scrapi:   # normative: {{scrapi-binding}} imposes MUSTs on its endpoints
+  I-D.ietf-scitt-scrapi:   # normative: {{scrapi-binding}} imposes MUSTs on its endpoints; see the Note to the RFC Editor
   UAX15:
     title: "Unicode Standard Annex #15: Unicode Normalization Forms"
     target: https://www.unicode.org/reports/tr15/
@@ -58,6 +60,7 @@ normative:
     date: 2025
 
 informative:
+  RFC6973:        # Privacy Considerations for Internet Protocols
   RFC6350:        # vCard 4.0
   RFC8032:        # EdDSA; S8.4 is why EdDSA is outside {{signature-malleability}}
   RFC9162:        # Certificate Transparency 2.0; {{merkle-construction}} states its relationship to Section 2.1.1
@@ -158,11 +161,16 @@ in the underlying published corpus.
 
 RFC EDITOR: please remove this section before publication.
 
-This document is Standards Track and makes four normative references to
-Informational documents: RFC 6839, RFC 8785, RFC 9053 and RFC 9334. Each is a
-downref under {{RFC8067}}. RFC 6839, RFC 9053 and RFC 9334 are already recorded
-in the downref registry, so no Last Call action is required for them; RFC 8785
-is not, and it is the one that needs the announcement below. That reference is
+This document is Standards Track and makes six normative references to
+Informational documents: RFC 2104, RFC 6234, RFC 6839, RFC 8785, RFC 9053 and
+RFC 9334. Each is a downref under {{RFC8067}}. RFC 6839, RFC 9053 and RFC 9334
+are already recorded in the downref registry, so no Last Call action is required
+for them. RFC 2104 and RFC 6234 are cited for HMAC and for SHA-256, which every
+digest this document defines depends on and which earlier revisions used
+throughout with no normative reference at all; RFC EDITOR, please confirm their
+current downref-registry status, since it may have changed since this revision
+was written. RFC 8785 is not registered, and it is the one that needs the
+announcement below. That reference is
 deliberately normative: ARP's Canonical Claim is a digest over an RFC 8785
 serialisation preceded by Unicode Normalization Form C, and the subject digest
 of {{composition}} is a digest over an unmodified RFC 8785 serialisation.
@@ -674,7 +682,17 @@ inputs. The register-produced signatures the Output carries -- the Partial
 Attestation inside each Query Binding Record, and each Non-Answer Statement --
 are outside it on the same ground as the Sealing Signature: they are signatures,
 and a signature scheme need not be deterministic. So is the Sealing-Key
-Identifier, which is rotation state and not an enumerated input. So are `attestation-stale` and `register-unresponsive`, and the
+Identifier, which is rotation state and not an enumerated input. So are the
+Reconciliation Event Identifier, the Reconciliation Identifier that carries it,
+and every Reconciliation Nonce carried in a Query Binding Record or a Non-Answer
+Statement, together with the register signatures taken over them: each is drawn
+fresh per reconciliation and is uniqueness state rather than an enumerated
+input. Two reconciliations agreeing on every enumerated input MUST differ in all
+three, and an implementation MUST NOT read that difference as a determinism
+failure. Stating it matters because the requirement above is expressed as
+identity in every field save those carved out here, so a field that is
+necessarily fresh and not carved out makes the requirement unsatisfiable by any
+implementation. So are `attestation-stale` and `register-unresponsive`, and the
 Divergence-Axis and verdict consequences that follow from either: both are
 functions of wall-clock timing and network conditions rather than of the
 enumerated inputs, which is the same ground on which the Freshness Timestamps
@@ -689,7 +707,7 @@ the enumerated inputs. Two reconciliations agreeing on every enumerated input
 but differing in Source-Data Version are not required to agree field for field, and
 an implementation MUST NOT treat such a difference as a determinism failure.
 
-## Canonical Claim Ingestion
+## Canonical Claim Ingestion {#ingestion}
 
 A Canonical Claim comprises:
 
@@ -707,6 +725,28 @@ A Canonical Claim comprises:
   two deployments differing on order, separator or length prefix while claiming
   the same construction identifier
 
+The reconciliation server MUST verify, before computing the Claim Hash, that
+the octets it received under {{request-binding}} are the canonicalisation of the
+claim they carry. It MUST parse them, re-serialise the parsed fields as this
+section constructs them, and refuse a request whose received octets differ from
+that re-serialisation, or whose member set is not exactly the fields enumerated
+above, returning the `422` of {{request-binding}} with a Remediation Advisory
+naming the difference.
+
+{{request-binding}} has the requester supply the {{RFC8785}} serialisation as a
+byte string and has the server hash the octets it received, for a reason that is
+correct: re-serialising a natively encoded claim would let two servers receiving
+identical bytes compute different Claim Hashes. The consequence not drawn was
+that the preimage of the Settlement-Layer Ledger index is then chosen by the
+requester. A claim submitted in NFD and the same claim in NFC have identical
+canonical field values and produce two Claim Hashes, two ledger indices and two
+retroactive-evaluation keys, and a sweep selecting on one misses the other. The
+check above keeps the requester's octets as the preimage and makes them
+canonical, which is what the rest of this section already assumes of them. The
+same argument appears at {{terminology}} for the Authority Origin -- a value
+normalised on receipt is a value two parties hash differently before they
+compare it -- and it was applied there and not here.
+
 Two claims whose canonical field values are identical MUST produce the same
 canonical form, and the same Claim Hash within one deployment. Across
 deployments the Claim Hash differs by the Deployment Blinding Value while the
@@ -714,11 +754,37 @@ canonical form does not. Declared array order is significant;
 claims differing only in declared array order are distinct claims. The Claim Hash is the index on the
 Settlement-Layer Ledger and the key for retroactive re-evaluation.
 
-The Evidentiary Provenance Manifest MAY be carried in any COSE-enveloped
-evidence structure; the container form is an interop convenience and does not
-alter the Claim Hash,
-which is computed as Canonical Claim Ingestion constructs it and over nothing
-else.
+The Evidentiary Provenance Manifest is a JSON object, and this document does not
+otherwise constrain its members. It **MUST NOT carry a signature, a COSE_Sign1,
+or any other signed artefact, in any member at any depth**, and a reconciliation
+server MUST refuse a claim whose Manifest carries one, returning the `422` of
+{{request-binding}}.
+
+Where the evidentiary provenance is itself a signed artefact -- a COSE-enveloped
+evidence structure, or a Verified Principal Credential -- the Manifest carries
+the Signing Input Digest of that artefact, rendered as a lowercase hexadecimal
+text string, and the artefact travels outside the Canonical Claim.
+
+The Manifest is a field of the Canonical Claim and therefore inside the Claim
+Hash preimage, so a signature within it is a signature inside a digest preimage,
+re-encodable in transit by a party holding no key, for the reason
+{{signature-malleability}} gives. A claim carrying one indexes the
+Settlement-Layer Ledger under a value that moves while the claim does not, and
+no party outside the deployment can detect it, because the Claim Hash is blinded
+and cannot be recomputed outside the deployment at all.
+
+This is the seventh carrier and the only one the class rule of
+{{signature-malleability}} could not have reached. That rule directs a party
+computing a digest to substitute a Signing Input Digest for any signature made
+by another party, and it is inoperable here for two reasons: the preimage is
+{{RFC8785}} JSON, which has no byte-string type for the substituted value, and
+{{request-binding}} has the server hash the requester's octets, so a server-side
+substitution would produce a Claim Hash over bytes the requester never signed.
+Where a construction cannot be repaired by the general rule, the content has to
+be excluded rather than the rule extended, which is what the prohibition above
+does. An earlier revision instead said the container form "does not alter the
+Claim Hash", which is true of the container and false of what the container
+holds.
 
 ## Requester Identity Binding and Agent Friend-or-Foe Gate
 
@@ -806,6 +872,21 @@ Output is produced. The Advisory is the only artefact a refused requester
 receives, so it carries the ground rather than leaving the requester to infer
 it.
 
+Where the Ground is `pattern-matched`, the second field MUST be encoded as CBOR
+null in the Advisory returned to the requester, the array's field order being
+unchanged, and the matched identifiers and the narrowing or substitution each
+concerns MUST be retained by the server and disclosed only to a regulator under
+{{regulator-portal}} and to an Audit Identity under {{audit-path}}.
+
+A requester that can vary a claim and read back which pattern matched
+enumerates, one refusal at a time, the corpus {{per-register-encryption}}
+declines to disclose even to a register. The query budget does not bound the
+probe, being keyed per principal per subject, so an evader varying subjects
+probes without limit. An Advisory that names the pattern is a more efficient
+route into the Pattern Library than the Library's confidentiality is a defence
+of it, and the party it was handed to is the one party the Test exists to
+defend against.
+
 The Per-Register Encryption Subsystem MUST architecturally withhold external
 transmission until a Pass result has been emitted or until an authorised
 operator has explicitly overridden the outcome. An override MUST be recorded in
@@ -880,6 +961,23 @@ the same taxonomic distance, the projection MUST fail with
 the taxonomy root without finding one, the projection MUST fail with
 `projection-unsupported`. The narrowing operation MUST be recorded in the
 Narrowed-From field of the Per-Register Claim Projection.
+
+The Predicate Taxonomy over which that walk is performed is the union of the
+branches the Register Data-Format Profiles of {{format-profiles}} define, each
+branch's parent relation being the one its profile declares and each branch's
+root being the predicate that profile names as such. Taxonomic distance is
+defined only between predicates within one branch. A predicate belonging to no
+declared branch has no parent, and a walk that would leave the branch it began
+in MUST fail with `projection-unsupported`. The `agent:` branch of {{agentic}}
+is governed by no profile and is therefore flat: its predicates have no parent
+and a walk beginning at one MUST fail on the same reason.
+
+There is no registry of predicates and this document does not create one. The
+taxonomy is a deployment artefact assembled from declared profiles, which is
+what makes it checkable by the register: the permitted-predicate set is item 1
+of {{bra-items}} and is therefore inside the Agreement Hash, so the second party
+to a projection can test the walk against terms it negotiated. Earlier revisions
+named the taxonomy and left the reader to infer where its edges came from.
 
 A Per-Register Claim Projection comprises:
 
@@ -1316,7 +1414,15 @@ A Partial Attestation comprises:
   from the Per-Register Claim Projection it answers. The construction is a
   five-element array whose first element is a fixed domain-separation string,
   rather than a byte concatenation, so that two implementations cannot differ on framing and the
-  digest cannot collide with any other construction in this document
+  digest cannot collide with any other construction in this document. Within that
+array the Reconciliation Identifier is a byte string of 80 octets as
+{{reconciliation-output}} fixes it, the Projected Predicate is a text string,
+the Reconciliation Nonce is a byte string of at least 16 octets, and the Subject
+Reference takes the CBOR type the Subject Reference form of item 8 of
+{{bra-items}} declares, which that Agreement MUST state. The register and the
+reconciliation server compute this digest independently and MUST obtain the same
+value, so an element whose type is left open is an element on which they can
+differ while agreeing on every negotiated term
 - Freshness Timestamp
 - Cryptographic Signature, a COSE_Sign1 by the register whose payload is the
   CBOR array of the fields above in the order listed, with an absent OPTIONAL or
@@ -1696,6 +1802,38 @@ Re-typing is confined to these cases:
   which the thresholds may differ unnoticed, and requiring every profile to mark
   it would disable the test in the case it exists for.
 
+- A `match` attested against a Projected Predicate that is a proper ancestor of
+  the Canonical Claim Predicate is re-typed to `partial-match` under an operator
+  that admits that value and to `indeterminate` under one that does not, under
+  the ground `projection-broadened`. The projection function of {{projection}}
+  resolves by taxonomic prefix match upward, producing the nearest permitted
+  ancestor, so a register answering a Projected Predicate that narrowing did not
+  reach is answering a **broader** question than the claim asked. A subject
+  designated on some US sanctions list is not thereby designated on the OFAC SDN
+  list, and a decisive `match` assembled from the ancestor states a conclusion
+  the input does not support.
+
+  A contribution other than `match` is not re-typed on this ground: a `no-match`
+  over an ancestor entails `no-match` over every descendant of it, so the
+  broadening is harmless in that direction and re-typing it would discard sound
+  evidence.
+
+  Earlier revisions covered the converse only. The opening sentence of this
+  section says a register answers a Projected Predicate "which may be a
+  narrowing of the Canonical Claim Predicate", and the projection function
+  produces an ancestor, which is the opposite relation. The Output records the
+  broadening in the Narrowed-From field of the Projection Record, so a relying
+  party inspecting it could see what happened; nothing obliged it to look, and
+  the Combined Verdict was decisive either way. Recording a divergence while
+  permitting a decisive verdict built on it is the failure ground 3 above is
+  written against, and it applied here and was not applied.
+
+  The Divergence Axis `claim-projection-narrowed-beyond-attestation-scope`
+  names this condition and is register-attestable, optional in the attestation,
+  and connected to no normative rule anywhere in this document; it appears in
+  its own enumeration and nowhere else. An axis a register need never emit, and
+  which changes no verdict when emitted, is not a control. This ground is.
+
 Re-typing operates on a register's contribution. It does not override the
 Verdict Arithmetic resolved under {{verdict-arithmetic}}, which is applied
 afterwards to the re-typed set and is otherwise unaffected. An implementation
@@ -2056,7 +2194,16 @@ encoded as a CBOR array which is empty only in the case described below.
 Each Audience Member comprises:
 
 - an Audience Member Identifier: a URI, in the same identifier space a
-  Requester-Binding uses for an accountable principal
+  Requester-Binding uses for an accountable principal, encoded as a CBOR text
+  string. Two Audience Member Identifiers are equal where they do not differ
+  after normalisation under Sections 6.2.2 and 6.2.3 of {{RFC3986}}; comparison
+  is over the normalised form and is otherwise bytewise, and an implementation
+  MUST encode the normalised form rather than normalise on receipt, for the
+  reason {{terminology}} gives for an Authority Origin. It is a sort key inside
+  the Audience Set and so inside the Reconciliation Hash preimage, the first
+  element of every Witness Entry and so inside the Agreement Hash, and the
+  equality target of the quorum rule of {{quorum-rule}}; the same treatment is
+  given to an Operating-Party Identifier and was not given here
 - a Verification Method Reference: the JWK thumbprint, computed as in
   {{RFC7638}}, of the public key under which that member signs a read request
   under {{ledger-read}}. It MUST be a durable key and MUST NOT be a session
@@ -2274,6 +2421,28 @@ A register receives the same Policy-Version Hash as every other addressed
 register, by {{projection}}. The Blinding Value prevents two colluding registers
 from recovering the Addressed-Registers Identifier Set from it by search; that
 they can observe they were addressed together is inherent and is discussed in
+{{side-channel}}.
+
+Equality is a different matter from inversion. The Requester-Binding is an
+element of the preimage and every other element is fixed by policy and by the
+addressed register set, so one requester asking repeatedly about different
+subjects presents every addressed register with the same Policy-Version Hash. A
+register cannot recover who that requester is, and can group every reconciliation
+that requester commissioned against it. Two registers addressed together can join
+their traffic on the same value, as can any reader of the notarised Signed
+Statements, in which the hash appears in the protected header. That is a stable
+requester pseudonym, disclosed to parties {{containment}} otherwise limits to the
+Requester-Binding Class, and reasoning about the preimage's resistance to search
+says nothing about it: a correlation handle does not need to be inverted to work.
+
+A deployment for which that is unacceptable MUST substitute, in the seventh
+element, a digest over the Requester-Binding and the Reconciliation Identifier.
+The Policy-Epoch Store holds both, so an auditor can still reconstruct the
+preimage, and the element then varies per reconciliation and carries no
+cross-reconciliation handle. It is stated as a deployment choice rather than a
+requirement because the constant form is what lets a register recognise a
+returning counterparty under a bilateral agreement, which some deployments need
+and others must not have. Discussed further in
 {{side-channel}}.
 
 ## Post-Seal Evaluation Records {#post-seal}
@@ -2781,7 +2950,23 @@ intersection of the corresponding permitted-read-predicate sets, and further
 intersected with the regulator's requested field set. Fields and predicates are
 different domains and are intersected separately; intersecting one with the other
 would yield the empty set, which earlier text did. Each
-access MUST be recorded in an append-only subpoena-grade audit trail.
+access MUST be recorded in an append-only audit trail. Each record MUST carry a
+contiguous sequence number and the digest of the preceding record, computed as
+{{settlement-ledger}} computes a Prior-Entry Hash, and the reconciliation server
+MUST publish a signed head of that trail -- its current last sequence number and
+digest, under its sealing key -- once per ledger-head notarisation interval, and
+MUST notarise that head into the Transparency Service of {{settlement-ledger}}.
+
+Earlier revisions called the trail subpoena-grade and specified none of that.
+The trail is held by the party whose reads it records, and the accountability of
+the Audit Identity entitlement rests on it -- an unaudited audit right is a
+standing unaccountable read. Without a chain and an externally anchored head, a
+record can be removed or rewritten by the party the trail exists to hold
+accountable, and it is then evidence only against a party that has not tampered
+with it. This document applies exactly this construction to the Settlement-Layer
+Ledger a few sections above and applied none of it here, which is the whole of
+the defect: not a technique the document lacks, a technique it did not carry to
+the second place that needed it.
 
 The Portal is a subsystem of the reconciliation server and reads the Ledger
 without scope restriction. The scope governs what it RETURNS, not what it may
@@ -2870,11 +3055,24 @@ entitled to:
 - for a named reconciliation, every element of the Policy-Version Hash preimage
   of {{sealing}} EXCEPT the Deployment Blinding Value, together with a
   Reconstruction Proof: a keyed digest, computed as HMAC-SHA-256 under the
-  Deployment Blinding Value over the disclosed elements, which the auditor
-  recomputes only if it is also given the Value, and otherwise compares against
-  the Reconstruction Proof the server returns beside the Output under
-  `GET /arp/outputs/{reconciliation-hash}` to a requester authenticated as an
-  Audit Identity
+  Deployment Blinding Value over the deterministically encoded CBOR array
+  `["arp-reconstruction-v1", P]`, where `P` is the Policy-Version Hash preimage
+  array of {{sealing}} with its Deployment Blinding Value position encoded as
+  CBOR null so that the array's length is preserved. It is served as the
+  two-element array of the disclosed elements and the proof, as the `result` of
+  `GET /arp/outputs/{reconciliation-hash}` where the requester authenticated as
+  an Audit Identity. An auditor given the Value recomputes it; one not given the
+  Value can only compare it against another proof the same server produced.
+
+  The preimage is pinned here because it was not pinned anywhere. The sweep
+  recorded in the Document History put every digest preimage and signature
+  payload in this document into a CBOR array with a normative field order and
+  null-substitution for absent fields, and enumerated the artefacts it had
+  reached; this construction was not among them. It had no array, no
+  domain-separation string, no field order, no rule for the excised element and
+  no encoding requirement, and it also had no wire representation, since
+  {{read-operations}} defines that operation as returning the sealed Output and
+  {{read-responses}} defines no slot for a value served beside one
 
 An Audit Identity is NOT given the Deployment Blinding Value, and is not given
 the preimage in full, because the preimage contains it. The Value is one
@@ -2884,9 +3082,22 @@ describes, including those of reconciliations the auditor's own register had no
 part in; every agreement declares an Audit Identity, so disclosing the Value to
 one would disclose the deployment to all of them.
 
-What the auditor can therefore establish is that the disclosed policy elements
-are the ones the server used, and not that the resulting hash is correct: the
-last step needs the Value. A deployment that requires the stronger property MUST
+An Audit Identity that does not hold the Deployment Blinding Value compares one
+value the server produced against another value the server produced, under a key
+only the server holds, over material that neither the Sealing Signature nor any
+Ledger entry commits to. Equality establishes that the server was self-consistent
+across the two reads and establishes nothing further. It does not establish that
+the disclosed policy elements are the ones sealed into the Policy-Version Hash,
+because a server that sealed under one policy state and later disclosed a
+different one computes a consistent pair with no more effort than an honest one
+does. And it does not establish that the resulting hash is correct. Only an
+Audit Identity given the Value can establish either.
+
+An earlier revision stated the first half as established and only the second as
+open, which was one step too generous: it granted the mechanism the property
+that a proof minted by the audited party, under the audited party's secret,
+over material nothing else commits to, tells a third party something about the
+world. A deployment that requires the stronger property MUST
 appoint an Audit Identity jointly with every register whose agreement it holds,
 and MAY disclose the Value to that joint identity alone. This document states the
 limit rather than resolving it, because a construction that let one register's
@@ -2913,12 +3124,36 @@ deterministic re-application of the updated state to the retained metadata of
 historical Reconciliation Outputs -- the Per-Register Result Set, the resolved
 arithmetic and its parameters, and the Source-Data Version Identifiers, being the
 inputs from which a Combined Verdict is recomputed. Under a Pattern-Library or
-Policy-Version trigger the set to be examined is those Outputs sealed against a
-superseded Policy-Version Hash. Under a Source-Data Version trigger the policy
+Policy-Version trigger the set to be examined is every retained Output whose
+Policy-Version Hash preimage, as the Policy-Epoch Store of {{sealing}} holds it,
+carries a value the transition changed. A Policy-Version Hash is not superseded
+as a value: its seventh element is that reconciliation's Requester-Binding, so
+it is per-reconciliation and there is no current hash against which to compare
+one. What a transition supersedes is a preimage element, and the store holds
+every preimage. Earlier revisions selected on "a superseded Policy-Version
+Hash", which named no determinate set and left the operator to choose which
+Outputs its own policy change had reached. Under a Source-Data Version trigger the policy
 state is unchanged and that set would be empty; the set is instead those Outputs
 whose Per-Register Result Set carries a Source-Data Version Identifier from the
 list that was republished. Under a credential-revocation trigger it is those
-whose Requester-Binding rested on the revoked credential. Where permissible under the applicable Bilateral
+whose Requester-Binding rested on the revoked credential. Under a
+register-record-correction trigger, being a statement by a Register Operator
+under item 32 of {{bra-items}} that a record it attested has been corrected, the
+set is those Outputs carrying a Partial Attestation from that register over the
+corrected record.
+
+The fifth trigger is new in this revision and the gap it closes is the one a
+subject would care about most. A `source-data-version` trigger reaches a
+corpus-level republication whose state identifier the list publisher assigns and
+which must be identical across every attestation over that list; it does not
+reach a register correcting one record about one person. So a beneficial-ownership
+register carrying an erroneous ownership percentage could produce a `match` on a
+sanctions-linkage predicate, correct the record the following week, and no
+trigger would fire, no sweep would run and no supersession would be appended. An
+Audience Member reading Continuations before relying past the Reliance Horizon
+would correctly find nothing, and the verdict built on the error would stand.
+{{privacy-erasure}} states that a rectified verdict is expressed by supersession
+rather than by deletion, and until this revision no trigger produced one. Where permissible under the applicable Bilateral
 Register Agreements, partial attestations MAY be re-invoked.
 
 The retroactive evaluation MUST be executable without re-negotiation of any
@@ -2961,13 +3196,29 @@ in time. A Statement comprises:
 - the Policy-Version Hash and Pattern-Library Version Identifier applied
 - the Entry Sequence Number of the Ledger head when the sweep began and when it
   completed
+- the Examined-Range Set: the set of Entry Sequence Number ranges the sweep
+  covered, each a two-element array of a first and a last Entry Sequence Number
+  inclusive, the ranges pairwise disjoint and in ascending order, and together
+  covering every entry between the two head sequence numbers above whose Entry
+  Type is `reconciliation`
 - the count of Reconciliation Outputs examined, and the count found materially
   changed
 - the Examined-Set Root: the root of a Merkle tree, constructed as
   {{merkle-construction}} defines it, over the Claim Hashes of the Reconciliation
   Outputs examined, sorted in bytewise lexicographic order, so that a party
-  entitled to one of those reconciliations can be shown an inclusion proof and
-  the counts are not bare assertions
+  entitled to one of those reconciliations can be shown an inclusion proof that
+  its own reconciliation was in the set. The Root commits to the distinct Claim
+  Hashes examined and to nothing else. By {{merkle-construction}} the leaf count
+  and the examined count are not derivable from one another, because two Outputs
+  over one claim share a Claim Hash and the leaves are deduplicated; and no
+  construction in this document commits the count found materially changed to
+  anything beyond this Statement's own signature. Both counts are therefore
+  assertions of the signing server, which the signature, the Timestamp and the
+  notarisation make attributable and dated, and do not make verifiable. An
+  earlier revision said the counts "are not bare assertions", which the
+  deduplication rule two sections above already contradicted. The Examined-Range
+  Set and the identity below are what make them checkable, by measuring them
+  against the Ledger rather than against the Root
 - an Evaluation Sweep Timestamp, in the form of {{reconciliation-output}}
 - the Transparency Service Identifier and EntryID of the notarisation of the
   previous Evaluation Sweep Statement, encoded as CBOR null in the first
@@ -2992,6 +3243,44 @@ is retained for the retention period of {{delivery}}.
 On request under {{read-operations}}, a server MUST return an inclusion proof of a
 given Claim Hash in the Examined-Set Root of a given Statement, to a party
 entitled to a reconciliation carrying that Claim Hash.
+
+**The sweep identity.** For every Evaluation Sweep Statement, a party able to
+read the Ledger over the Statement's Examined-Range Set MUST be able to verify
+all three of the following, and a Statement failing any of them is
+non-conforming:
+
+1. The Examined-Range Set is contiguous over the interval it claims: the ranges
+   are disjoint, ascending, and their union contains every Entry Sequence Number
+   between the two head sequence numbers whose entry is of Entry Type
+   `reconciliation`. A gap is a claim to have examined an interval with a hole
+   in it, and it is visible because the Ledger is contiguous by construction.
+2. The count of Reconciliation Outputs examined equals the number of
+   `reconciliation` entries in that union.
+3. The count found materially changed equals the number of
+   `continuation-supersession` entries appended in the interval between the two
+   head sequence numbers whose superseded Reconciliation Hash is one of a
+   `reconciliation` entry in that union.
+
+The three together are an accounting identity rather than a signature, and that
+is the point of them. A signature makes an assertion attributable; an identity
+makes it checkable against something the asserting party does not solely
+control. The Ledger is append-only, contiguous, head-notarised into a
+Transparency Service outside the operator's control, and read under
+{{read-operations}} by regulators, Audience Members, Register Operators and
+Audit Identities. Requiring the counts to balance against it converts two
+numbers the operator could previously choose into two numbers the operator must
+now make true, and a sweep that examined less than it claims fails the identity
+at whichever of the three it falsified.
+
+The Examined-Set Root and the Examined-Range Set answer different questions and
+both are needed. The Root proves **membership**: an Audience Member can be shown
+that its own reconciliation was in the examined set. The Range Set proves
+**coverage**: any Ledger reader can see that no interval was skipped. A Merkle
+root over a set of Claim Hashes cannot prove coverage, because Claim Hashes are
+sparse in the digest space and a set commitment has no notion of the elements
+that are missing. Entry Sequence Numbers are dense and contiguous, so absence in
+that space is visible in a way absence in the digest space is not. Committing to
+the same sweep in both spaces is what lets one artefact answer both questions.
 
 A Statement does not prove a sweep was performed honestly, and this document does
 not claim it does. What it changes is that a sweep not performed is now a
@@ -3043,6 +3332,87 @@ later on an Output whose principal was disowned the following week is prevented,
 which is the case that matters and the case earlier revisions left open. The
 horizon is declared per predicate, so a deployment needing a shorter window for a
 sanctions predicate than for a corporate-registry one sets one.
+
+### Coverage Probes {#coverage-probes}
+
+Every mechanism in this section makes a sweep that was not performed into a
+statement an operator has to sign and date. None of them establishes how much of
+what should have been examined actually was. The sweep identity of
+{{sweep-statements}} closes the gap between the counts and the Ledger; it does
+not close the gap between the Ledger and the world, because an operator that
+never wrote an entry has nothing to be caught balancing.
+
+That is the omission problem, and it does not have a proof. It has an estimator.
+
+**The construction.** A **Coverage Probe** is an ordinary reconciliation,
+commissioned by an Audit Identity under {{audit-path}}, that is indistinguishable
+at the reconciliation server from any other reconciliation over the same
+predicate and register set. Before commissioning a set of probes, the Audit
+Identity publishes a **Probe Commitment**: a COSE_Sign1 under its own key whose
+payload is the Merkle Root, constructed as {{merkle-construction}} defines it,
+over the Claim Hashes of the probes it intends to commission, together with
+their count and a Commitment Timestamp. The commitment is published before the
+first probe is commissioned and MUST be notarised into the Transparency Service
+of {{settlement-ledger}}.
+
+After a sweep that should have covered them, the Audit Identity requests an
+inclusion proof for each probe's Claim Hash under the Examined-Set Root of the
+Statement covering the interval its probe fell in, which {{sweep-statements}}
+already obliges the server to return. The **recovery fraction** is the number of
+probes for which a valid inclusion proof was returned, over the number
+committed.
+
+**What it estimates.** The recovery fraction is an unbiased estimator of the
+proportion of eligible Outputs the sweep actually examined, provided the server
+cannot distinguish a probe from an ordinary reconciliation. Applied to the
+examined count the Statement asserts, it yields an estimate of the population
+that should have been examined and was not: where a sweep asserts `E` examined
+and recovers `m` of `k` probes, the eligible population is estimated at
+`E · k / m`, and the shortfall at `E · (k - m) / m`.
+
+This is not a proof about any individual Output and this document does not claim
+it is. It is a bound on an aggregate, with a confidence interval that narrows as
+`k` grows, and it is the only thing in this document that speaks to the size of
+what was never written down. An operator suppressing a class of reconciliations
+suppresses probes at the same rate, because it cannot tell them apart, and the
+suppression appears in the recovery fraction rather than in any artefact the
+operator controls.
+
+**Indistinguishability is the whole of the mechanism, and it is what makes it
+expensive.** A probe MUST address real registers over a real predicate and MUST
+be charged against a real query budget, and its subject MUST be drawn from the
+same distribution as ordinary subjects for that predicate. A server that can
+identify probes by their subject, their register set, their timing, their
+requester or their budget treatment can examine those and suppress the rest, and
+the estimator then reports the operator's discrimination rather than its
+coverage. A deployment MUST NOT exempt a probe from any charge, limit or path
+that applies to an ordinary reconciliation, and MUST NOT mark one as a probe in
+any artefact before the sweep it tests has been notarised.
+
+**Why the commitment precedes the probes.** Without it, an auditor could
+commission many probes, observe which were examined, and publish only those it
+liked, in either direction: an auditor hostile to an operator publishes only the
+misses, and an auditor captured by one publishes only the hits. The commitment
+fixes the denominator before the numerator is knowable to anybody, which is what
+makes the fraction evidence rather than a selection.
+
+**What it costs and what it cannot do.** Probes consume register capacity, and a
+register bears that cost without receiving the benefit, so the number of probes
+is a term for a Bilateral Register Agreement rather than a constant this
+document sets; item 33 of {{bra-items}} carries it. The technique establishes
+nothing about a deployment whose registers are themselves suppressing, since a
+probe's answer is only as good as the register's. And it cannot reach a
+reconciliation that was never commissioned by anyone, which is the requester's
+vantage and not the auditor's.
+
+The estimator is standard practice in fields that must characterise a survey
+they cannot repeat: sources of known brightness are injected into an
+astronomical image and the fraction recovered gives the survey's completeness
+function; marked individuals are released into a population and the fraction
+recaptured bounds the population that was never seen. In both cases the quantity
+of interest is what the instrument missed, which cannot be observed directly and
+can be estimated from a known signal passed through the same instrument. A
+retroactive evaluation sweep is an instrument of that kind.
 
 ## Cryptographic-Primitive-Upgrade Path {#crypto-upgrade}
 
@@ -3162,8 +3532,14 @@ order this document specifies.
     this a relying party holding a Head Consistency Statement has no defined way
     to obtain the key that verifies it.
 31. Whether partial attestations may be re-invoked under {{retroactive}}.
+32. Whether the Register Operator notifies corrections to records it has
+    attested, and the endpoint at which it does so, which is what makes the
+    `register-record-correction` trigger of {{retroactive}} reachable.
+33. The Coverage Probe allowance of {{coverage-probes}}: the number of probes an
+    Audit Identity may commission against that register per interval, and the
+    interval, as a two-element array of unsigned integers.
 
-Items 26, 27, 28, 30 and 31 are new in this revision; item 29 is carried from
+Items 26, 27, 28, 30, 31, 32 and 33 are new in this revision; item 29 is carried from
 -03 in a new position. Two of the five were already required elsewhere in this
 document while sitting outside the Agreement Hash.
 {{read-responses}} obliges a deployment to declare a response freshness
@@ -3297,8 +3673,14 @@ under {{read-responses}} when it holds Head Consistency Statements from at least
   Self-Entry Hash of the triple at the Statement's Entry Sequence Number equals
   item 3 of that Statement; that the Self-Entry Hash of the triple at the named
   head equals the one the response names; and that the triple at each sequence
-  number carries, as its Prior-Entry Hash, the Signing Input Digest of the Entry
-  Signature of the entry below it. Those two values are digests over different
+  number carries, as its Prior-Entry Hash, the Signing Input Digest that the
+  linkage array of the entry below it reports. The linkage projection carries
+  that digest as its fourth element precisely so this condition is computable by
+  the party required to compute it: a Signing Input Digest is taken over the
+  `Sig_structure`, so neither the protected header nor the payload of the entry
+  below is recoverable from a triple of sequence number and two hashes, and the
+  substitution a reader might reach for instead is the one the next sentence
+  forbids. Those two values are digests over different
   preimages -- {{settlement-ledger}} takes a Self-Entry Hash over the entry
   array with two positions nulled and a Prior-Entry Hash over a `Sig_structure`
   -- so a verifier MUST NOT test them for equality against each other; and
@@ -3416,7 +3798,7 @@ reader to infer it.
 
 Each Bilateral Register Agreement carries an Agreement Hash: the SHA-256 digest
 over the deterministically encoded CBOR array, under {{cbor-cose}}, of the items
-of {{bra-items}} in the order given there. The array has **exactly thirty-one
+of {{bra-items}} in the order given there. The array has **exactly thirty-three
 elements**. The reconciliation server and the Register Operator compute it
 independently and MUST obtain the same value.
 
@@ -3442,6 +3824,8 @@ and not a warning. The types are therefore fixed here.
 | 14, 28 | unsigned integer |
 | 18 | two-element array: the permitted request count as an unsigned integer, and the interval in seconds as an unsigned integer |
 | 23, 24, 31 | boolean |
+| 32 | two-element array: a boolean, and the endpoint URI as a text string or null |
+| 33 | two-element array of unsigned integers: the probe allowance and the interval in seconds |
 | 25 | two-element array: the reserved proportion as a CBOR decimal fraction, and the per-principal sub-budget as an unsigned integer |
 | 29 | two-element array: the maximum cardinality as an unsigned integer or null, and the permitted member class as a text string or null |
 
@@ -3598,6 +3982,17 @@ subject had been investigated under a named predicate, without its consent and
 without any register's. Naming is an assertion by the requester; enrolment is
 what makes it an assertion about a party that has agreed to receive.
 
+A refusal on that ground discloses that a named identifier is not enrolled,
+which a requester able to repeat it turns into an enumeration of the enrolment
+roster. A server MUST charge such a refusal against the requester's rate limit
+under {{read-errors}} and MUST record it in the access log that section requires.
+{{read-errors}} refuses to distinguish absence from inentitlement on the read
+path, on the ground that answering differently would turn every endpoint into an
+existence oracle; this endpoint is outside that section, so the principle is
+carried here by rate and by record rather than by collapsing the two answers,
+because a requester naming an audience member it believes enrolled needs to be
+told when it is wrong. The residual is recorded in {{privacy}}.
+
 The response is one of four things, the fourth being the `401` of
 {{read-signing}} where the request's own signature was not accepted. A `200` whose body is the
 signed read response of {{read-responses}}, whose `result` element is the sealed
@@ -3693,7 +4088,7 @@ commissioning request of {{request-binding}}.
 - The reconciliation server MUST publish a Policy Parameters Document at
   `/.well-known/arp-policy-parameters` on its Authority Origin: a COSE_Sign1 by
   its sealing key, under the media type registered in {{iana}}, whose payload is
-  the five-element CBOR array of: a Publication Timestamp, in the form
+  the six-element CBOR array of: a Publication Timestamp, in the form
   {{reconciliation-output}} fixes; the array of permitted signature algorithm
   identifiers; the array of per-predicate entries, each a four-element array of
   the predicate, the admitted regime set sorted in bytewise lexicographic order,
@@ -3704,7 +4099,20 @@ commissioning request of {{request-binding}}.
   effective time, which {{sweep-statements}} relies on; and the two-element array
   of the effective Witness Set and the effective Witness Quorum of
   {{witness-discovery}}, the Witness Set sorted in bytewise lexicographic order
-  of the deterministic CBOR encoding of each entry. Without that last element a
+  of the deterministic CBOR encoding of each entry; and the two-element array of
+  the response freshness tolerance of {{read-responses}} in seconds and the
+  effective ledger-head notarisation interval that bounds it, each an unsigned
+  integer.
+
+  The sixth element is present for the same reason as the fifth.
+  {{read-responses}} obliges **every** reader of a read response to check that
+  the response time falls within a declared tolerance, and declares that
+  tolerance in the Bilateral Register Agreements. A relying party is party to no
+  Agreement and holds only their hashes, so the tolerance every reader must
+  apply was readable only by the parties who did not have to apply it, which is
+  precisely the defect the Witness Set element was added to fix.
+
+  Without that fifth element a
   relying party, which holds only Agreement Hashes, could not evaluate the quorum
   the same section obliges it to evaluate.
 
@@ -3793,8 +4201,9 @@ that a party holding no entitlement at all can still observe a head.
   Operator or regulator requesting the Self-Entry Hash alone, for the consistency
   check of {{settlement-ledger}}, by the `fields=self-entry-hash` query
   parameter. Any requester whose signature verifies under {{read-signing}} is
-  additionally entitled to the three-element array of the Entry Sequence Number,
-  the Prior-Entry Hash and the Self-Entry Hash, by the `fields=linkage` query
+  additionally entitled to the four-element array of the Entry Sequence Number,
+  the Prior-Entry Hash, the Self-Entry Hash and the Signing Input Digest of that
+  entry's Entry Signature, by the `fields=linkage` query
   parameter, for the head linkage of {{quorum-rule}}, **and only for an Entry
   Sequence Number at or below the head of the most recently published Ledger
   Head Statement**. A request under that parameter naming a higher sequence
@@ -4031,7 +4440,8 @@ redacted entry therefore cannot verify its chain hashes, which is the price of
 redaction and is why an unredacted read is the ordinary case.
 
 Each read served under this section MUST be recorded in an append-only access
-log, retained for the period of {{delivery}}. The log is not the Settlement-Layer
+log, retained for the period of {{delivery}}, sequenced, chained, headed and
+notarised as the audit trail of {{regulator-portal}} is and for the same reason. The log is not the Settlement-Layer
 Ledger and MUST NOT be written to it: who asked a question is not a fact about
 the reconciliation, and a Ledger that recorded reads would disclose the pattern
 of interest in a subject to every party entitled to read it. The log is readable only by a regulator under
@@ -4186,7 +4596,15 @@ A reconciliation server MUST publish its sealing keys as a COSE Key Set at
 and
 a single key by identifier at `/.well-known/arp-sealing-keys/{kid_value}`. The
 Sealing-Key Identifier is the pair of that origin and the `kid`; where this
-document requires a `kid` to equal the Sealing-Key Identifier, it is the `kid`
+document requires a `kid` to equal the Sealing-Key Identifier, a key identifier in this document is in every case the JWK thumbprint of
+{{RFC7638}}, base64url-encoded without padding. It is carried as a CBOR text
+string in every payload field and in every `keyid` signature parameter, as the
+UTF-8 encoding of that same text string in a COSE `kid` (label 4), which
+{{RFC9052}} makes a byte string, and as that text string unaltered in a
+`{kid_value}` path segment. Every equality test this document requires between a
+`kid` and a Sealing-Key Identifier component is over the base64url text. Without
+one pinned form the same key has three spellings and those equality tests
+compare values of different CBOR types. With that fixed, it is the `kid`
 component that is compared.
 
 Resolving a key is not sufficient. Web PKI establishes that an origin is the
@@ -4205,7 +4623,7 @@ party from the Output.
 
 An Authorised-Origin Document is a COSE_Sign1 whose payload comprises, for each
 reconciliation server the register operator has authorised, that server's
-the three-element arrays {{sealing-key-discovery}} pins above. It MUST be signed under a key served as a COSE Key Set at
+the three-element arrays {{sealing-key-discovery}} pins above. It MUST be signed under a key served in a COSE Key Set at
 `/.well-known/arp-register-keys` on the same register origin -- a key set carrying the same `arp-key-status` and `arp-key-validity` parameters as
 a sealing key set, so
 that a compromised register key has an in-band revocation path, and the same key
@@ -4226,9 +4644,13 @@ key; the authorised server origin and its key-set signing key identifier from
 that document; and the sealing key from the server's key set, verified under
 that identifier. Every step is fetchable by a party holding only the Output.
 
-A key entry MUST carry the `arp-key-validity` and `arp-key-status` parameters of `active`, `retired`
-or `revoked`. A relying party MUST reject a Sealing Signature made under a
-`revoked` key irrespective of when the Output claims to have been sealed, MUST
+A key entry MUST carry the `arp-key-validity` and `arp-key-status` parameters of
+`active`, `retired` or `revoked`, and an entry whose status is `revoked` MUST
+carry a revocation time as the third element of `arp-key-validity`. A relying party MUST reject a Sealing Signature made under a
+`revoked` key whose Reconciliation Timestamp falls at or after the revocation time that key
+entry carries, MUST reject a Sealing Signature made under a `revoked` key
+carrying no revocation time irrespective of when the Output claims to have been
+sealed, MUST
 accept one made under a `retired` key only where the Reconciliation Timestamp
 falls within that key's validity interval, and MUST reject one whose
 Reconciliation Timestamp falls outside the interval of the key it resolves to. A
@@ -4236,6 +4658,25 @@ key MUST NOT be removed from the set while any Reconciliation Output it sealed
 may still be relied upon: retirement is by status, not by deletion, so that a
 historical Output remains verifiable while a compromised key can still be
 refused.
+
+Revocation without a time is repudiation of an epoch. Earlier revisions scoped
+`retired` by validity interval and left `revoked` unscoped, so one status change
+in a document the reconciliation server publishes, on its own origin, under its
+own key, invalidated every Reconciliation Output, Evaluation Sweep Statement,
+signed read response and Entry Signature that key had ever made. The rule
+closing removal -- a key MUST NOT be deleted while an Output it sealed may be
+relied upon -- was defeated by status, which is the same act with a different
+verb.
+
+The reconciliation server MUST therefore publish and notarise its sealing key
+set as {{read-signing}} requires of the Policy Parameters Document: with a
+Publication Timestamp, notarised into the Transparency Service of
+{{settlement-ledger}} on the ledger-head notarisation interval, and republished
+on that interval whether or not its contents changed. A relying party MUST NOT
+act on a status transition it cannot date. A COSE_Sign1 is not dateable from its
+own bytes, and a status flip that no party can place in time disarms every party
+it disarms without any of them being able to say when, or to show that it
+happened after the Output they hold.
 
 The key set MUST itself be signed under the key whose identifier the
 Authorised-Origin Document gives for that server, and a relying party MUST verify
@@ -4302,6 +4743,81 @@ which such a party could determine that it is not entitled, nor the marker of it
 own staleness, would be the bearer artefact {{entitlement}} exists to retire,
 reintroduced through the interop form.
 
+## Representation Invariance {#representation-invariance}
+
+Every interoperability defect this document has repaired in its digest
+constructions is one defect. A signature that has two byte encodings for one
+signing act. A CBOR item whose major type the text did not fix. A set with no
+ordering rule. An optional member that could be omitted or nulled. A URI that
+could be normalised on receipt or before sending. A Unicode string in NFC or in
+NFD. A binary value rendered into JSON as base64, base64url or hex. A digest
+taken over transmitted bytes or over a re-encoding.
+
+In each case two byte strings carry the same information and a digest over them
+differs. The information content is invariant and the representation is not, and
+the digest was defined over the representation. This section states the general
+rule those repairs are instances of, so that the next instance is caught by the
+rule rather than by the next reviewer.
+
+**The rule.** For every digest, signature payload and comparison this document
+defines, the value MUST depend only on the information its input carries and
+MUST NOT depend on any choice of representation that carries no information. A
+construction that fails this is not merely inconvenient: two conforming
+implementations given the same facts compute different values, and every
+mechanism built on the value inherits the divergence.
+
+**The obligation that makes it testable.** A specification cannot discharge this
+by asserting it. For every digest it defines, this document names the
+**representation class** of each input: the set of byte strings that carry the
+same information as that input. The classes this document recognises are:
+
+- **Signature encoding.** For ECDSA, `(r, s)` and `(r, n - s)`. The class has
+  more than two members over the wire, since a low-S rule removes one member of
+  an unbounded set. Handled by {{signature-malleability}}.
+- **CBOR type choice.** A value expressible as more than one major type: an
+  identifier as `tstr` or `bstr`, a count as `uint` or text, a URI as `tstr` or
+  tag 32, a timestamp as `tstr` or tag 0. Handled by the type tables of
+  {{bra-hash}}, {{reconciliation-output}}, {{partial-attestation}} and {{iana}}.
+- **Collection order.** The permutations of a set. Handled by the bytewise sort
+  rules stated at each set.
+- **Absence.** An optional member omitted, or present and null. Handled by the
+  null-substitution rules, which also fix array length.
+- **Text normalisation.** The Unicode normalisation forms of one string.
+  Handled by the NFC requirement of {{ingestion}}.
+- **Reference normalisation.** The equivalent forms of one URI or origin.
+  Handled by {{terminology}} for an Authority Origin and by {{RFC3986}}
+  normalisation for the identifiers that carry it.
+- **Binary rendering in a text encoding.** Base64, base64url with or without
+  padding, and hexadecimal renderings of one byte string. Handled by the
+  key-identifier rule of {{sealing-key-discovery}} and by the digest rendering
+  of {{ingestion}}.
+- **Framing.** A concatenation against an array, and an array against a map.
+  Handled by the domain-separated array requirement stated at each preimage.
+
+**A specification that defines a new digest MUST state, for every element of its
+preimage, which of these classes the element belongs to and which member of the
+class the preimage takes.** A registration under {{iana}} that introduces a value
+carried into any digest this document defines MUST do the same, and the
+designated expert MUST refuse one that does not.
+
+**The conformance obligation.** A conformance runner for any construction in
+this document MUST exercise the construction against the representation class of
+each of its inputs, and not against an enumeration of previously observed
+defects. The distinction is the whole of the test's value. A runner that checks
+a digest against the two ECDSA signature encodings it has heard of confirms
+what its author already knew; a runner that enumerates the class and asserts the
+digest is constant across it detects the member nobody had thought of. The same
+holds for every class above. Where a class is unbounded, the runner MUST sample
+it and MUST record in its run transcript that it sampled rather than enumerated,
+so that a reader is not told a property was established over a class when it was
+established over a sample of one.
+
+**What this does not establish.** Invariance across a representation class is
+not correctness. A digest can be perfectly invariant and taken over the wrong
+elements, and this rule says nothing about that. It says only that two parties
+holding the same facts reach the same value, which is the precondition for every
+other property this document claims and is not itself any of them.
+
 # Security Considerations
 
 ## Service-Operator Containment {#containment}
@@ -4315,6 +4831,28 @@ requester or by an equivalent measure that no internal operator action can
 reverse -- rather than by policy. A conformance test for this requirement is
 whether an operator holding every credential the deployment issues can obtain a
 register record; if it can, the deployment does not conform.
+
+Encryption addressed to the requester discharges this requirement for a register
+record, and for any enumerated field the reconciliation server does not read. It
+cannot discharge it for the Query Binding, the Freshness Timestamp, the echoed
+Policy-Version Hash and Bilateral-Register-Agreement Hash, the Source-Data
+Version Identifier Set or the Applied-Parameter Set, each of which
+{{partial-attestation}}, {{source-versioning}}, {{projection}} and
+{{replay-defence}} oblige the reconciliation server to read in the clear. For
+those fields the equivalent measure MUST be an execution boundary whose
+integrity is remotely attestable under {{RFC9334}} and whose plaintext state no
+credential the deployment issues can read, and the conformance test above
+extends to them: an operator holding every credential the deployment issues must
+be unable to obtain any of them.
+
+The distinction this rests on is the one the section opens with and did not
+carry through. The prohibition binds **the service-operator entity**, a legal
+person, and not the reconciliation server, a process, whose reading of those six
+fields the sections named above require. The two named enforcement measures were
+therefore not alternatives of equal reach: the first is unavailable for exactly
+the fields where the prohibition bites, and the conformance test asked only
+about a register record, so the payload half of the requirement had no test at
+all.
 
 That property is per-event and MUST NOT be read as a property of the system
 under repeated querying. A verdict is a function of an attested value the
@@ -4462,13 +5000,30 @@ Attestation includes a reference to the Agreement Hash under which it was
 issued. Agreement drift is detectable by comparison of agreement-hash
 references across Partial-Attestation batches. Reconciliation MUST be
 suspended for an addressed register whose Agreement Hash deviates from the
-hash committed at the start of a reconciliation event.
+hash committed at the start of a reconciliation event. A suspension under this
+section ends when the two parties have agreed a new Agreement Hash under
+{{bra-hash}} and the reconciliation server holds it as the hash it commits at the
+start of the next reconciliation event, from which event the register is
+addressable again. A suspension arising instead from the irreconcilable head
+statements of {{settlement-ledger}} ends only when the Register Operator that
+refused further projections states, under the read key of item 22 of
+{{bra-items}}, that the discrepancy is resolved. No other event ends either, and
+a deployment MUST NOT treat the passage of time as ending one.
 
 ## Replay Defence {#replay-defence}
 
 Each Partial Attestation MUST carry a Freshness Timestamp. The
 reconciliation server MUST verify the Freshness Timestamp against a
-freshness window declared in the Bilateral Register Agreement. Stale Partial Attestations MUST be rejected, and the rejection MUST be recorded
+freshness window declared in the Bilateral Register Agreement. The window is
+measured backward from the instant the reconciliation server received the
+Partial Attestation. An attestation is fresh where its Freshness Timestamp is no
+earlier than that instant less the declared window and no later than 60 seconds
+after it, and a Freshness Timestamp further in the future MUST be treated as
+stale. A window with no stated reference instant and no stated direction is a
+test two implementations apply differently to the same attestation, and the
+register cannot tell which one it will be held to. This document states the
+reference instant and direction for the witness observation window of
+{{quorum-rule}} and did not state them here. Stale Partial Attestations MUST be rejected, and the rejection MUST be recorded
 in the Reconciliation Output under {{no-answer}} with the Non-Answer Reason
 `attestation-stale` and a `freshness-stale` divergence axis attributed to that
 register. A signed agent request under {{RFC9421}} MUST additionally carry a
@@ -4575,6 +5130,54 @@ for the same reason. Both are failures of verification rather than of
 authenticity, and a deployment that reports them as detected tampering will be
 reporting something that did not happen.
 
+## Declared Trade-offs {#tradeoffs}
+
+Several properties this document would like to hold cannot hold together. Where
+that is so, the document chooses, and this section is the list of the choices in
+one place, so that a reader can find what was given up without reading for it.
+
+The discipline is worth stating on its own. A specification that wants two
+incompatible properties has three options: claim both and be wrong somewhere a
+reader has to find; weaken both until the conflict disappears and deliver
+neither; or take the conflict as irreducible, choose, and say where the loss
+went. The third is the only one that leaves a reader able to reason about a
+deployment. What makes it work is that the loss is **located** rather than
+distributed: a reader who knows exactly which property was surrendered, and
+where, can compensate for it, and a reader told that everything holds cannot.
+
+| Wanted | Also wanted | Given up | Stated in | What a reader can check instead |
+|---|---|---|---|---|
+| Reproducibility from enumerated inputs | Uniqueness per reconciliation | Field-for-field identity, for three fields | {{architecture}} | Every other field is identical; the three are carved out by name |
+| Erasure of a subject's data | An append-only record | Permanence of Output content | {{privacy-erasure}} | No chain depends on content; a digest whose preimage is gone is still a valid chain element |
+| A flag-day-free schema upgrade | Telling withheld from never-defined | The upgrade; absence is encoded, not omitted | {{settlement-ledger}} | Array length is fixed by Entry Type, so a short array is a defect and not a version |
+| A chain stable under re-encoding | A verifier-side test that an entry was signed once | The test | {{signature-malleability}} | The obligation remains and is examinable by an auditor; a re-signature under a different key still moves the chain |
+| Digests unguessable from outside | An auditor who can recompute them | Recomputation without the blinding value | {{audit-path}} | Self-consistency across two reads, and nothing more, which that section now says |
+| A register recognising a returning counterparty | A requester unlinkable across reconciliations | Unlinkability, by default | {{sealing}} | The deployment may substitute a per-reconciliation element; the choice is declared |
+| One interoperable register leg | Sovereign registers keeping their own interfaces | The common leg | {{format-profiles}} | Every leg is declared in an Agreement whose hash is committed to |
+| A regulator reading a redacted entry | That regulator verifying the entry's chain | Chain verification under redaction | {{read-operations}} | Redacted fields are null in place, so the length is intact and an unredacted read is available |
+| Errors that tell a requester what went wrong | Endpoints that are not existence oracles | Distinguishing errors, on the read path | {{read-errors}} | The commissioning path distinguishes them and pays for it in rate limit and access log |
+| Coverage measured without cost | Probes indistinguishable from real work | Free measurement | {{coverage-probes}} | A probe consumes a real budget against a real register, which is what makes it uncountable by the operator |
+| A quorum proving observer independence | A test a verifier can actually run | Proof of independence | {{bra-limits}} | Distinct declared parties and distinct keys, both mechanically checkable |
+
+Two things follow from having written this table that were not obvious before
+writing it.
+
+The first is that most of the losses are **stated limits rather than open
+defects**, and the difference is whether a reader can compensate. A limit a
+reader knows about is an input to that reader's decision; a limit it does not
+know about is a false belief. This document has repeatedly found that its own
+worst errors were sentences claiming a property it did not have, rather than
+missing properties honestly described, and the table is the form that makes the
+distinction hard to lose.
+
+The second is that a row can be **retired by invention**. Two rows that stood in
+earlier revisions no longer do: the falsifiability of a sweep against its
+operator, which was traded away and has been bought back by anchoring the Policy
+Parameters Document; and the verifiability of the sweep counts, which was
+conceded as an assertion and is now an accounting identity against the Ledger. A
+trade-off is a statement about the mechanisms available at the time it was made,
+not a law, and a list of them is also a list of what to attack next.
+
 # Privacy Considerations {#privacy}
 
 This protocol operates over beneficial-ownership registers, corporate registries,
@@ -4618,6 +5221,82 @@ addresses. An Override Record names an authorising operator in the clear inside
 the Output. {{budget-suppression}} records a further residual risk, and
 {{side-channel}} the projection-narrowing channel.
 
+## Against the threat model of RFC 6973 {#privacy-6973}
+
+Taking the threats of Section 5 of {{RFC6973}} in turn, and stating the residual
+rather than the mitigation where there is one.
+
+**Surveillance and correlation.** Every digest that could otherwise correlate a
+subject across deployments is blinded: a Claim Hash cannot be recomputed outside
+the deployment that produced it and equality of Claim Hashes across deployments
+is not a comparison that can be made at all. Within a deployment, correlation is
+by design -- the Ledger index is a stable function of the claim, which is what
+makes retroactive re-evaluation possible -- so a Ledger reader entitled to
+nothing else still learns that some subject was reconciled repeatedly, and how
+often. That residual is inherent in an append-only index and is not closed here.
+
+**Identification.** The Ledger carries no Subject Identifier and no Subject
+Reference. Those travel to the addressed registers, which is unavoidable in a
+protocol that asks a register about a subject, and into the Reconciliation
+Output, which is confidential to its Audience Set.
+
+**Secondary use and disclosure.** A reconciliation server MUST NOT write a
+Subject Identifier, a Subject Reference, an Applied-Parameter Set or any
+register-record field to the Settlement-Layer Ledger, and MUST NOT include one
+in any artefact it notarises into a Transparency Service. Notarisation under
+{{scrapi-binding}} places the sealed Output into an append-only log operated by a
+third party, and a sealed Output carries Subject References inside its Query
+Binding Records. Notarisation of an Output is a MAY and MUST NOT be performed
+where the deployment's subjects have not been accounted for in that disclosure.
+The Ledger Head Statement, the Evaluation Sweep Statements and the Policy
+Parameters Document carry no subject data and are the artefacts this document
+requires to be notarised.
+
+**Exclusion.** The subject is not told, cannot object and cannot learn that it
+was reconciled. This is stated above as a deliberate property and it is the
+sharpest privacy cost the protocol imposes. It is restated here because
+{{RFC6973}} names exclusion as a threat in its own right and a document that
+lists its mitigations and passes over the one threat it does not mitigate is
+reporting selectively.
+
+## Erasure and rectification against an append-only record {#privacy-erasure}
+
+A jurisdiction in which a subject may require erasure or rectification of
+personal data is in direct tension with a Ledger this document requires to be
+append-only and with a Transparency Service it requires to be outside the
+operator's control. That tension cannot be resolved by a protocol mechanism, and
+this document does not claim to resolve it. What it can do is bound what has to
+be erased, and that is a design obligation rather than a remark:
+
+- **No personal data is written to the Ledger**, per the rule above. What the
+  Ledger carries about a reconciliation is digests, register Authority Origins,
+  verdict values and structural metadata. An erasure obligation over the
+  subject's data therefore falls on the Reconciliation Output and the register
+  correspondence, both of which are held by the deployment and both of which
+  have a retention period.
+- **A retracted or rectified verdict is expressed by supersession and not by
+  deletion.** {{retroactive}} appends a `continuation-supersession` entry and
+  {{re-notification}} notifies the affected regulators. The superseded Output
+  remains identified by its Reconciliation Hash and its content may be destroyed
+  at the end of its retention period without breaking any chain, because no
+  chain hashes the Output's content: the Ledger commits to the Reconciliation
+  Hash, and a digest whose preimage no longer exists is still a valid chain
+  element. **This is the property that makes erasure implementable at all, and
+  an implementation MUST NOT introduce any construction that hashes Output
+  content into the chain.**
+- **A deployment that has notarised an Output cannot erase it**, because the
+  Transparency Service is required not to be under the operator's control. That
+  is the reason notarisation of an Output is optional and is now prohibited
+  where the disclosure has not been accounted for.
+
+A deployment operating under an erasure regime should treat the retention period
+of {{delivery}} as the erasure horizon for Output content, and should not
+notarise Outputs. This document states that as guidance and not as a
+requirement, because the obligation arises outside it and its shape differs by
+jurisdiction. What is normative is the constraint that makes any of it possible:
+personal data does not enter the append-only record, and nothing in the chain
+depends on the continued existence of the content that could be erased.
+
 # IANA Considerations {#iana}
 
 This document requests IANA to register the following:
@@ -4645,7 +5324,9 @@ This document requests IANA to register the following:
 - Two COSE Key common parameters in the COSE Key Common Parameters registry,
   values to be assigned by IANA: `arp-key-status` (value TBD), a CBOR text string
   of `active`, `retired` or `revoked`; and `arp-key-validity` (value TBD), a
-  two-element CBOR array of the not-before and not-after times in the form of
+  two-element CBOR array of the not-before and not-after times, or a
+  three-element array whose third element is a revocation time where the entry's
+  `arp-key-status` is `revoked`, each in the form of
   {{reconciliation-output}}. {{sealing-key-discovery}} requires both on every key
   it publishes, and a key parameter used normatively and never registered is a
   parameter no other implementation can read.
@@ -4718,7 +5399,7 @@ This document requests IANA to register the following:
 
 - A registry of ARP Retroactive Evaluation Triggers, registration policy
   Specification Required, initially containing `pattern-library`,
-  `policy-version`, `source-data-version` and `credential-revocation`, defined in
+  `policy-version`, `source-data-version`, `credential-revocation` and `register-record-correction`, defined in
   {{sweep-statements}}. A registration MUST name an event whose occurrence and
   time a party outside the reconciliation server can establish, or state plainly
   that it cannot, since the falsifiability of {{sweep-statements}} turns on it.
@@ -4733,8 +5414,8 @@ This document requests IANA to register the following:
 
 - A registry of ARP Re-Typing Grounds, registration policy Specification
   Required, initially containing `bounded-depth-not-closure`,
-  `declared-not-determined` and `threshold-divergence`, corresponding to the
-  three grounds of {{verdict-retyping}}.
+  `declared-not-determined`, `threshold-divergence` and `projection-broadened`,
+  corresponding to the four grounds of {{verdict-retyping}}.
 
 - A registry of ARP Verdict-Arithmetic operators, registration policy
   Specification Required, initially containing conjunction, disjunction,
@@ -4819,6 +5500,7 @@ forms.
 | `arp-evaluation-sweep+cose` | an Evaluation Sweep Statement | {{sweep-statements}} |
 | `arp-key-set+cose` | a signed COSE Key Set or an Authorised-Origin Document | {{sealing-key-discovery}} |
 | `arp-head-consistency+cose` | a Head Consistency Statement | {{head-consistency}} |
+| `arp-probe-commitment+cose` | a Probe Commitment | {{coverage-probes}} |
 
 # Acknowledgments
 
@@ -5588,7 +6270,7 @@ encoding of each element. Determinism under Section 4.2.1 of {{RFC8949}} fixes
 how a given value is encoded and does not fix which type an item takes or how a
 set is ordered, so -03's construction was not one two parties could
 independently compute even with the item order settled. It also states that the
-array has exactly thirty-one elements and that an absent, inapplicable or empty
+array has exactly thirty-three elements and that an absent, inapplicable or empty
 item is encoded as CBOR null with the element still present, naming the four
 items that may be absent -- -03 said only that an absent *optional* item was
 null, while more than the one OPTIONAL item admits absence. Since {{agreement-drift}} suspends reconciliation on a deviating
@@ -5644,10 +6326,18 @@ diversity was declared, by a named party, in a term that party can be held to.
 ### The head-linkage projection
 
 {{read-operations}} gains a `fields=linkage` projection returning the Entry
-Sequence Number, Prior-Entry Hash and Self-Entry Hash of one entry, entitled to
+Sequence Number, Prior-Entry Hash, Self-Entry Hash and the Signing Input Digest
+of the Entry Signature of one entry, entitled to
 any requester whose signature verifies, because {{quorum-rule}} obliges a
 relying party to link two heads and a relying party is entitled to no other read
-that would let it. The projection is bounded at the head of the most recently
+that would let it. The fourth element was added after the projection was
+specified with three: the chain condition of {{quorum-rule}} compares a
+Prior-Entry Hash against the Signing Input Digest of the entry below, that
+digest is taken over a `Sig_structure`, and neither the protected header nor the
+payload of the entry below is recoverable from a triple of one sequence number
+and two hashes. The condition was uncomputable by the only party required to
+compute it, and the substitution a reader might have reached for instead is the
+one the same section forbids. The projection is bounded at the head of the most recently
 published Ledger Head Statement. Unbounded it would be a live head oracle --
 the Ledger is contiguous, so a requester could binary-search the current head
 between publications and poll it for the write rate, which is the disclosure
@@ -5659,6 +6349,196 @@ No timing claim is added by this revision and none is tested. {{read-errors}}
 continues to state that response timing is a separate claim which an
 implementation must either make with its measurement conditions published or not
 make at all, and that making none is not non-conformance.
+
+### Six adversarial passes, and what they found
+
+The changes above were made in response to review. The changes below were made
+in response to a sweep run against this document with the specific intent of
+breaking it, from six directions at once, before anyone else did. They are
+grouped by what they say about the document rather than by section, because the
+grouping is the finding.
+
+**Three sentences claiming rigour were the least rigorous sentences in the
+document.**
+
+{{sweep-statements}} said the falsifiability argument holds for three triggers
+in four, "stated rather than rounded up". It held for one. Two of the three
+rested on a transition array published by the reconciliation server, under its
+own key, in a Policy Parameters Document with no publication time, no
+notarisation and no chain, so a transition omitted from the array started no
+clock and no party could date the Document well enough to show that it had been.
+{{read-signing}} now gives that Document a Publication Timestamp, requires it to
+be notarised on the ledger-head interval, and requires republication on that
+interval whether or not its contents changed. The claim is now three in four and
+is stated as conditional on that anchoring.
+
+{{signature-malleability}} said "every digest in this document that identifies
+or chains a signed artefact" and enumerated five. There were seven. The Override
+Record of {{adversarial-test}} carries a COSE_Sign1 by the authorising operator
+inside the Reconciliation Hash preimage, and the Evidentiary Provenance Manifest
+of {{ingestion}} could carry one inside the Claim Hash preimage. The rule is now
+stated over the class -- in any preimage this document defines, every signature
+made by a party other than the one computing the digest is replaced by its
+Signing Input Digest -- because an enumeration of carriers is correct only until
+someone adds a field. The Manifest could not be repaired that way, its preimage
+being {{RFC8785}} JSON with no byte-string type and its octets being the
+requester's, so signed artefacts are now prohibited inside it and carried beside
+it by digest.
+
+{{bra-witness}} said two instances of one observer are not two observers and
+tested distinctness on the Operating-Party Identifier alone. Two entries
+declaring one key under two identifiers satisfied a quorum of two with a single
+signature. {{quorum-rule}} now requires pairwise distinct Verification Method
+References, which is a mechanical test, and states why that is different from
+the declared-independence limit {{bra-limits}} concedes and cannot close.
+
+**Two paths reached a decisive verdict out of nothing.** An empty
+Addressed-Registers Identifier Set yielded `match` under conjunction: every
+operator in {{verdict-arithmetic}} is a condition universally quantified over
+the contributions, and both precedence rules began "where any", so at zero
+contributions every guard was vacuously satisfied. A source class containing no
+addressed register yielded a decisive `no-match`, which conjunction propagated.
+Neither required an operator to misbehave. Both are now closed by explicit rules.
+
+**Nothing bound the subject.** The transformation from the Canonical Claim's
+Subject Identifier to the Subject Reference each register was asked about was
+unrecorded, unconstrained and invisible to every party outside the
+reconciliation server. Every signature could verify, every binding recompute,
+the chain hold and the notarisation pass, while every register answered honestly
+about a different person. {{subject-mapping}} adds a Subject Mapping Record
+carrying the Subject Reference and a registered descriptor naming a
+transformation that must be a function of the Subject Identifier and declared
+terms alone.
+
+**Evidence about a party was obtainable only from that party.** Head Consistency
+Statements had an artefact, a quorum rule, a linkage chain and a freshness
+window, and no channel. The obvious implementation has the responding service
+supply them, which satisfies every stated condition and defeats the mechanism
+entirely under exactly the fork it exists to detect. Witnesses now publish on
+their own origins and a relying party MUST NOT accept one from the responding
+service.
+
+**Vocabulary that did not reach the output.** A verifier told to refuse a proof
+had no way to record which of four refusals it made; {{verification-outcomes}}
+adds them, and requires `same-act-distinct-encodings` to be tested before any
+outcome that accuses a party of equivocation. One Non-Answer Reason carried five
+distinct causes because four other sections directed implementations to it for
+conditions its own definition never named; it is now five reasons.
+
+**Claims a mechanism could not support.** The Reconstruction Proof of
+{{audit-path}} had no pinned preimage, no wire representation, and compares one
+value the audited server produced against another value the same server
+produced under a key only it holds. The preimage and the wire form are now
+fixed, and the stated limit is corrected: equality establishes self-consistency
+across two reads and nothing else. The Examined-Set Root's counts were said not
+to be bare assertions, which {{merkle-construction}} already contradicted; they
+are assertions, made attributable and dated by the signature and the
+notarisation and not made verifiable. The Regulator Portal audit trail was
+called subpoena-grade with no sequence, chain, head or notarisation behind it,
+and is now given all four.
+
+**Things two implementers would encode differently.** A CBOR type table for the
+Reconciliation Output; deterministic encoding stated for the Self-Entry Hash
+preimage; `authority origin` defined as an Authority Origin against {{RFC6454}};
+element types for the Query Binding preimage; a form for the Audience Member
+Identifier; one canonical form for a key identifier and its two conversions; an
+ordering rule, a form discriminator and an equality rule for the Source-Data
+Version Identifier Set; an equality relation for the Witness Set intersection; a
+member form for the fifth Divergence Axis; a subject key for the query budget; a
+reference instant and direction for the freshness window; and the edges of the
+Predicate Taxonomy the projection function walks.
+
+**Things no implementer could satisfy.** The reproducibility requirement of
+{{architecture}} was stated as identity in every field save an enumerated
+carve-out, and three fields that are necessarily fresh were not in it. The
+`fields=linkage` projection returned three values where the chain condition it
+exists to serve needs four. The response freshness tolerance every reader must
+apply was readable only by the parties who do not have to apply it. Suspension
+under {{agreement-drift}} had no defined exit.
+
+**Privacy.** {{privacy-6973}} takes the threats of {{RFC6973}} in turn and
+states the residual rather than the mitigation where there is one, including
+exclusion, which this protocol does not mitigate. {{privacy-erasure}} states the
+one property that makes erasure implementable against an append-only record --
+no personal data enters the Ledger, and no chain depends on the continued
+existence of content that could be erased -- and prohibits notarising an Output
+where that disclosure has not been accounted for.
+
+**What was looked for and not found.** Several candidates did not survive
+verification and no change was made for them: the Claim Hash's unverifiability
+outside the deployment is already stated in two places; `notarisation-incomplete`
+already distinguishes pending, refused and never-attempted; the register key
+discovery root already has an encoding, a media type and a trust anchor; and the
+containment requirement of {{containment}} is satisfiable, though its named
+enforcement measure could not reach six fields the reconciliation server is
+obliged to read, which is now stated.
+
+### Five mechanisms taken from outside this field
+
+The repairs above answer review. These four sections answer questions the
+document could not previously answer at all, and each is a technique this field
+has not used and another has.
+
+**{{representation-invariance}} — every encoding defect is one defect.** A
+signature with two byte forms, a CBOR item whose type is unfixed, a set with no
+order, an optional member omitted or nulled, a URI normalised or not, NFC or
+NFD, base64 or hex, transmitted bytes or a re-encoding. In each the information
+is the same and the representation differs, and the digest was defined over the
+representation. Physics has a name for a quantity that must not depend on a
+choice carrying no information, and the discipline that goes with it is to
+identify the freedom and quotient it out rather than to patch each place it
+shows. The section names the eight representation classes this document
+recognises, requires every new digest to state which class each preimage element
+belongs to, and requires a conformance runner to exercise the **class** rather
+than an enumeration of previously observed defects. A runner testing the two
+ECDSA encodings it has heard of confirms what its author knew; a runner
+enumerating the class finds the member nobody thought of.
+
+**{{coverage-probes}} — an estimator where there is no proof.** The sweep
+identity below closes the gap between the counts and the Ledger. Nothing closes
+the gap between the Ledger and the world, because an operator that never wrote
+an entry has nothing to be caught balancing, and that is the omission problem in
+its general form. It has no proof and it has an estimator. An Audit Identity
+publishes a commitment to a set of Claim Hashes it intends to commission, then
+commissions them as ordinary reconciliations the server cannot distinguish, then
+requests the inclusion proofs {{sweep-statements}} already obliges the server to
+return. The recovery fraction estimates the proportion of eligible Outputs the
+sweep actually examined, and the shortfall estimates the population that was
+never written down. Astronomy injects sources of known brightness into an image
+to measure what its pipeline missed; ecology releases marked individuals to
+bound a population it cannot count. Both are estimating the same thing: what an
+instrument failed to record, from a known signal passed through the same
+instrument. A retroactive sweep is an instrument of that kind. The commitment
+precedes the probes so that the denominator is fixed before the numerator is
+knowable, which is what makes the fraction evidence rather than a selection.
+
+**The sweep identity in {{sweep-statements}} — accounting rather than
+signature.** The examined count and the materially-changed count were assertions
+of the signing server. They are now required to balance against the Ledger: the
+Examined-Range Set must be contiguous over the interval it claims, the examined
+count must equal the number of `reconciliation` entries in it, and the
+materially-changed count must equal the number of `continuation-supersession`
+entries appended over the same interval. A signature makes an assertion
+attributable; an identity makes it checkable against something the asserting
+party does not solely control, which is what double-entry bookkeeping has done
+for six centuries and what a conservation law does in physics.
+
+**The Examined-Range Set — coverage needs a dense space.** A Merkle root over
+Claim Hashes proves membership and cannot prove coverage, because Claim Hashes
+are sparse in the digest space and a set commitment has no notion of what is
+missing from it. Entry Sequence Numbers are dense and contiguous, so a gap in
+them is visible. Committing to the same sweep in both spaces lets one artefact
+answer both questions, and the choice of space is the whole of the trick.
+
+**{{tradeoffs}} — locating the loss.** Several properties this document wants
+cannot hold together, and a specification facing that can claim both and be
+wrong somewhere a reader must find, weaken both and deliver neither, or choose
+and say where the loss went. The section is the third, in one table. What makes
+it useful is that the loss is located rather than distributed: a reader who
+knows which property was surrendered and where can compensate, and a reader told
+that everything holds cannot. Two rows that stood in earlier revisions have
+already been retired by the mechanisms above, which is the other thing the table
+turns out to be — a list of what to attack next.
 
 ### Mechanical
 

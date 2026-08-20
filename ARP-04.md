@@ -863,6 +863,175 @@ was exhaustive.
 **Structural check after twenty edits: no section number outside Document
 History moved.** Two new subsections, both appended within their parent.
 
+### 2.11 Round two: the open list closed. Nineteen more repairs
+
+Every item on the 2.10 open list was put to a verification pass instructed to
+refute it. **Two were refuted and no change was made** -- the Claim Hash
+unverifiability limit is already stated twice, and `notarisation-incomplete`
+already distinguishes pending from refused from never-attempted. That is the
+point of verifying: two fixes not made are two ways the document was not made
+worse.
+
+Confirmed and repaired:
+
+- **A seventh signature carrier**, and the only one the class rule of 7.9 cannot
+  reach. The Evidentiary Provenance Manifest sits inside the Claim Hash preimage
+  and could carry a COSE_Sign1. The preimage is JCS JSON, which has no
+  byte-string type for a substituted Signing Input Digest, and the octets are
+  the requester's, so a server-side substitution would hash bytes the requester
+  never signed. Where a construction cannot be repaired by the general rule the
+  content has to be excluded: signed artefacts are now prohibited inside the
+  Manifest and carried beside it by digest.
+- **A decisive `match` on a broader predicate.** The projection function
+  produces the nearest permitted **ancestor**, and re-typing covered only
+  narrowing. A register answering "designated on some US sanctions list"
+  produced a decisive `match` for a claim about the OFAC SDN list. Fourth
+  re-typing ground added. The one Divergence Axis naming this condition appears
+  exactly once in 6,400 lines, is register-attestable, optional, and wired to no
+  rule -- an axis a register need never emit and which changes no verdict when
+  emitted is not a control.
+- **The Claim Hash preimage was the requester's to choose.** No rule required
+  the server to check the received octets are canonical. NFD and NFC of one
+  claim gave two ledger indices and two retroactive keys.
+- **The Reconstruction Proof** compared a server-produced value against a
+  server-produced value under a server-held key, over an unpinned preimage with
+  no wire representation. Its stated limit was one step too generous.
+- **Two self-held logs**, one called "subpoena-grade", with no sequence, chain,
+  head or notarisation -- while the document applies all four to the Ledger a
+  few sections above.
+- **The Examined-Set Root counts.** "Not bare assertions" was contradicted by
+  the document's own deduplication rule two sections earlier.
+- **Nine implementer defects**: the Predicate Taxonomy had no stated edges and
+  the `agent:` branch no parent relation; the reproducibility requirement was
+  unsatisfiable, three necessarily-fresh fields sitting outside its carve-out;
+  the Query Binding preimage had no element types though two parties compute it
+  independently; the Audience Member Identifier had no comparison rule while
+  sorting inside two signed digests; a key identifier had three spellings with
+  equality tests between them; the freshness window had no reference instant or
+  direction; **`fields=linkage` returned three values where the chain condition
+  it exists to serve needs four**, so that condition was uncomputable by the
+  only party required to compute it; suspension had no exit; and the response
+  freshness tolerance every reader must apply was readable only by the parties
+  who do not have to apply it.
+- **Privacy**: an RFC 6973 threat walk stating the residual rather than the
+  mitigation, including exclusion, which this protocol does not mitigate; and an
+  erasure section whose load-bearing rule is that no chain depends on the
+  continued existence of content that could be erased.
+- **Containment narrowed rather than refuted**: satisfiable, because the
+  prohibition binds the service-operator entity and not the server process, but
+  its named measure cannot reach six fields the server must read in the clear,
+  and the conformance test asked only about a register record.
+
+Also added: RFC 6234 and RFC 2104 as normative references, SHA-256 and HMAC
+having been used throughout with none; the Note to the RFC Editor updated to six
+downrefs.
+
+**Document History now carries the whole sweep**, grouped by what each finding
+says about the document rather than by section, and including the four
+candidates that did not survive verification. A reviewer reads that section
+first.
+
+Structural check after thirty-nine edits across two rounds: **no section number
+outside Document History has moved.** Four new subsections, all appended within
+their parents.
+
+### 2.12 Round three, and five mechanisms from other fields
+
+**Round three.** Ten adversary-pass candidates verified. Four refuted, six
+repaired. The two that mattered most:
+
+- **A key status flip repudiated an epoch.** `retired` was time-scoped and
+  `revoked` was not, so one status change in a key set the server publishes on
+  its own origin, under its own key, invalidated every Output, Sweep Statement,
+  signed read response and Entry Signature that key had ever made. The rule
+  forbidding key *deletion* while an Output may be relied upon was defeated by
+  *status*, which is the same act with a different verb. Revocation now carries
+  a time, and the key set is published and notarised as the Policy Parameters
+  Document is, because a relying party must not act on a transition it cannot
+  date.
+- **A corrected register record was not a trigger.** A beneficial-ownership
+  register carrying an erroneous percentage could produce a `match`, correct the
+  record next week, and nothing would fire: `source-data-version` reaches a
+  corpus republication the list publisher versions, not one record about one
+  person. Fifth trigger added. The erasure section already said a rectified
+  verdict is expressed by supersession, and until now no trigger produced one.
+
+Also: the Remediation Advisory was handing matched Pattern-Library identifiers
+back to the requester, so the anti-evasion corpus was enumerable one refusal at
+a time by the party it defends against; the enrolment error was a roster oracle;
+the Policy-Version Hash is a stable requester pseudonym under equality even
+though it resists inversion; and the retroactive sweep selector named no
+determinate set.
+
+Refuted and left alone: the open-screening-oracle claim (three gates exist),
+Audience-Set flooding (the rate floor scales per Reconciliation Hash and naming
+requires enrolment), attestation length as a side channel (no field varies with
+the verdict, and the Source-Data Version rule already forbids exactly that), and
+the register-supplied Freshness Timestamp as a deniable veto (silence is
+deniable, a signed backdated timestamp is not).
+
+### 2.13 The five mechanisms
+
+These are not repairs. They answer questions `-04` could not answer at all.
+
+**Representation Invariance.** Every encoding defect this document has fixed is
+one defect wearing eight costumes: signature encoding, CBOR type choice,
+collection order, absence, text normalisation, reference normalisation, binary
+rendering in text, and framing. In each, the information is invariant and the
+representation is not, and the digest was defined over the representation. That
+is gauge freedom, and the discipline that goes with it is to quotient it out
+rather than patch each appearance. The section names the eight classes,
+requires every new digest to state which class each preimage element belongs to,
+and **requires conformance runners to exercise the class rather than a list of
+known defects.** That last is the part Sokolov and Sirkkavaara will recognise
+immediately: a runner testing the two ECDSA encodings it has heard of confirms
+what its author knew.
+
+**Coverage Probes.** The omission problem has no proof and the whole substrate
+thread says so. It has an estimator. An Audit Identity commits to a set of Claim
+Hashes, commissions them as reconciliations the server cannot distinguish, and
+then asks for the inclusion proofs the document already obliges the server to
+return. The recovery fraction estimates the proportion of eligible Outputs
+actually examined; the shortfall estimates the population never written down.
+Astronomy injects synthetic sources to measure survey completeness; ecology
+marks and recaptures to bound a population it cannot count. Both estimate what
+an instrument missed, from a known signal passed through the same instrument.
+The commitment precedes the probes so the denominator is fixed before the
+numerator is knowable.
+
+**This is the thing to take to the substrate thread.** Hawkins, Sirkkavaara,
+Etcheverry and ARP have all arrived at the same wall: completeness of what was
+anchored is not proof that nothing was withheld from anchoring. Nobody in that
+thread has offered anything that speaks to the *size* of the omission. This
+does, and it is a technique two mature observational sciences already run at
+scale.
+
+**The sweep identity.** The examined count and the materially-changed count were
+assertions. They now have to balance against the Ledger: contiguous range
+coverage, examined count equal to the `reconciliation` entries in it,
+materially-changed count equal to the `continuation-supersession` entries over
+the same interval. A signature makes an assertion attributable; an identity
+makes it checkable against something the asserting party does not solely
+control. Double-entry bookkeeping, and conservation laws.
+
+**The Examined-Range Set.** A Merkle root over Claim Hashes proves membership
+and cannot prove coverage, because the digest space is sparse and a set
+commitment has no notion of what is missing. Entry Sequence Numbers are dense
+and contiguous, so a gap is visible. Same sweep, two spaces, two questions
+answered. The choice of space is the whole trick.
+
+**Declared Trade-offs.** Eleven rows, each naming two properties that cannot
+both hold, which one was surrendered, where that is stated, and what a reader
+can check instead. The point is that the loss is *located* rather than
+distributed: a reader who knows which property went and where can compensate,
+and a reader told everything holds cannot. Two rows have already been retired by
+the mechanisms above, which is the other thing the table is — a list of what to
+attack next.
+
+Structural check after three rounds and roughly sixty edits: **no section number
+outside Document History has moved.** Seven new subsections, all appended within
+their parents.
+
 ## 3. Family coherence
 
 The three drafts share one Verification Reconciliation Object, one issuing-partner
@@ -1263,6 +1432,8 @@ That check has not been done yet.
 | 2026-08-20 | Sokolov's two hardware files run. `-04` confirmed stable, `-03` not. Twin is the low-S normalisation, so no attacker is needed. Two new `-04` items: no reason code for same-act-two-encodings, and no stated assumption about EntryID stability in the sweep chain. |
 | 2026-08-20 | Dogru's messages recovered from junk. Rung ladder correctly attributed to him. ARP's chain claim corrected: the chain covers a withdrawal from the middle and is blind to a truncated tail; the deadline is what reaches rung 3. Placement generalised to three. Weakest-rung rule identified as a fourth independent arrival at ARP's own verdict re-typing discipline. |
 | 2026-08-20 | Six-pass adversarial sweep. Twenty repairs including two fail-open paths to a decisive verdict, a sixth signature carrier in the Reconciliation Hash, the subject-mapping binding, the Head Consistency retrieval path, the Reconciliation Event Identifier, the Reconciliation Output type table, and a corrected falsifiability count that was already in an outgoing email. Register at `_audit/REGISTER.md`. |
+| 2026-08-20 | Round two: the 2.10 open list verified and closed. Two refuted, nineteen repaired, including a seventh signature carrier, a decisive match on a broader predicate, an uncomputable chain condition, and the RFC 6973 and erasure sections. Register at `_audit/REGISTER.md`. |
+| 2026-08-20 | Round three: ten adversary candidates verified, four refuted, six repaired, including retroactive epoch repudiation by key status and the missing register-record-correction trigger. Five new mechanisms: Representation Invariance, Coverage Probes, the sweep identity, the Examined-Range Set, Declared Trade-offs. |
 | 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |

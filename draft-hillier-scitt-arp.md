@@ -36,6 +36,7 @@ normative:
   RFC3339:        # date/time on the wire
   RFC7638:        # JWK Thumbprint
   RFC3986:        # URI generic syntax, for target normalisation
+  RFC6454:        # The Web Origin Concept, for the Authority Origin form
   RFC9530:        # Digest Fields, for Content-Digest
   RFC8615:        # Well-Known URIs, under which this document registers
   RFC6838:        # Media type registration procedures
@@ -403,13 +404,40 @@ Combined Verdict:
 Reconciliation Hash:
 : The SHA-256 digest over the deterministically encoded CBOR serialisation of a
   Reconciliation Output excluding its Sealing Signature and Sealing-Key
-  Identifier, as specified in {{reconciliation-output}}, and with the register
-  signature carried in each Query Binding Record and in each Non-Answer
-  Statement replaced by the Signing Input Digest of that signature. Excluding
-  the Sealing Signature is not sufficient on its own: a Reconciliation Output
-  embeds signatures made by the addressed registers, and a digest over those
+  Identifier, as specified in {{reconciliation-output}}, and with every
+  signature made by a party other than the sealing reconciliation server
+  replaced by the Signing Input Digest of that signature. Those are the register
+  signature carried in each Query Binding Record, the register signature carried
+  in each Non-Answer Statement, and the authorising operator's signature carried
+  in the Override Record of {{adversarial-test}}. Excluding the Sealing
+  Signature is not sufficient on its own: a Reconciliation Output embeds
+  signatures made by parties other than the server, and a digest over those
   names whichever encoding the reader was handed, for the reason
-  {{signature-malleability}} gives.
+  {{signature-malleability}} gives. The rule is stated over the class -- every
+  signature not made by the sealing server -- and not over an enumeration,
+  because an enumeration is complete only until a field is added, and the
+  Override Record is the field that showed this.
+
+Authority Origin:
+: The serialisation of an origin as Section 6.2 of {{RFC6454}} defines it: the
+  scheme, the U+003A COLON and two U+002F SOLIDUS characters, the host, and,
+  where the port differs from the default for the scheme, a U+003A COLON and the
+  port in decimal with no leading zeros. The scheme and the host are lowercased.
+  There is no trailing solidus, no path, no query and no fragment, and no
+  userinfo component: `https://register-a.example` and
+  `https://register-a.example:8443` are Authority Origins and
+  `https://register-a.example/`, `https://Register-A.example`,
+  `https://register-a.example:443` and `register-a.example` are not.
+  An implementation MUST reject a value in any of those other forms rather than
+  normalise it, because a value that is normalised on receipt is a value two
+  parties can hash differently before they compare it.
+
+  This document uses Authority Origins as bytewise sort keys inside signed sets,
+  as path segments, and as equality targets against the origin component of a
+  Sealing-Key Identifier. Each of those three uses breaks on a different
+  divergence: a sort key reorders, a path segment resolves elsewhere, and an
+  equality test refuses a key that was in fact authorised. Fixing the form once,
+  here, is what makes those three uses one term.
 
 Signing Input Digest:
 : The SHA-256 digest over the deterministically encoded CBOR `Sig_structure` of
@@ -748,7 +776,7 @@ FRIENDLY. The Requester-Binding and the Agent-IFF policy identifier are
 committed to the Policy-Version Hash so that the settlement record is
 attributable to a determined requester class.
 
-## Adversarial Pre-Transmission Test
+## Adversarial Pre-Transmission Test {#adversarial-test}
 
 Before any Per-Register Claim Projection is produced, the Adversarial
 Pre-Transmission Test Subsystem applies the current Pattern Library to the
@@ -799,7 +827,7 @@ An Override Record comprises:
   encoded as CBOR null, encoded under Section 4.2.1 of {{RFC8949}}, and carrying
   as its key identifier the JWK thumbprint, computed as in {{RFC7638}}, of a key published
   in the reconciliation server's Operator Key Set at
-  `/.well-known/arp-operator-keys` on its authority origin. That key set is
+  `/.well-known/arp-operator-keys` on its Authority Origin. That key set is
   published and validated as the sealing key set of {{sealing-key-discovery}} is,
   save that the Authorised-Origin Document MUST name a key identifier for the
   operator key set distinct from the one anchoring the sealing key set. Sealing
@@ -906,6 +934,54 @@ under {{no-answer}}. Without this the per-register signatures over the
 Policy-Version Hash -- the only independent corroboration of it -- would be
 discarded at aggregation, and a server could address different registers under
 different policy versions undetectably.
+
+### Subject Mapping Record {#subject-mapping}
+
+The projection function transforms the Canonical Claim's Subject Identifier into
+a Subject Reference in the form the addressed register's Bilateral Register
+Agreement declares. Until this revision nothing recorded that transformation,
+nothing constrained it, and no party outside the reconciliation server could
+check it.
+
+That is the gravest thing a reader can fail to notice about an Output. Every
+signature in a Reconciliation Output can verify, every Query Binding can
+recompute, the Merkle Root can be correct, the ledger entry can chain and the
+notarised Signed Statement can pass every check in {{registration}}, while every
+addressed register answered honestly and completely **about a different
+person**. The registers answer about the Subject Reference they were sent. The
+Output is read as an answer about the Subject Identifier in the claim. Nothing
+joined the two, and a substitution at that step is invisible to the requester,
+to an Audience Member, to a regulator reading the portal, to an Audit Identity,
+and to the registers themselves, none of which is shown the Canonical Claim.
+
+Each Per-Register Result Set entry for which a projection was transmitted MUST
+therefore carry a **Subject Mapping Record**: the two-element CBOR array of the
+Subject Reference transmitted to that register, and the **Subject Mapping
+Descriptor** -- a text string, drawn from the registry of {{iana}}, naming the
+transformation applied. The initial registrations are `identity`, where the
+Subject Reference is the Subject Identifier unchanged; `profile-declared`, where
+the transformation is the one the register's declared Data-Format Profile
+specifies for the Subject Identifier's form; and `agreement-declared`, where the
+Bilateral Register Agreement declares the transformation as one of its terms.
+A registration MUST specify a transformation that is a function of the Subject
+Identifier and of declared terms alone, so that a party holding the Canonical
+Claim and the applicable Agreement can recompute the Subject Reference and
+compare it. The designated expert MUST refuse a registration whose
+transformation takes any input the server chooses at reconciliation time, since
+such a descriptor would name the discretion rather than remove it.
+
+A verifier holding the Canonical Claim MUST recompute the Subject Reference
+under the named descriptor and MUST reject the Output where the recomputed value
+differs from the one carried. A verifier not holding the Canonical Claim cannot
+perform that check, and this document does not claim otherwise: what the record
+gives that party is an attributable statement, signed and sealed and ledgered,
+of which subject each register was actually asked about. The substitution
+remains possible and stops being deniable, which is the same trade
+{{no-answer}} makes for a suppressed register answer.
+
+This does not close the case where the Subject Identifier in the claim was
+already the wrong person. Nothing in a reconciliation protocol can, and
+{{subject-digest-scope}} states the boundary.
 
 ## Register Data-Format Profiles {#format-profiles}
 
@@ -1107,17 +1183,42 @@ threshold-sensitive: a designation is a listed-or-not fact.
 Where a register's answer depends on a source data state that changes
 independently of the Bilateral Register Agreement and of the Policy Version --
 a consolidated sanctions list being the characteristic case -- the Partial
-Attestation MUST carry a Source-Data Version Identifier Set: one identifier for each source consulted
-in evaluating the Projected Predicate. Each identifier is a tuple of the list name as declared in the Bilateral
-Register Agreement and the state identifier the LIST PUBLISHER assigns to that
-state -- a published version token, or a digest of the published corpus where
-the publisher assigns none -- rather than any value of the register's own
-devising. A register-chosen opaque string would be an arbitrary-bandwidth
+Attestation MUST carry a Source-Data Version Identifier Set: one identifier for
+each source consulted in evaluating the Projected Predicate. Each identifier is
+a two-element CBOR array of the list name as declared in the Bilateral Register
+Agreement, as a text string, and the state identifier the LIST PUBLISHER
+assigns to that state, rather than any value of the register's own devising.
+
+The state identifier is itself a two-element CBOR array of a form discriminator
+and a value. The discriminator is the text string `token` where the publisher
+assigns a version token, and the value is that token as a text string exactly as
+the publisher renders it, with no normalisation, trimming or case folding. The
+discriminator is the text string `digest` where the publisher assigns none, and
+the value is the SHA-256 digest, as a 32-octet CBOR byte string, of the octets
+the publisher serves for that state, taken as served and before any
+decompression, transcoding or reformatting the register applies.
+
+The discriminator is present because the two branches are a text string and a
+byte string in one position, and a reader that must infer which it holds from
+the CBOR major type is a reader that will be wrong the first time a publisher
+issues a token that happens to decode. The "as served, before decompression"
+rule is present because a consolidated list published as a compressed archive
+has at least two byte sequences with an equal claim to being the corpus, and two
+registers that choose differently produce two identifiers for one state, which
+{{retroactive}} would then read as a version change that never occurred.
+
+The Source-Data Version Identifier Set MUST be encoded as a CBOR array sorted in
+bytewise lexicographic order of the deterministic CBOR encoding of each member.
+Every other set this document carries into a signature is ordered, and for the
+reason {{audience}} gives: an unordered set gives one signed artefact as many
+digests as it has permutations. A register consulting three lists would
+otherwise have six conforming encodings of one attestation, each producing a
+different Merkle leaf under {{aggregation}} and a different Reconciliation Hash. A register-chosen opaque string would be an arbitrary-bandwidth
 channel from register to relying party, carried under signature into a sealed
 and ledgered artefact, and the rule that differing identifiers MUST NOT be read
 as disagreement would normalise it. The reconciliation server MUST reject an
 identifier that is not drawn from the publisher's own state sequence, under
-{{no-answer}} with the reason `attestation-unverifiable`. The tuple form is what
+{{no-answer}} with the reason `attestation-source-version-invalid`. The tuple form is what
 keeps identifiers issued by one register over different lists from colliding, so
 that a register consulting several lists can denote the state of each.
 
@@ -1235,14 +1336,19 @@ verify against every other check; and a register could answer the same question
 differently to two requesters and deny having done so, because its signature
 would not identify the question.
 
-The `arp-policy-version-hash` and `arp-bilateral-agreement-hash` in a Partial
-Attestation's protected header MUST equal the corresponding payload fields, and
-an implementation MUST reject an attestation where they differ: a value carried
-twice with no equality rule is a value an implementation may read either way.
+The `arp-policy-version-hash`, `arp-bilateral-agreement-hash` and
+`arp-source-data-version` in a Partial Attestation's protected header MUST equal
+the corresponding payload fields, and an implementation MUST reject an
+attestation where they differ: a value carried twice with no equality rule is a
+value an implementation may read either way. The third is included because
+{{source-versioning}} carries the Source-Data Version Identifier Set in the
+protected header and again into the Per-Register Result Set, which is the
+condition this rule exists to govern, and an earlier revision applied the rule
+to the first two only.
 
 The reconciliation server MUST recompute the Query Binding from the projection
 it transmitted and MUST reject an attestation whose Query Binding does not
-match, under {{no-answer}} with the reason `attestation-unverifiable`.
+match, under {{no-answer}} with the reason `attestation-binding-mismatch`.
 
 The Query Binding Record of {{reconciliation-output}} carries the three
 projection values and the register's signed attestation into the Output, so that
@@ -1380,6 +1486,49 @@ half of its pair: a malformed proof fails loudly on every path a verifier
 tries, while a valid proof bound to the wrong leaf passes every check except
 this one.
 
+### Verification outcomes {#verification-outcomes}
+
+The preceding rules tell a verifier to refuse. They do not give it any way to
+record which refusal it made, and four conditions that arrive at "refuse"
+through this section are evidence about four different things. A deployment that
+reports them alike reports something that did not happen, and the report will be
+believed, because the check that produced it worked exactly as specified.
+
+A verifier that refuses a proof or an artefact under this document MUST record a
+Verification Outcome, drawn from the registry of {{iana}}, and MUST NOT report
+one as another. The initial values are:
+
+`proof-against-empty-root`:
+: A proof was presented against the empty-tree root of {{merkle-construction}}.
+  Evidence of neither equivocation nor re-encoding: the empty root commits to
+  nothing and no proof against it can be valid.
+
+`leaf-object-mismatch`:
+: The leaf recomputed from the object differs from the leaf the proof carries.
+  Evidence of equivocation by the serving party, and the case this section
+  exists to catch.
+
+`root-mismatch`:
+: The sibling walk completed and produced a root other than the one named.
+  Evidence of equivocation by the serving party.
+
+`same-act-distinct-encodings`:
+: The artefact the verifier holds and the artefact the proof or digest commits
+  to have equal Signing Input Digests and unequal enveloped bytes. **Evidence of
+  a re-encoding and not of equivocation.** A verifier MUST test for this
+  condition before reporting `leaf-object-mismatch` or `root-mismatch`, and
+  where it holds, MUST report this outcome instead.
+
+The last is the one that changes what a reader concludes. Two artefacts with one
+Signing Input Digest are one signing act under two encodings, which
+{{signature-malleability}} shows a third party holding no key can produce from
+the honest signer's own bytes -- and which, for ECDSA, is produced by any
+implementation that normalises `s` on ingest while believing it is hardening.
+Reporting that as detected tampering accuses a party of equivocating on the
+strength of an operation an intermediary performed correctly. The constructions
+of {{signature-malleability}} make the digests stable; this makes the report
+that survives them accurate.
+
 ## Aggregation {#aggregation}
 
 The aggregation subsystem operates in Hash-Linkage Aggregation. Each
@@ -1411,8 +1560,17 @@ and carries instead, in its own field, a Non-Answer Reason drawn from:
   suspended for Bilateral-Register-Agreement drift
 - `attestation-stale`, where the Freshness Timestamp fell outside the declared
   window and the attestation was rejected
-- `attestation-unverifiable`, where the signature did not verify or the echoed
-  Policy-Version Hash did not match the one sent
+- `attestation-signature-invalid`, where the signature did not verify
+- `attestation-echo-mismatch`, where a value the register echoed did not match
+  the one sent, or a value carried in the protected header did not equal the
+  corresponding payload field
+- `attestation-binding-mismatch`, where the Query Binding the server recomputed
+  did not match the one the attestation carries, which is an attestation
+  elicited for a different question
+- `attestation-source-version-invalid`, where a Source-Data Version Identifier
+  was not drawn from the publisher's own state sequence
+- `attestation-scope-exceeded`, where the register attested a Divergence Axis the
+  registry of {{iana}} records as server-recorded
 - `register-unresponsive`, where no attestation was received within the window
   declared in the Bilateral Register Agreement
 - `register-refused`, where the register declined to answer, whether under its
@@ -1428,10 +1586,27 @@ and carries instead, in its own field, a Non-Answer Reason drawn from:
 
 Each Non-Answer Reason is either register-attested or server-observed, and the
 registry of {{iana}} MUST record which for every registration.
-`register-refused` is register-attested. `attestation-stale` and
-`attestation-unverifiable` are server-observed but arise from an attestation the
-server holds. The remainder are server-observed with no register artefact behind
-them.
+`register-refused` is register-attested. `attestation-stale` and the five
+`attestation-` reasons above are server-observed but arise from an attestation
+the server holds. The remainder are server-observed with no register artefact
+behind them.
+
+Earlier revisions carried a single `attestation-unverifiable` covering all five
+of those conditions, and normative text in four other sections directed
+implementations to it for causes its own definition did not name. They are not
+variants of one condition and an auditor cannot be asked to treat them as one.
+A failed signature is a broken or impersonated register. An echo mismatch is an
+attestation about a different policy state. A binding mismatch is the
+reconciliation server presenting an attestation elicited for a different subject
+or predicate, which is a server-side attack and not a register fault at all. A
+source-version invalidity is a register attempting a covert channel. A scope
+excess is a register claiming competence the registry says it does not have.
+Recording all five as one value tells the Register Operator reading its own
+entry under {{read-operations}} that something was wrong with its attestation,
+and does not tell it whether the fault was its own. This document made exactly
+this argument for `non-answer-unattested` two paragraphs below and did not
+apply it here. An implementation MUST NOT record any of the five under a
+value that does not name its cause.
 
 Where a Non-Answer Reason is register-attested, the Per-Register Result Set entry
 MUST carry a Non-Answer Statement in the field {{reconciliation-output}} defines
@@ -1449,7 +1624,7 @@ a refusal in another over the same subject and predicate.
 
 Where a register-attested reason is recorded without a Statement, or with one
 that does not verify, the reason MUST be replaced by `non-answer-unattested`.
-That is a distinct reason and not `attestation-unverifiable`, which denotes a
+That is a distinct reason and not any of the `attestation-` reasons, which denote a
 Partial Attestation the server holds and could not verify; collapsing the two
 would put the missing-refusal case back into a server-observed bucket and undo
 the distinction this rule exists to draw.
@@ -1474,7 +1649,7 @@ the Server-Recorded Divergence-Axis Set against that Register Identifier.
 
 A reconciliation server MUST reject a Partial Attestation that attests a
 Divergence Axis the registry of {{iana}} records as server-recorded, with the
-reason `attestation-unverifiable`. A register cannot attest a relation between
+reason `attestation-scope-exceeded`. A register cannot attest a relation between
 itself and another register, which is what those axes are.
 
 ## Verdict Re-Typing {#verdict-retyping}
@@ -1558,9 +1733,20 @@ requires the server to publish the resolved operator, its parameters and the
 reliance interval per predicate and regime set, so the mapping is available
 without probing and the admitted-regime check is what constrains the choice.
 
-Two rules apply to every operator and take precedence over the operator's own
+Three rules apply to every operator and take precedence over the operator's own
 table:
 
+- The Addressed-Registers Identifier Set MUST NOT be empty, and a Combined
+  Verdict MUST NOT be computed over an empty contribution set. Every operator
+  below is defined by a condition universally quantified over the contributions,
+  so every one of them is vacuously satisfied where there are none: conjunction
+  yields `match`, disjunction and threshold-count yield `no-match`, and the two
+  rules that follow -- both of which begin "where any" -- do not fire, because
+  there is no contribution to be indecisive. A decisive verdict from no evidence
+  at all is the failure mode the rest of this section is built to prevent, and
+  it is reached not by an operator behaving badly but by every guard being true
+  of nothing. A relying party MUST reject an Output whose Addressed-Registers
+  Identifier Set is empty, and MUST NOT treat its Combined Verdict as a verdict.
 - Where any addressed register has no decisive contribution because it did not
   answer, was refused or was rejected under {{no-answer}}, the Combined Verdict
   MUST be `indeterminate`. An operator MUST NOT reach a decisive verdict over an
@@ -1598,7 +1784,18 @@ threshold-count:
 source-class-quorum:
 : threshold-count evaluated per source class, over the partition and the
   per-class threshold resolved for the named regimes, then combined across
-  classes by conjunction.
+  classes by conjunction. A source class containing no addressed register
+  contributes `indeterminate` and MUST NOT contribute `no-match`. Without that
+  rule the class is threshold-count over nothing: the count of `match`
+  contributions cannot reach a threshold of one or more, no contribution is
+  `indeterminate` because there is no contribution, and the class yields a
+  decisive negative built on an empty class -- which conjunction then propagates
+  to the Combined Verdict. The `indeterminate`-substitution rule above does not
+  reach it, because that rule governs evidence that is present and inconclusive
+  and this is evidence that is absent. Suppressing a hit by partitioning it into
+  a class with no members in it is a decisive negative assembled out of the
+  partition, and the partition is resolved from the policy-epoch store rather
+  than from the registers actually addressed.
 
 Every operator admits `partial-match` except threshold-count and
 source-class-quorum, which do not. Where {{verdict-retyping}} would re-type a
@@ -1609,6 +1806,7 @@ contribution is re-typed to `indeterminate` instead.
 
 A Reconciliation Output comprises:
 
+- Reconciliation Event Identifier
 - Reconciliation Identifier
 - Claim Hash
 - Reconciliation Timestamp
@@ -1619,7 +1817,7 @@ A Reconciliation Output comprises:
   every parameter that operator takes -- the threshold for threshold-count, and
   both the source-class partition and the per-class threshold for
   source-class-quorum
-- Addressed-Registers Identifier Set, each member an authority origin, sorted in
+- Addressed-Registers Identifier Set, each member an Authority Origin, sorted in
   bytewise lexicographic order of its UTF-8 encoding
 - Bilateral-Register-Agreement Hash Set, sorted in bytewise lexicographic order
   of the digests themselves, in the order of the Addressed-Registers Identifier
@@ -1640,10 +1838,51 @@ A Reconciliation Output comprises:
   alone encoded as CBOR null, so that it covers every other field including the
   Sealing-Key Identifier
 
+The Reconciliation Event Identifier is a 16-octet value drawn from a
+cryptographically secure random source at the start of a reconciliation, unique
+to that reconciliation across the life of the deployment.
+
 The Reconciliation Identifier is the Claim Hash concatenated with the
-Policy-Version Hash. It is therefore reproducible from enumerated inputs and
-satisfies the determinism requirement of {{architecture}} without a separate
-construction rule.
+Policy-Version Hash concatenated with the Reconciliation Event Identifier.
+
+Earlier revisions omitted the third component, and the first two are both
+reproducible functions of enumerated inputs. Two reconciliations over one claim
+under one policy state therefore shared an identifier, and the protocol keys
+three mechanisms on it that each assume it names one event:
+
+- A register's own read under {{read-operations}} is keyed on the Reconciliation
+  Identifier, and exists so that a server cannot discard a register's signed
+  `match` and record `register-unresponsive` while the only party holding the
+  contradicting artefact has no operation with which to produce it. Where two
+  reconciliations shared the identifier, a server could record the register's
+  `match` in the first and suppress it in the second, and serve the first to the
+  register's audit read. The register sees its answer faithfully recorded and
+  the suppression is invisible.
+- The Query Binding of {{partial-attestation}} carries the Reconciliation
+  Identifier so that an attestation is admissible only into the reconciliation
+  that elicited it. Every element of that preimage was identical across the two,
+  so an attestation elicited in the first verified unchanged inside the second.
+- The Non-Answer Statement carries it so that a refusal elicited in one
+  reconciliation is not admissible as a refusal in another over the same subject
+  and predicate — which, under unchanged policy, is precisely when the
+  identifier repeated.
+
+The three protections were each written against the same assumption and the
+assumption was not established anywhere. A retroactive supersession under a
+Source-Data Version trigger leaves the policy state unchanged by definition, so
+the identifier repeated on the path the document itself constructs, not only on
+one a requester might contrive. The Event Identifier is what the three
+mechanisms were already relying on.
+
+It is carried in the Output as its own field, so it is inside the Reconciliation
+Hash preimage: two reconciliations that address no register and are sealed in
+the same second would otherwise produce one Reconciliation Hash, which is the
+ledger index and the retrieval key, and no field distinguishing them.
+
+The Event Identifier is not a secret and carries no requester-supplied content.
+It is random rather than a counter so that it discloses nothing about
+reconciliation volume to a register or to a relying party, and 16 octets rather
+than 32 because it needs only uniqueness within a deployment.
 
 The Claim Hash binds the Output to the question it answers. Without it a relying
 party receives a Combined Verdict with nothing to attribute it to, and the
@@ -1675,8 +1914,9 @@ Each entry of the Per-Register Result Set comprises:
 - OPTIONAL Divergence-Axis Field, as attested by that register
 - OPTIONAL Source-Data Version Identifier Set, as attested by that register
 - Projection Record, comprising the Narrowed-From field of the Per-Register
-  Claim Projection where a projection was transmitted, and the Applied-Parameter
-  Set the register reported where the Answer State is `answered`; required
+  Claim Projection where a projection was transmitted, the Applied-Parameter
+  Set the register reported where the Answer State is `answered`, and the
+  Subject Mapping Record of {{subject-mapping}}; required
   wherever a projection was transmitted and either the projection narrowed or
   the Profile Parameter Set was non-empty
 - Query Binding Record, present exactly where the Answer State is `answered`,
@@ -1703,7 +1943,14 @@ Hash determinate. Of the axes recorded by the server,
 a Register Identifier. `source-version-skew` is a relation between two or more
 registers, and one member MUST be added for each register involved, so that the
 set is a determinate function of the inputs rather than a choice between them; `register-threshold-divergence`
-concerns the reconciliation and MUST NOT. Recording a bare axis over five
+concerns the reconciliation and MUST NOT. `agent-action-scope-divergence` is
+likewise a relation, between two capsules rather than between two registers, and
+one member MUST be added for each Register Identifier whose contribution the
+divergence concerns, or a single member carrying null where it concerns no
+register's contribution; the rule is stated for all five axes and not four
+because the Set is inside the Reconciliation Hash preimage, so an axis whose
+member form is left open gives one reconciliation two ledger indices.
+Recording a bare axis over five
 addressed registers would state that something was stale without stating what,
 which is not reproducible.
 
@@ -1728,6 +1975,43 @@ implementations reading "excluding" the two ways would never agree on a ledger
 index. It is the value recorded in the Settlement-Layer Ledger, the value a
 Post-Seal Evaluation Record references, and the retrieval key of
 {{ledger-read}}.
+
+Determinism under Section 4.2.1 of {{RFC8949}} fixes how a given value is
+encoded. It does not fix which CBOR type a field takes, nor the order of
+elements within a field that is a set. The Reconciliation Hash is the ledger
+index of {{settlement-ledger}}, the retrieval key of {{ledger-read}}, and a
+value {{request-binding}} has the requester compute over an Output it has just
+been handed, so two parties compute it independently and MUST obtain the same
+value. The types are therefore fixed here, as {{bra-hash}} fixes them for the
+Agreement Hash and {{iana}} fixes them for a Ledger entry.
+
+| Field | CBOR encoding |
+|---|---|
+| Reconciliation Event Identifier | byte string of 16 octets |
+| Reconciliation Identifier | byte string of 80 octets, the Claim Hash followed by the Policy-Version Hash followed by the Reconciliation Event Identifier |
+| Claim Hash, Policy-Version Hash, Merkle Root | byte string of 32 octets |
+| Reconciliation Timestamp, Reliance Horizon | text string, in the form fixed below |
+| Combined Verdict | text string, one of the four values of {{terminology}} |
+| Verdict Arithmetic and its parameters | two-element array: the operator identifier as a text string, and its parameters as an array, empty for conjunction and disjunction, a one-element array of the threshold as an unsigned integer for threshold-count, and a two-element array of the source-class partition and the per-class threshold for source-class-quorum |
+| source-class partition | array of two-element arrays of the class identifier as a text string and the sorted array of Register Identifiers in that class, the outer array sorted by class identifier |
+| Addressed-Registers Identifier Set | array of Authority Origins as text strings, sorted as {{reconciliation-output}} states |
+| Bilateral-Register-Agreement Hash Set | array of 32-octet byte strings, deduplicated, sorted |
+| Pattern-Library Version Identifier | text string |
+| Requester-Binding Class | text string |
+| Aggregation-Method Descriptor | text string |
+| Audience Set, Per-Register Result Set, Server-Recorded Divergence-Axis Set | array of arrays, each member in the field order its own section enumerates |
+| Override Record | array in the field order of {{adversarial-test}}, or null |
+| Sealing-Key Identifier | two-element array of the Authority Origin as a text string and the JWK thumbprint as a text string |
+| Sealing Signature | byte string, the serialised COSE_Sign1, or null in a preimage |
+| Register Identifier | text string |
+| Answer State, Attested Verdict, Effective Verdict, Non-Answer Reason, Re-Typing Ground, Subject Mapping Descriptor | text string |
+| Divergence-Axis Field | array of two-element arrays of the axis identifier as a text string and its Register Identifier or null, sorted by the deterministic encoding of the member |
+| Query Binding Record, Non-Answer Statement, Projection Record | array in the field order its own section enumerates, or null |
+
+The Bilateral-Register-Agreement Hash Set is deduplicated because two addressed
+registers may be governed by one Agreement, and an implementation that carried
+the digest twice and one that carried it once would compute two Policy-Version
+Hashes and two Reconciliation Hashes from identical inputs.
 
 Every timestamp this document places inside a digest preimage or a signature
 payload MUST be expressed in the form `YYYY-MM-DDTHH:MM:SSZ`: {{RFC3339}} with the
@@ -2094,8 +2378,15 @@ followed by the type-specific fields enumerated below, followed by:
 
 - Self-Entry Hash, being the SHA-256 digest over the CBOR array of this same
   entry with the Self-Entry Hash and Entry Signature positions encoded as CBOR
-  null, so that the array's length is the length fixed by the Entry Type and is
-  the same array a verifier already holds
+  null, encoded under the Core Deterministic Encoding Requirements of Section
+  4.2.1 of {{RFC8949}}, so that the array's length is the length fixed by the
+  Entry Type and is the same array a verifier already holds. The encoding
+  requirement is stated here and not left to be inferred from
+  {{cbor-cose}}: without it a definite-length and an indefinite-length encoding
+  of one entry yield two Self-Entry Hashes, and the head comparison of this
+  section treats that as a fork, which obliges every reader of the second
+  encoding to act under {{ledger-replication}} against an operator that
+  equivocated about nothing
 - Entry Signature, a COSE_Sign1 by the reconciliation-server sealing key whose
   payload is the CBOR array of this same entry with the Entry Signature position
   alone encoded as CBOR null -- so it covers every other field including the
@@ -2164,7 +2455,7 @@ for.
 An entry whose Entry Type is `reconciliation` additionally comprises:
 
 - Policy-Version Hash
-- Addressed-Registers Identifier Set, each member an authority origin, sorted in
+- Addressed-Registers Identifier Set, each member an Authority Origin, sorted in
   bytewise lexicographic order of its UTF-8 encoding
 - Aggregation-Method Descriptor
 - Merkle Root
@@ -2179,7 +2470,7 @@ An entry whose Entry Type is `reconciliation` additionally comprises:
 
 An entry whose Entry Type is `continuation-notarisation` additionally comprises:
 
-- Transparency Service Identifier, being the authority origin of that service
+- Transparency Service Identifier, being the Authority Origin of that service
 - exactly one of the EntryID that service returned, or the HTTP status code by
   which that service terminally refused registration
 
@@ -2366,7 +2657,7 @@ chain share a common prefix.
 
 A common-prefix demonstration between stores under one operator is that operator
 attesting to itself. The reconciliation server MUST therefore publish a signed Ledger Head Statement
-at `/.well-known/arp-ledger-head` on its authority origin. It is republished once
+at `/.well-known/arp-ledger-head` on its Authority Origin. It is republished once
 per notarisation interval and not on every append: the resource is unauthenticated
 and carries a contiguous sequence number, so a continuously updated head would
 hand any observer the deployment's exact entry count, its write rate and the
@@ -2712,9 +3003,22 @@ Policy Parameters Document of {{read-signing}} carries the identifier and
 effective time of every Pattern-Library and Policy-Version transition the server
 applies, which makes those two triggers observable. A credential-revocation
 trigger is observable to the credential's issuer and to the affected principal
-and to nobody else, and this document does not make it more so. The
-falsifiability argument therefore holds for three triggers in four, which is
-stated rather than rounded up. An operator that signs a Statement it did not earn is making a
+and to nobody else, and this document does not make it more so.
+
+The falsifiability argument therefore holds for three triggers in four, and it
+holds for the second and third of them **only through the anchoring
+{{read-signing}} places on the Policy Parameters Document itself**, which is
+stated here because an earlier revision of this section claimed three in four
+while the Document carrying two of them was published by the reconciliation
+server, under its own key, with no publication time and no notarisation. On
+that footing the count was one in four and the sentence claiming otherwise was
+the one place this document rounded up. A transition simply omitted from the
+array started no clock, and no party could date the Document well enough to show
+that it had been. The Publication Timestamp, the notarisation, and the
+obligation to republish on the interval whether or not anything changed are
+what make the second and third arguments true, and a deployment whose Policy
+Parameters Document is not anchored as {{read-signing}} requires has one
+falsifiable trigger and not three. An operator that signs a Statement it did not earn is making a
 false attributable claim, which is a different thing from an invisible omission,
 and the Examined-Set Root means an Audience Member can require it to prove that
 its own reconciliation was in the set it claims to have examined.
@@ -2902,7 +3206,7 @@ is a CBOR array of exactly three elements, in this order and not nested:
 
 1. the Audience Member Identifier, as {{audience}} defines it;
 2. the Verification Method Reference, as {{audience}} defines it; and
-3. an **Operating-Party Identifier**: a URI naming the party that controls the
+3. an **Operating-Party Identifier**: an Authority Origin naming the party that controls the
    witness.
 
 {{audience}} encodes those first two as a two-element array. Here they are the
@@ -2974,6 +3278,17 @@ under {{read-responses}} when it holds Head Consistency Statements from at least
 
 - each verifies under the key material declared for that entry;
 - the `t` entries have **pairwise distinct Operating-Party Identifiers**;
+- the `t` entries have **pairwise distinct Verification Method References**, and
+  a relying party MUST reject a set in which two entries resolve to the same
+  key. Distinctness of the Operating-Party Identifier alone does not establish
+  that two entries are two observations: two entries declaring one key under two
+  Operating-Party Identifiers are satisfied by a single COSE_Sign1, and a
+  relying party applying only the previous condition counts one signature twice
+  and reports a quorum of two met by one signer. That failure is mechanical and
+  locally checkable, which distinguishes it from the declared-independence limit
+  {{bra-limits}} concedes and cannot close: a verifier cannot test whether two
+  named parties are truly independent, and it can always test whether two
+  entries name one key;
 - each covers the head the response names, that is, item 2 of the Statement
   equals the response's `as-of-sequence-number` and item 3 equals the Self-Entry
   Hash that response names; or covers a head at a higher Entry Sequence Number
@@ -2992,6 +3307,33 @@ under {{read-responses}} when it holds Head Consistency Statements from at least
   notarisation interval after it, that interval being the shortest any Bilateral
   Register Agreement the deployment holds declares, per the direction rule of
   {{delivery}}.
+
+A witness MUST publish its Head Consistency Statements at
+`/.well-known/arp-head-consistency` on the Authority Origin of its
+Operating-Party Identifier, most recent first, under the media type registered
+in {{iana}}, and MUST serve them to any party without authentication. The
+Operating-Party Identifier is for this reason an Authority Origin and not a bare
+name: an identifier that names a party without locating it cannot be the route
+by which the artefact is obtained.
+
+**A relying party MUST obtain Head Consistency Statements from the witnesses'
+own origins, and MUST NOT accept for quorum purposes a Statement obtained from
+the responding service.** Until this revision the document specified the
+artefact, the quorum arithmetic and the freshness window, and specified no
+channel at all, which left the obvious implementation: the responding service
+hands over the witness statements alongside its response. That implementation
+satisfies every condition above. The witness signature stops the service
+forging a Statement and does nothing to stop it choosing which ones to pass on,
+and under exactly the fork this mechanism exists to detect, an operator serving
+two branches hands each reader the statements of the witnesses it fed that
+branch. Every check passes on both branches and the quorum is met on both.
+
+This is the whole of the artefact's value and it was the one thing not stated.
+A Head Consistency Statement obtained from the party it is evidence about is
+not independent evidence; it is the responding service's own selection,
+countersigned. Where a witness origin is unreachable, the relying party holds
+fewer than `t` Statements and MUST act under {{read-responses}} accordingly,
+rather than accepting a substitute from the service.
 
 The chain requirement in the third condition is what makes the artefact worth
 its name, and it is why the condition pins **both ends** of the chain and not
@@ -3034,7 +3376,21 @@ against that document.
 Where a deployment holds more than one Bilateral Register Agreement, the
 effective Witness Set is the intersection of the Witness Sets every such
 Agreement declares and the effective Witness Quorum is the largest any of them
-declares, per the direction rule of {{delivery}}.
+declares, per the direction rule of {{delivery}}. Two Witness Entries are
+**equal for the purpose of that intersection when their Operating-Party
+Identifiers are equal and their Verification Method References are equal**, and
+the intersection carries, for each such pair, the entry as the Agreement with
+the lexicographically least Agreement Hash declares it.
+
+Stating the relation is not pedantry. Taken over whole entries, the intersection
+empties on any difference in the first element -- an Audience Member Identifier
+written two ways for one witness -- and this section then obliges a conforming
+deployment to stop serving reads entirely. Taken over the Operating-Party
+Identifier alone, two entries declaring different keys for one party merge, and
+a relying party accepts a Head Consistency Statement under key material only one
+of the two Agreements declared. Both readings are available from the bare word
+"intersection", one produces an outage and the other produces an unauthorised
+key, and a deployment cannot be conforming under both.
 
 The effective Witness Set MUST contain at least the effective Witness Quorum
 entries with pairwise distinct Operating-Party Identifiers. Where it does not,
@@ -3149,7 +3505,7 @@ MUST NOT treat a met quorum as proof of observer diversity. It is proof that
 observer diversity was declared, by a named party, in a term that party can be
 held to.
 
-The same holds of item 20, the authority origin, which {{containment}} already
+The same holds of item 20, the Authority Origin, which {{containment}} already
 requires a register operator to corroborate by publishing an Authorised-Origin
 Document, and which is the one declared item this document does provide a
 mechanism to check.
@@ -3287,7 +3643,7 @@ its holder could not present to anything.
 Requests are HTTP over TLS to the reconciliation server's authority origin, the
 same origin whose Sealing-Key Identifier resolves under {{sealing-key-discovery}}.
 Every hash appearing in a path segment is base64url-encoded without padding;
-every authority origin appearing in one is percent-encoded as Section 2.1 of
+every Authority Origin appearing in one is percent-encoded as Section 2.1 of
 {{RFC3986}} provides; and every timestamp in a path or query parameter is in the
 form {{reconciliation-output}} pins. The `@target-uri` is inside the request-binding
 digest of {{read-responses}}, so an encoding two implementations could choose
@@ -3335,9 +3691,10 @@ commissioning request of {{request-binding}}.
   Audience Set. Key material is retrieved as that agreement provides, or, for an
   agent, through the Web Bot Auth directory of {{http-sig}}.
 - The reconciliation server MUST publish a Policy Parameters Document at
-  `/.well-known/arp-policy-parameters` on its authority origin: a COSE_Sign1 by
+  `/.well-known/arp-policy-parameters` on its Authority Origin: a COSE_Sign1 by
   its sealing key, under the media type registered in {{iana}}, whose payload is
-  the four-element CBOR array of: the array of permitted signature algorithm
+  the five-element CBOR array of: a Publication Timestamp, in the form
+  {{reconciliation-output}} fixes; the array of permitted signature algorithm
   identifiers; the array of per-predicate entries, each a four-element array of
   the predicate, the admitted regime set sorted in bytewise lexicographic order,
   the two-element array of the resolved Verdict Arithmetic and its parameters,
@@ -3347,9 +3704,34 @@ commissioning request of {{request-binding}}.
   effective time, which {{sweep-statements}} relies on; and the two-element array
   of the effective Witness Set and the effective Witness Quorum of
   {{witness-discovery}}, the Witness Set sorted in bytewise lexicographic order
-  of the deterministic CBOR encoding of each entry. Without that fourth element a
+  of the deterministic CBOR encoding of each entry. Without that last element a
   relying party, which holds only Agreement Hashes, could not evaluate the quorum
-  the same section obliges it to evaluate. A requester is
+  the same section obliges it to evaluate.
+
+  The Publication Timestamp is first because the rest of the array is evidence
+  about the reconciliation server, published by the reconciliation server, under
+  its own key, and a COSE_Sign1 is not dateable from its own bytes. Two
+  Documents published a year apart, one of which has had a transition or a
+  Witness Entry quietly dropped from it, are otherwise indistinguishable to
+  every party the Document exists to inform. This document already reached that
+  conclusion twice, for the Ledger Head Statement of {{settlement-ledger}} and
+  for the Head Consistency Statement of {{head-consistency}}, and the same
+  reasoning was not carried here.
+
+  The reconciliation server MUST notarise each published Policy Parameters
+  Document into the Transparency Service of {{settlement-ledger}}, under its own
+  media type, within the ledger-head notarisation interval of that section
+  measured from its Publication Timestamp, and MUST republish it on that
+  interval whether or not its contents changed. A Document that changed without
+  a new Publication Timestamp, or a published Document with no notarisation
+  inside the interval, is non-conforming.
+
+  The obligation to republish unchanged is what makes silence readable: without
+  it, an operator that has removed a Witness Entry and an operator that has
+  changed nothing publish the same thing, and the notarised series has no entry
+  to be missing. A relying party MUST NOT treat a Policy Parameters Document as
+  current where its Publication Timestamp is older than twice that interval, and
+  MUST refuse to evaluate a quorum against one it cannot date. A requester is
   party to no Bilateral Register Agreement and could not otherwise determine how
   to sign, and publishing the resolved parameters removes the regime-shopping
   probe of {{verdict-arithmetic}} by making its result available without
@@ -3814,7 +4196,7 @@ accepted any well-formed key set would accept an Output minted by any party able
 to stand up a host, since the Bilateral-Register-Agreement Hashes can be copied
 from a genuine Output and are one-way.
 
-Each Bilateral Register Agreement MUST therefore declare the authority origin of
+Each Bilateral Register Agreement MUST therefore declare the Authority Origin of
 the reconciliation server it authorises, and each register operator MUST publish
 an Authorised-Origin Document at `/.well-known/arp-authorised-origins` on its own
 register origin. A Register Identifier is an origin, so the register origin is a
@@ -3944,7 +4326,18 @@ does not.
 
 A deployment MUST therefore declare in each Bilateral Register Agreement a query
 budget and the interval over which it is measured, and the budget MUST be
-measured per accountable principal per subject, not per subject alone. Where the
+measured per accountable principal per subject, not per subject alone. The
+subject half of that key is the **Claim Hash of the Canonical Claim with its
+Predicate, Applicable-Regimes Set and Claim Timestamp elided**, computed as
+{{terminology}} computes a Claim Hash over the remainder. The principal half is
+pinned in three tiers below and the subject half was pinned nowhere, which left
+the counter keyed on a value the requester controls: a Subject Identifier is
+NFC-normalised as a string and nothing more, so case, leading zeros,
+jurisdiction prefixes and equivalent register-specific forms each open a fresh
+counter. The bound on recovery-by-search this section exists to impose was
+evadable by respelling, and the per-subject ceiling was a shared counter whose
+key a party could collide with a victim's, forcing every third-party
+reconciliation about that victim to `indeterminate`. Where the
 budget is shared across requesters, any one requester exhausts it for all of
 them -- including a requester whose Requester-Binding class is
 `agent-unverified`, which is to say a party the deployment has declined to
@@ -4138,7 +4531,25 @@ accordingly a Signing Input Digest, or has its embedded signatures replaced by
 one. Those are the Prior-Entry Hash of {{settlement-ledger}}, the Post-Seal
 Evaluation Record Hash of {{post-seal}}, the Merkle leaf of {{aggregation}}, the
 authority-reference digest of {{composition}} in its tagged-transparency form,
-and the Reconciliation Hash of {{terminology}}. The `Sig_structure` excludes the
+the Reconciliation Hash of {{terminology}}, and -- reached through the
+Reconciliation Hash rather than named beside it -- the authorising operator's
+signature in the Override Record of {{adversarial-test}}.
+
+The sixth was found after the first five had been repaired, and the way it was
+missed is worth stating rather than quietly corrected. The first sweep looked
+for digests taken over signed artefacts, found the Reconciliation Hash embedded
+a register signature, and repaired that. The Override Record is a signature
+made by a third party -- the authorising operator, deliberately not the server,
+under {{adversarial-test}} -- travelling to the server over a channel the server
+does not control, and sitting in a field the Reconciliation Hash preimage
+carries. It failed no test that was applied to it; no test was applied to it.
+
+An implementation MUST therefore apply the rule of {{terminology}} over the
+class rather than over the list above: in any preimage this document defines,
+every signature made by a party other than the party computing the digest is
+replaced by its Signing Input Digest. A specification that enumerates the
+carriers is correct until someone adds a field, and correctness that expires on
+the next revision is not the property this section exists to establish. The `Sig_structure` excludes the
 signature by construction, which is why this is total where a low-S
 canonicalisation rule is partial -- low-S removes one encoding from a set with
 more than one member, while the signing input has one value for one signing act
@@ -4256,6 +4667,25 @@ This document requests IANA to register the following:
   a register-attested registration that does not state what the register signs
   over.
 
+- A registry of ARP Subject Mapping Descriptors, registration policy
+  Specification Required, initially containing `identity`, `profile-declared`
+  and `agreement-declared`, defined in {{subject-mapping}}. A registration MUST
+  specify a transformation that is a function of the Subject Identifier and of
+  declared terms alone. The designated expert MUST refuse a registration whose
+  transformation takes any input the reconciliation server chooses at
+  reconciliation time, since a descriptor naming server discretion records that
+  the discretion was exercised and not what it did.
+
+- A registry of ARP Verification Outcomes, registration policy Specification
+  Required, initially containing the values enumerated in
+  {{verification-outcomes}}. A registration MUST name a condition a verifier can
+  reach mechanically, and MUST state whether reaching it is evidence of
+  equivocation by the serving party, evidence of a transport or encoding
+  difference, or neither. The designated expert MUST refuse a registration that
+  does not state which, because the distinction between an operator that
+  equivocated and an artefact that was re-encoded in transit is the one this
+  registry exists to carry.
+
 - A registry of ARP Post-Seal Evaluation Qualifiers, registration policy
   Specification Required, initially containing `notarisation-incomplete` and
   `attribution-indeterminate`, defined in {{post-seal}}. A registration MUST
@@ -4344,7 +4774,7 @@ This document requests IANA to register the following:
 
 ## Well-Known URIs {#iana-wellknown}
 
-Six entries are requested in the Well-Known URIs registry of {{RFC8615}}. For
+Seven entries are requested in the Well-Known URIs registry of {{RFC8615}}. For
 each, the change controller is the IETF, the status is permanent, and the
 specification document is this document.
 
@@ -4356,6 +4786,7 @@ specification document is this document.
 | `arp-authorised-origins` | {{sealing-key-discovery}} | none |
 | `arp-ledger-head` | {{settlement-ledger}} | none |
 | `arp-policy-parameters` | {{read-signing}} | none |
+| `arp-head-consistency` | {{head-consistency}} | none; served by a witness on the Authority Origin of its Operating-Party Identifier |
 
 ## Media types {#iana-media}
 

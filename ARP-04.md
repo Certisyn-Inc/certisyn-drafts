@@ -814,6 +814,55 @@ consequence of the SCRAPI 2.3.1 ambiguity already raised on the list.
 **`-04` actions from this run:** a reason code for the same-act-two-encodings
 refusal; an assumption statement in 4.20.1; the low-S note in 7.9.
 
+### 2.10 The six-pass adversarial sweep. Twenty repairs, register at `_audit/REGISTER.md`
+
+Six passes on 20 August, each carrying the method of a named reviewer now active
+on the list, plus an IESG lens and an independent-implementer lens nobody has
+applied yet. Roughly two hundred candidates. Twenty verified and repaired.
+
+**Three of the repairs were to claims the document made about its own rigour.**
+That is the finding under the findings, and it is the same shape as the probe
+that computed `sha256(X) == sha256(X)`:
+
+- 4.20.1 said the falsifiability argument holds for three triggers in four,
+  *"stated rather than rounded up"*. It was one in four. The other two rested on
+  a transition array published by the server, under the server's own key, in a
+  Policy Parameters Document with no publication time and no notarisation.
+  **This claim was in the drafted reply to the closing-omission thread.**
+  Repaired by anchoring the Document, not by softening the sentence.
+- 7.9 said *"every digest in this document that identifies or chains a signed
+  artefact"* and enumerated five. There were six. The Override Record carries a
+  COSE_Sign1 by the authorising operator, inside the Reconciliation Hash
+  preimage. It failed no test that was applied to it; no test was applied to it.
+  The rule is now stated over the class, because an enumeration of carriers is
+  correct until someone adds a field.
+- 4.23.2 said two instances of one observer are not two observers, and tested
+  distinctness on the Operating-Party Identifier alone. Two entries declaring
+  one key under two identifiers satisfied a quorum of two with one signature.
+
+**The two worst were fail-open to a decisive verdict.** An empty
+Addressed-Registers Identifier Set yields `match` under conjunction, because
+every operator is universally quantified and both precedence rules begin "where
+any"; two further guards go vacuous at the same point. A source class with no
+members yields a decisive `no-match`, which conjunction propagates. Neither
+requires an operator to misbehave. Every guard is true of nothing.
+
+**The most consequential substantively** is the subject-mapping step: nothing
+recorded or constrained the transformation from the claim's Subject Identifier
+to the Subject Reference each register was asked about. Every signature verifies
+and every register answers honestly, about a different person. Now a Subject
+Mapping Record with a registered descriptor.
+
+Full list of repairs and the open register, honestly labelled by whether each
+open item has been verified, at `_audit/REGISTER.md`. The three large passes are
+at `_audit/pass-iesg.md`, `_audit/pass-implementer.md` and
+`_audit/pass-adversary.md`. Between them they hold more than `-04` can carry.
+The remainder is `-05`, and the register says so rather than implying the sweep
+was exhaustive.
+
+**Structural check after twenty edits: no section number outside Document
+History moved.** Two new subsections, both appended within their parent.
+
 ## 3. Family coherence
 
 The three drafts share one Verification Reconciliation Object, one issuing-partner
@@ -1213,6 +1262,7 @@ That check has not been done yet.
 | 2026-08-20 | 2.9.1 and 2.9.2 recorded: four survivors verified against the text, plus three BLOCKING defects in the Source-Data Version Identifier Set -- the component two other implementers proposed the same morning to lift into shared substrate text. Told them before the lift. |
 | 2026-08-20 | Sokolov's two hardware files run. `-04` confirmed stable, `-03` not. Twin is the low-S normalisation, so no attacker is needed. Two new `-04` items: no reason code for same-act-two-encodings, and no stated assumption about EntryID stability in the sweep chain. |
 | 2026-08-20 | Dogru's messages recovered from junk. Rung ladder correctly attributed to him. ARP's chain claim corrected: the chain covers a withdrawal from the middle and is blind to a truncated tail; the deadline is what reaches rung 3. Placement generalised to three. Weakest-rung rule identified as a fourth independent arrival at ARP's own verdict re-typing discipline. |
+| 2026-08-20 | Six-pass adversarial sweep. Twenty repairs including two fail-open paths to a decisive verdict, a sixth signature carrier in the Reconciliation Hash, the subject-mapping binding, the Head Consistency retrieval path, the Reconciliation Event Identifier, the Reconciliation Output type table, and a corrected falsifiability count that was already in an outgoing email. Register at `_audit/REGISTER.md`. |
 | 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |

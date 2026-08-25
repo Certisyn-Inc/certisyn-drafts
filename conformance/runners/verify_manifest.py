@@ -18,6 +18,7 @@ import hashlib
 import io
 import os
 import re
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -25,8 +26,23 @@ ROOT = os.path.abspath(os.path.join(HERE, ".."))
 
 # Files section 6 is expected to account for. Runs are not section 6's business;
 # their hashes live in section 5 and are checked separately below.
-TRACKED_DIRS = ("harness", "runners", "vectors", "reference")
-TRACKED_SUFFIX = (".py", ".json", ".go")
+#
+# These were called TRACKED_DIRS and TRACKED_SUFFIX until Emek Can Dogru named
+# the defect on the SCITT list: npm packs from the working directory rather than
+# from the repository, so a file present on the build machine and in no commit
+# ships anyway, and the measurement is of a disk rather than of a package. The
+# same shape was here. The walk below enumerates what is PRESENT; nothing asked
+# git what is TRACKED, so an untracked file under one of these directories was
+# enumerated, hashed, recorded in section 6, and covered by the published
+# archive digest. The names said tracked and the code meant present, inside the
+# runner whose whole subject is declarations that do not match what they
+# describe. They are named for what they do now, and the tracked question is
+# asked below by something that actually asks it.
+ENUMERATED_DIRS = ("harness", "runners", "vectors", "reference")
+# .mjs joined this list when the first Node runner did. A suffix tuple that
+# omits a language enumerates zero files of it and reports a clean tree, which
+# is the same sentence a tree with no such files produces.
+ENUMERATED_SUFFIX = (".py", ".json", ".go", ".mjs")
 
 # Section 5 records run hashes in a two-line layout -- the path with its
 # headline result on one line, the digest on the next -- which the section 6
@@ -36,8 +52,15 @@ TRACKED_SUFFIX = (".py", ".json", ".go")
 # copy-paste that gave it the typed-reference run's digest. A run hash changing
 # is exactly the event section 5 exists to record, so it is checked here rather
 # than excused.
+# A recorded run may carry several wrapped description lines between its name
+# and its digest. The earlier form allowed exactly one, so an entry that wrapped
+# further was reported as "not recorded in section 5" -- a false sentence about
+# a file that was recorded, which is the same defect class this runner exists to
+# catch. Continuation lines are now counted up to four, and the lookahead stops
+# the span at the next record so one entry can never claim another's digest.
 SECTION5 = re.compile(
-    r"^\s{4}(runs/\S+)[^\n]*\n(?:[^\n]*\n)?\s+sha256 ([0-9a-f]{64})", re.M)
+    r"^\s{4}(runs/\S+)[^\n]*\n(?:(?!\s{4}runs/)[^\n]*\n){0,4}?\s+sha256 ([0-9a-f]{64})",
+    re.M)
 
 CRLF_NOTE = """\
   Every digest above that is marked (line endings) matches once CRLF is
@@ -77,6 +100,29 @@ def digest_of(path, recorded):
     return actual, normalised == recorded
 
 
+def git_tracked_set():
+    """Paths git tracks under ROOT, relative to ROOT, or (None, reason).
+
+    Returns a set on success and (None, reason) on any failure, so the caller
+    can refuse rather than treat an unanswerable question as an empty answer.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", ROOT, "ls-files", "-z"],
+            capture_output=True, timeout=60)
+    except FileNotFoundError:
+        return None, "git is not on PATH"
+    except subprocess.TimeoutExpired:
+        return None, "git ls-files timed out"
+    except OSError as e:
+        return None, f"git could not be run: {e}"
+    if out.returncode != 0:
+        detail = out.stderr.decode("utf-8", "replace").strip().splitlines()
+        return None, (detail[0] if detail else f"git exited {out.returncode}")
+    paths = out.stdout.decode("utf-8", "replace").split("\0")
+    return {p for p in paths if p}, None
+
+
 def main():
     manifest = os.path.join(ROOT, "REPRODUCE.md")
     text = io.open(manifest, encoding="utf-8").read()
@@ -113,18 +159,37 @@ def main():
     # The other direction: a script in the tree that the manifest never names.
     # A manifest that silently omits a file cannot be used to check the tree.
     present = set()
-    for d in TRACKED_DIRS:
+    for d in ENUMERATED_DIRS:
         base = os.path.join(ROOT, d)
         for dirpath, _dirs, files in os.walk(base):
             if "__pycache__" in dirpath:
                 continue
             for fn in files:
-                if fn.endswith(TRACKED_SUFFIX):
+                if fn.endswith(ENUMERATED_SUFFIX):
                     present.add(os.path.relpath(
                         os.path.join(dirpath, fn), ROOT).replace(os.sep, "/"))
     unlisted = sorted(present - set(recorded))
     for u in unlisted:
         problems.append(f"UNLISTED  {u}  (in the tree, absent from REPRODUCE.md)")
+
+    # Every enumerated file must be tracked by git. A file on this disk and in
+    # no commit is not part of the package a recipient can reconstruct, and
+    # hashing it into section 6 puts it under a digest that claims otherwise.
+    #
+    # Fails closed: if git cannot answer, this does not pass. A check that could
+    # not run must not print the same word as one that ran and found nothing.
+    tracked, git_error = git_tracked_set()
+    if git_error is not None:
+        problems.append(
+            "UNTRACKABLE  git could not report tracked files (" + git_error
+            + ").  Refusing to pass: this check cannot distinguish a clean tree "
+              "from an unchecked one, and the archive digest covers whatever the "
+              "walk found either way.")
+    else:
+        for u in sorted(present - tracked):
+            problems.append(
+                f"UNTRACKED  {u}  (enumerated into section 6 and covered by the "
+                "archive digest, but in no commit -- a recipient cannot obtain it)")
 
     # Section 5: the run hashes.
     run_recorded = {}
@@ -149,8 +214,8 @@ def main():
             print(f"  note: {u} is in runs/ and is not recorded in section 5")
 
     print(f"REPRODUCE.md section 6 records {len(recorded)} digests over "
-          f"{len(present)} tracked files; section 5 records "
-          f"{len(run_recorded)} run digests.")
+          f"{len(present)} enumerated files, all of them tracked by git; "
+          f"section 5 records {len(run_recorded)} run digests.")
     if problems:
         print()
         for p in problems:
@@ -160,8 +225,8 @@ def main():
             print()
             print(CRLF_NOTE)
         return 1
-    print("Every recorded digest matches, every listed path exists, and no "
-          "tracked file is unlisted.")
+    print("Every recorded digest matches, every listed path exists, every "
+          "enumerated file is tracked by git, and none is unlisted.")
     print("MANIFEST: PASS")
     return 0
 

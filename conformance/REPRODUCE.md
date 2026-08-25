@@ -192,6 +192,18 @@ which is the intended behaviour and not a defect in the runner.
     #      repaired too.
     python3 runners/ecdsa_malleability_probe.py
 
+    # (j3) which SCITT identity digest survives a change of signature
+    #      algorithm. Node, and @noble/post-quantum 0.6.1, which is the
+    #      version pinned in the Certisyn platform, called the same way. 200 sign calls per leg, a few seconds.
+    #      One key and one signing input per leg, with no adversary and no
+    #      transform: the Sig_structure digest is 1 of 200 on every leg,
+    #      and the envelope digest is 1 of 200 on Ed25519 and on
+    #      deterministic ML-DSA-65 and 200 of 200 on ECDSA P-256, on hedged
+    #      ML-DSA-65 and on any parallel composition containing either.
+    #      Every value is recovered by decoding the served envelope.
+    npm install @noble/post-quantum@0.6.1
+    node runners/pq_signature_stability_probe.mjs
+
     # (j) the Section 4.9 Merkle equivalence, executed rather than asserted.
     #     Standing rule 12. About two minutes, no arguments, no dependency.
     python3 runners/merkle_equiv.py
@@ -293,6 +305,11 @@ No other fixture is used. Everything else is read from the pinned corpora.
     runs/existence_oracle_run.json  PASS_WITH_DECLARED_GAPS, 7 of 7
                                     controls exercised, 6 declared gaps
       sha256 74df0c9aae6a6d230c1ecc1a9fc92be2ace571be411c50666e7cf8bfb5199869
+    runs/pq_signature_stability_run.json  SIGNING-INPUT DIGEST STABLE ON ALL
+                                          LEGS; ENTRY DIGEST STABLE ON
+                                          Ed25519 AND DETERMINISTIC
+                                          ML-DSA-65 ONLY
+      sha256 c419a057923731638d45976160c5a304ebab745a43c58fcd4c10e030e2e6d2b3
 
 Two files in `runs/` are deliberately absent from this section and
 `verify_manifest.py` says so on every run rather than passing over them in
@@ -332,7 +349,9 @@ two rows; see CHANGES-v2.1.md.
     ecaee0cc29127d61abb27ebbf190a07226abff48c2b910d55c8bf1ec3655d774  runners/run_cpb_vectors.py
     583dc806ee49b50f27ef27c5270a5330657c63155e580cfb312b1c4d455db19d  runners/run_aac_vectors.py
     cb964d52a7c30cf00d4527766916773772ac3eb0d2524ec00b3d6b44d6ec9f65  runners/aac_go_shim/main.go
-    dbed0ea02d38336a6ed7342797b9905aca6db206f462dfa08e10908073cec7b4  runners/verify_manifest.py
+    3f46a672965bdf22cc6a73238f494840f6a0ee04f3e5dea435813a2e92985931  runners/verify_manifest.py
+    5832b13ab96b2f2f2ea127f62db7b157118e8f62c0a0a7c65bb635424bc398ef  runners/check_self_claims.py
+    a2e37d66d4c7d305dab60d168b4aa91baa8cdf94895559c80e4e5fb8c916ffcc  runners/mutate_self_claims.py
     2ce3ff85fbf7c10c8905c4392e56a6b33191704996911cc88bc3dc8887e634d7  runners/build_typed_ref_vectors.py
     b1056fa365900b196ad186e4a07fac2939d4c75843d0280629f21c0828e3b621  runners/run_typed_ref_vectors.py
     8726e9f178ea94bb2b255af808bd0761e3f2f46473fcd403413fce5ab1db1b35  vectors/arp-outcome-vectors-v0.2.json
@@ -345,6 +364,8 @@ two rows; see CHANGES-v2.1.md.
     9313e91e3066ce09a353d977a5a580004646556fa7610bdf04f3503193117d8e  runners/run_deterministic_encoding_vectors.py
     366b3868c60758468e40f83de61a74389a2639cd720ac5df7674f0286617c294  runners/merkle_equiv.py
     a5c48706747b88fcd0ceeca8d2ad8baf0bd1301d7f1a065877e4db2756efcf27  runners/ecdsa_malleability_probe.py
+    df3d8b423eb3a4b26f2120df2706055166d5cf56a4353d846abb62c1194655d4  runners/pq_signature_stability_probe.mjs
+    3564ce49d6cc582a8efe2c1b7ad8cb035f648a4e3d553a2394cf983390a53e32  vectors/arp-deterministic-encoding-v0.1.json
     b5cf28d058beb6d235a6f1a168658c66bc4da4c53aa994027ae7afcc1b34045b  vectors/arp-deterministic-encoding-v0.2.json
     8ce61405fc02755c4950c44bdacada84e3379356e20cd552ffd2d43d41393a36  reference/fixture-eo-v0.1.json
     6e50ea9014fc348d8ddd632fb8b36a0103c44a965d26af4be1607b5107651af7  runners/run_existence_oracle_vectors.py

@@ -192,6 +192,17 @@ which is the intended behaviour and not a defect in the runner.
     #      repaired too.
     python3 runners/ecdsa_malleability_probe.py
 
+    # (j4) whether draft-ietf-scitt-receipts-ccf-profile-04 admits a
+    #      one-transaction tree. Node, no dependencies, no arguments. Section
+    #      2.1 defines MTH({d[0]}) = HASH(d[0]); Section 3.2's compute_root
+    #      iterates over proof.path, so an empty path is zero iterations and
+    #      the leaf hash is the root; Section 3's CDDL writes the path as
+    #      [+ ccf-proof-element] and RFC 8610 Section 3.2 defines + as one or
+    #      more. This runs the Section 3.2 algorithm verbatim over the
+    #      one-transaction case and prints what it returns, so the reading is
+    #      a measurement rather than an argument about a grammar.
+    node runners/ccf_single_leaf.mjs
+
     # (j3) which SCITT identity digest survives a change of signature
     #      algorithm. Node, and @noble/post-quantum 0.6.1, which is the
     #      version pinned in the Certisyn platform, called the same way. 200 sign calls per leg, a few seconds.
@@ -364,6 +375,7 @@ two rows; see CHANGES-v2.1.md.
     9313e91e3066ce09a353d977a5a580004646556fa7610bdf04f3503193117d8e  runners/run_deterministic_encoding_vectors.py
     366b3868c60758468e40f83de61a74389a2639cd720ac5df7674f0286617c294  runners/merkle_equiv.py
     a5c48706747b88fcd0ceeca8d2ad8baf0bd1301d7f1a065877e4db2756efcf27  runners/ecdsa_malleability_probe.py
+    618d30551b0aa3d20c72aa1c103878c2981c4bf292fcab7befec64762cb8a365  runners/ccf_single_leaf.mjs
     df3d8b423eb3a4b26f2120df2706055166d5cf56a4353d846abb62c1194655d4  runners/pq_signature_stability_probe.mjs
     3564ce49d6cc582a8efe2c1b7ad8cb035f648a4e3d553a2394cf983390a53e32  vectors/arp-deterministic-encoding-v0.1.json
     b5cf28d058beb6d235a6f1a168658c66bc4da4c53aa994027ae7afcc1b34045b  vectors/arp-deterministic-encoding-v0.2.json

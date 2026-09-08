@@ -2,7 +2,7 @@
 title: Attestation Reconciliation Protocol
 abbrev: ARP
 docname: draft-hillier-scitt-arp-04
-date: 2026-08-13
+date: 2026-09-08
 category: std
 submissiontype: IETF
 v: 3
@@ -60,6 +60,7 @@ normative:
     date: 2025
 
 informative:
+  I-D.hillier-coverage-attestation:   # coverage accounting with a declared denominator
   RFC6973:        # Privacy Considerations for Internet Protocols
   RFC6350:        # vCard 4.0
   RFC8032:        # EdDSA; S8.4 is why EdDSA is outside {{signature-malleability}}
@@ -108,6 +109,7 @@ informative:
   I-D.meunier-webbotauth-httpsig-protocol:
   I-D.meunier-webbotauth-httpsig-directory:
   I-D.meunier-webbotauth-registry:
+  I-D.connolly-cfrg-ml-dsa-security-considerations:
   FIPS203:
     title: Module-Lattice-Based Key-Encapsulation Mechanism Standard
     seriesinfo:
@@ -190,7 +192,7 @@ reference cannot be informative. RFC EDITOR: this document should not be
 published before that draft, and the reference should be updated to the
 resulting RFC number.
 
-# Introduction
+# Introduction {#introduction}
 
 Sovereign authoritative registers record facts that are treated as conclusive
 within their jurisdiction. Examples include beneficial-ownership registers
@@ -258,6 +260,98 @@ an audit finding available after. This document treats real-time reconciliation
 of claimed-versus-actual conduct as a first-class property of accountable
 autonomous action.
 
+# Relationship to Other Work {#relationship}
+
+This protocol is assembled from existing work wherever existing work reaches,
+and this section states what it takes, what it does not replace, and why it
+exists as a separate document rather than as an extension to one of them. A
+reader who concludes after this section that an existing mechanism already
+covers the problem has the information needed to say so, which is the purpose of
+putting it before the specification rather than after it.
+
+## What this document builds on
+
+The transparency model is {{RFC9943}}. A Reconciliation Output is a Signed
+Statement in that architecture's sense, the Settlement-Layer Ledger is a
+Transparency Service, and {{composition-scitt}} states the mapping field by
+field. This document defines no registration API and expects
+{{I-D.ietf-scitt-scrapi}}. Receipts are {{RFC9942}}. Where the two disagree,
+{{RFC9943}} governs and this document is wrong.
+
+The evidence-appraisal vocabulary is {{RFC9334}}. {{composition}} states the
+correspondence between a Reconciliation Output and an Attestation Result, and
+the Reconciliation Agreement occupies the position of an Appraisal Policy. This
+document does not define a second appraisal model.
+
+Logging and inclusion proofs are {{RFC6962}} and {{RFC9162}}. {{aggregation}}
+uses the {{RFC9162}} leaf and proof structure without modification. The Merkle
+constructions here are that construction; the only thing this document adds is
+what goes into the leaf.
+
+Encoding is {{RFC8949}} with {{RFC8785}} where a JSON form is required, and
+signatures are {{RFC9052}} and {{RFC9053}}. {{encoding}} adds determinism
+requirements over those and defines no new encoding.
+
+Requester authentication over HTTP is {{RFC9421}}, and the agentic binding of
+{{agentic}} composes with {{I-D.meunier-webbotauth-httpsig-protocol}} rather
+than defining a parallel scheme.
+
+## What this document does not replace
+
+It does not replace Verifiable Credentials or Decentralized Identifiers, and it
+is not a credential format. A Reconciliation Output is not held by a subject,
+is not presented by a subject, and carries no selective-disclosure mechanism for
+a holder. Where a deployment needs a subject-held credential, that work exists
+and this document is not it.
+
+It does not replace a national register's own API, signing chain or statutory
+access regime, and it does not ask a register to change any of them. The whole
+premise of {{format-profiles}} is that registers keep their interfaces.
+
+It does not define a trust framework, an accreditation scheme or a policy
+language. What counts as an acceptable register, an acceptable operator or an
+acceptable verdict is out of scope and stays with the relying party.
+
+## Why it is a separate document
+
+The problem in {{introduction}} is a relying party requiring a deterministic
+combined verdict over two or more sovereign registers that will not export their
+raw records, and requiring a settlement record a sovereign regulator can audit
+afterwards. Each ingredient of that exists. The combination does not.
+
+{{RFC9943}} makes a statement transparent once it has been made, and is
+deliberately silent on how the statement was produced or whether it reconciles
+anything. {{RFC9334}} appraises evidence about one attester and does not
+reconcile the outputs of several independent authorities into one verdict.
+{{RFC9162}} proves an entry is in a log and says nothing about what the entry
+means. None of the three is deficient in this. Reconciliation across sovereign
+registers, under a declared agreement, with non-answers distinguished from
+negative answers and with a coverage denominator a relying party can check, is a
+layer above all of them, and adding it to any one of them would push work into
+that document which its own charter does not cover.
+
+The alternative this document rejects, and names so that a reader can disagree
+with the choice rather than assume it was not made, is a profile of
+{{RFC9943}} carrying the reconciliation semantics in an unconstrained payload.
+That is smaller and it fails at the one property the problem requires: a payload
+a Transparency Service does not interpret cannot carry a verdict two independent
+verifiers must reach identically. Determinism has to be specified where the
+verdict is produced.
+
+## Where the design was taken from elsewhere
+
+Several mechanisms here were established by other people, several of them in
+review of earlier revisions of this document, and each is named at the point of
+use as well as in {{acknowledgments}}. The Signing Input Digest construction of
+{{signature-malleability}} follows from a reproduction posted to the SCITT
+mailing list rather than from anything original here. The sweep-every-instance
+method applied to that construction, and the two-axis separation of the
+coverage vocabulary, are likewise attributed where they are used. A specification
+that presents a borrowed design as its own invention is defective independently
+of whether the design is sound, and the naming is normative practice in this
+document rather than courtesy.
+
+
 # Conventions and Definitions {#terminology}
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
@@ -286,15 +380,24 @@ Bilateral Register Agreement:
 Witness Set:
 : The set of observers, declared in a Bilateral Register Agreement under
   {{witness-entries}}, whose Head Consistency Statements under
-  {{head-consistency}} constitute head-consistency evidence independent of the
-  responding service.
+  {{head-consistency}} and Witness Linkage Segments under {{witness-linkage}}
+  constitute head-consistency evidence independent of the responding service.
+
+Witness Linkage Segment:
+: A signed record, published by a witness at its own origin under
+  {{witness-linkage}}, of the linkage arrays it observed over a contiguous
+  interval of Entry Sequence Numbers. Consecutive Segments from one witness
+  cover a Ledger from that witness's Attestation Floor upward, and are what a
+  relying party assembles a chain between two heads from where {{quorum-rule}}
+  obliges it to hold one.
 
 Witness Quorum:
 : The number of Witness Entries, as {{witness-entries}} defines them, with
-  pairwise distinct Operating-Party Identifiers whose Head Consistency
-  Statements a relying party must hold before the evidence condition of
-  {{read-responses}} is satisfied. Declared under {{bra-witness}} and evaluated
-  under {{quorum-rule}}.
+  pairwise distinct Operating-Party Identifiers whose head-consistency evidence
+  a relying party must hold before the evidence condition of {{read-responses}}
+  is satisfied. Declared under {{bra-witness}} and evaluated under
+  {{quorum-rule}}, which states what that evidence is in each of its two
+  branches.
 
 Policy-Epoch Store:
 : The persisted, versioned record of a deployment's verification-policy state,
@@ -410,7 +513,7 @@ Combined Verdict:
   match and no-match.
 
 Reconciliation Hash:
-: The SHA-256 digest over the deterministically encoded CBOR serialisation of a
+: The SHA-256 digest of {{RFC6234}} over the deterministically encoded CBOR serialisation of a
   Reconciliation Output excluding its Sealing Signature and Sealing-Key
   Identifier, as specified in {{reconciliation-output}}, and with every
   signature made by a party other than the sealing reconciliation server
@@ -2002,7 +2105,7 @@ three mechanisms on it that each assume it names one event:
   so an attestation elicited in the first verified unchanged inside the second.
 - The Non-Answer Statement carries it so that a refusal elicited in one
   reconciliation is not admissible as a refusal in another over the same subject
-  and predicate — which, under unchanged policy, is precisely when the
+  and predicate -- which, under unchanged policy, is precisely when the
   identifier repeated.
 
 The three protections were each written against the same assumption and the
@@ -3054,7 +3157,8 @@ entitled to:
   Audience Sets, by `GET /arp/outputs/{reconciliation-hash}`
 - for a named reconciliation, every element of the Policy-Version Hash preimage
   of {{sealing}} EXCEPT the Deployment Blinding Value, together with a
-  Reconstruction Proof: a keyed digest, computed as HMAC-SHA-256 under the
+  Reconstruction Proof: a keyed digest, computed as HMAC {{RFC2104}} with
+  SHA-256 under the
   Deployment Blinding Value over the deterministically encoded CBOR array
   `["arp-reconstruction-v1", P]`, where `P` is the Policy-Version Hash preimage
   array of {{sealing}} with its Deployment Blinding Value position encoded as
@@ -3196,6 +3300,10 @@ in time. A Statement comprises:
 - the Policy-Version Hash and Pattern-Library Version Identifier applied
 - the Entry Sequence Number of the Ledger head when the sweep began and when it
   completed
+- the Excluded-Range Set: the set of Entry Sequence Number ranges inside the
+  bracket that the sweep deliberately did not examine, each a two-element array
+  of a range and a reason drawn from the registry of {{iana}}, empty where the
+  sweep examined its whole bracket
 - the Examined-Range Set: the set of Entry Sequence Number ranges the sweep
   covered, each a two-element array of a first and a last Entry Sequence Number
   inclusive, the ranges pairwise disjoint and in ascending order, and together
@@ -3249,19 +3357,32 @@ read the Ledger over the Statement's Examined-Range Set MUST be able to verify
 all three of the following, and a Statement failing any of them is
 non-conforming:
 
-1. The Examined-Range Set is contiguous over the interval it claims: the ranges
-   are disjoint, ascending, and their union contains every Entry Sequence Number
-   between the two head sequence numbers whose entry is of Entry Type
-   `reconciliation`. A gap is a claim to have examined an interval with a hole
+1. **The bracket abuts the previous one.** The beginning head sequence number
+   equals the completing head sequence number of the Statement this one names as
+   its predecessor, or the Statement is the first of its series. Without this the
+   identity below is an accounting over an interval the operator chose after
+   seeing what was in it, and a sweep can be complete over a bracket that begins
+   after the entries it would rather not have examined. The Examined-Range Set
+   answers *was anything skipped inside the bracket*; this answers *was the
+   bracket cut*, and the second question is the one an operator with something to
+   hide would prefer nobody asked.
+2. The Examined-Range Set and the Excluded-Range Set together are contiguous
+   over the interval claimed: the ranges are pairwise disjoint, ascending, and
+   their union contains every Entry Sequence Number between the two head
+   sequence numbers whose entry is of Entry Type `reconciliation`. A range the
+   sweep chose not to examine is therefore individually disposed, with a reason,
+   rather than absent -- a remainder that reconciles only by arithmetic being
+   exactly what {{I-D.hillier-coverage-attestation}} declines to accept, one
+   level down. A gap is a claim to have examined an interval with a hole
    in it, and it is visible because the Ledger is contiguous by construction.
-2. The count of Reconciliation Outputs examined equals the number of
-   `reconciliation` entries in that union.
-3. The count found materially changed equals the number of
+3. The count of Reconciliation Outputs examined equals the number of
+   `reconciliation` entries in the Examined-Range Set alone.
+4. The count found materially changed equals the number of
    `continuation-supersession` entries appended in the interval between the two
    head sequence numbers whose superseded Reconciliation Hash is one of a
    `reconciliation` entry in that union.
 
-The three together are an accounting identity rather than a signature, and that
+The four together are an accounting identity rather than a signature, and that
 is the point of them. A signature makes an assertion attributable; an identity
 makes it checkable against something the asserting party does not solely
 control. The Ledger is append-only, contiguous, head-notarised into a
@@ -3271,6 +3392,15 @@ Audit Identities. Requiring the counts to balance against it converts two
 numbers the operator could previously choose into two numbers the operator must
 now make true, and a sweep that examined less than it claims fails the identity
 at whichever of the three it falsified.
+
+The first of the four was added after Walter Hawkins showed, on the SCITT
+mailing list on 20 August 2026, that an equivalent rule one level down
+constrains the remainder inside a declared population and says nothing about
+where the population's edge falls. His sentence for it is the one worth keeping:
+the information did not survive being moved from the remainder to the
+denominator, it just moved. An operator that may choose the bracket has the same
+freedom as one that may choose the denominator, and every rule below the first
+was satisfiable over a bracket selected after the fact.
 
 The Examined-Set Root and the Examined-Range Set answer different questions and
 both are needed. The Root proves **membership**: an Audience Member can be shown
@@ -3381,7 +3511,7 @@ cannot distinguish a probe from an ordinary reconciliation. Applied to the
 examined count the Statement asserts, it yields an estimate of the population
 that should have been examined and was not: where a sweep asserts `E` examined
 and recovers `m` of `k` probes, the eligible population is estimated at
-`E · k / m`, and the shortfall at `E · (k - m) / m`.
+`E * k / m`, and the shortfall at `E * (k - m) / m`.
 
 This is not a proof about any individual Output and this document does not claim
 it is. It is a bound on an aggregate, with a confidence interval that narrows as
@@ -3528,13 +3658,37 @@ order this document specifies.
 24. The audit right over the query-budget counter of {{budget-suppression}}.
 25. The reserved proportion of any per-subject ceiling and its per-principal
     sub-budget.
-26. The response freshness tolerance of {{read-responses}}, which MUST NOT
-    exceed the effective ledger-head notarisation interval of
-    {{settlement-ledger}}, being the shortest item 15 any Bilateral Register
-    Agreement the deployment holds declares. Bounding it against this
-    Agreement's own item 15 would admit a tolerance longer than the interval the
-    deployment notarises at, and so a response naming a head the reader could
-    already know to be superseded.
+26. The response freshness tolerance of {{read-responses}}, which is the
+    backward bound only. It MUST be at least sixty seconds, and MUST NOT exceed
+    the effective ledger-head notarisation interval of {{settlement-ledger}} or
+    sixty seconds, whichever is longer, that interval being the shortest item 15
+    any Bilateral Register Agreement the deployment holds declares. The floor is
+    stated because the bound runs backward from the reader's receipt of the
+    response and the response was produced before that instant: a tolerance
+    below the transit and clock disagreement between the two parties rejects
+    every honest response, and a tolerance of zero rejects all of them, which is
+    a denial of service a deployment can declare itself into without any party
+    misbehaving. Sixty seconds is the figure this document fixes for the forward
+    bound of this test and of the two others that bound a party against another's
+    clock over a message it has just received, so using it as the floor makes the
+    narrowest admissible interval symmetric. A fourth test, the witness
+    observation window of {{quorum-rule}}, bounds a pair of clocks over an
+    artefact published on an interval rather than over a message in flight; its
+    forward bound is the greater of sixty seconds and twice that interval, and
+    sixty seconds is its floor in both directions for the reason it is the floor
+    here. The
+    forward bound is that fixed sixty seconds and is not negotiable per
+    Agreement: a forward bound each deployment set for itself would restore the
+    untestable case the fixed one exists to close. Bounding the ceiling against
+    this Agreement's own item 15 would admit a tolerance longer than the interval
+    the deployment notarises at, and so a response naming a head the reader could
+    already know to be superseded. Where that interval is itself shorter than sixty
+    seconds the floor governs, a ceiling below a floor being a term no deployment
+    can declare, and such a deployment trades the supersession property for
+    liveness knowingly: it notarises more often than the window in which a reader
+    will accept a response, so a response naming a superseded head is admissible
+    by exactly the difference. A deployment that wants both notarises no more
+    often than sixty seconds.
 27. The Witness Set of {{bra-witness}}, which MAY be empty.
 28. The Witness Quorum of {{bra-witness}}.
 29. OPTIONALLY, an audience constraint under {{audience}}.
@@ -3553,8 +3707,8 @@ order this document specifies.
     interval, as a two-element array of unsigned integers.
 
 Items 26, 27, 28, 30, 31, 32 and 33 are new in this revision; item 29 is carried from
--03 in a new position. Two of the five were already required elsewhere in this
-document while sitting outside the Agreement Hash.
+-03 in a new position. Three of the seven, items 26, 30 and 31, were already
+relied on elsewhere in this document while sitting outside the Agreement Hash.
 {{read-responses}} obliges a deployment to declare a response freshness
 tolerance in its Bilateral Register Agreements; that is item 26.
 {{read-signing}} obliges an Agreement to declare the keys under which a
@@ -3565,14 +3719,19 @@ Agreement Hash -- an Agreement Hash that does not cover a term the Agreement is
 required to carry. {{retroactive}} makes re-invocation of partial attestations
 conditional on what the applicable Agreements permit without making that
 permission a declared item; that is item 31. Items 27 and 28 specify the witness
-quorum {{read-responses}} names and earlier revisions declined to fix.
+quorum {{read-responses}} names and earlier revisions declined to fix. Items 32
+and 33 are terms this revision creates rather than terms it moves inside the
+Agreement Hash: item 32 is what makes the `register-record-correction` trigger of
+{{retroactive}} reachable, and item 33 is the probe allowance {{coverage-probes}}
+meters against.
 
 **An Agreement computed under an earlier revision does not compute the same
-Agreement Hash under this one.** The Agreement Hash covers five items it did not
-cover before -- 26, 27, 28, 30 and 31 -- and {{bra-hash}} now fixes the CBOR type of every item and the
-ordering within every set-valued one, so the value changes for every Agreement
-even where no negotiated term has changed. Agreements MUST be recomputed, and a deployment
-holding a Bilateral-Register-Agreement Hash recorded before this revision MUST
+Agreement Hash under this one.** The Agreement Hash covers seven items it did
+not cover before -- 26, 27, 28, 30, 31, 32 and 33 -- and {{bra-hash}} now fixes
+the CBOR type of every item and the ordering within every set-valued one, so the
+value changes for every Agreement even where no negotiated term has changed.
+Agreements MUST be recomputed, and a deployment holding a
+Bilateral-Register-Agreement Hash recorded before this revision MUST
 treat it as naming an Agreement under the earlier item list rather than
 as a value comparable with one computed under this section. Comparing the two
 is the Bilateral-Register-Agreement drift of {{agreement-drift}}, and a
@@ -3650,6 +3809,117 @@ freshness rule over a Statement carrying no time is a rule no verifier can
 apply. {{settlement-ledger}} adds a Statement Timestamp to the Ledger Head
 Statement for the same reason.
 
+#### Witness Linkage Segments {#witness-linkage}
+
+A **Witness Linkage Segment** is a COSE_Sign1 by a witness, under the media type
+registered in {{iana-media}}, carrying the `arp-witness-identifier` header
+parameter registered in {{iana}} in its protected header, whose payload is the
+deterministically encoded CBOR array, under {{cbor-cose}}, of:
+
+1. the text string `arp-witness-linkage-v1`;
+2. the Authority Origin of the reconciliation server whose Settlement-Layer
+   Ledger the Segment covers, as a text string, normalised as {{witness-entries}}
+   normalises an Operating-Party Identifier, so that equality is a test a
+   verifier computes rather than one it decides and a Segment cannot be
+   presented as evidence about a Ledger it was not taken over;
+3. the Entry Sequence Number of the lowest entry the Segment covers, as an
+   unsigned integer;
+4. the Entry Sequence Number of the highest entry it covers, as an unsigned
+   integer;
+5. the ordered array, lowest Entry Sequence Number first, of the linkage array
+   of {{read-operations}} for each entry in that inclusive interval, each a
+   four-element array of the Entry Sequence Number as an unsigned integer and
+   the Prior-Entry Hash, the Self-Entry Hash and the Signing Input Digest of
+   that entry's Entry Signature, each as a byte string; and
+6. the time the witness produced this Segment, in the form of
+   {{reconciliation-output}}. It is present for the reason item 5 of
+   {{head-consistency}} is present: a COSE_Sign1 is not dateable from its own
+   bytes.
+
+A Segment MUST cover at least one and at most **one thousand** entries. The cap
+is what makes the artefact bounded independently of how often a witness
+observes or how fast a Ledger is appended to, both of which this document leaves
+to a deployment; a witness with more entries to cover publishes consecutive
+Segments rather than one larger one.
+
+A Witness Entry names one Ledger. A party observing more than one MUST appear as
+one Witness Entry per Ledger, under a distinct Operating-Party Identifier and so
+a distinct Authority Origin, because the addressing below is by Entry Sequence
+Number alone and two series on one origin would give one sequence number two
+Segments and no conforming answer.
+
+Item 3 of a Segment MUST be one greater than item 4 of the Segment the witness
+published before it, or, in the first Segment it publishes for a Ledger, the
+Entry Sequence Number the witness elects to attest from. The lowest entry a witness's
+first Segment for a Ledger covers is that witness's **Attestation Floor** for
+it, and a witness chooses that value when it begins publishing: one that begins
+observing a Ledger at entry n attests from n and makes no claim below it, which
+is what lets a witness join a Ledger of any length without signing its history.
+
+**A witness MUST publish Segments that together cover every Entry Sequence
+Number from its Attestation Floor to the head named by the most recent Head
+Consistency Statement it has published for that Ledger.** The obligation is
+stated as coverage rather than per observation so that an interval in which
+nothing was appended obliges nothing: {{settlement-ledger}} republishes the
+Ledger Head Statement once per notarisation interval and not on every append,
+and a Statement covering a head already covered needs no further Segment. A
+Statement whose head the witness's Segments do not reach is a Statement no
+relying party can use for the second branch of {{quorum-rule}}; the first branch
+needs no Segment.
+
+A witness MUST serve, at `/.well-known/arp-witness-linkage/{n}` on the Authority
+Origin of its Operating-Party Identifier, where `{n}` is an Entry Sequence
+Number, the single Segment whose interval contains `n`, and MUST answer `404`
+where it has published none covering `n`, which is the answer for every `n`
+below its Attestation Floor. It MUST serve its most recently published Segment
+at `/.well-known/arp-witness-linkage`. Each response carries exactly one Segment
+under the media type registered in {{iana-media}}. A witness MUST serve the same
+Segment for a given Entry Sequence Number on every request, and MUST serve
+Segments to any party without authentication, for the reason {{quorum-rule}}
+gives for serving Head Consistency Statements that way: an artefact obtainable
+only through the party it is evidence about is that party's selection.
+
+A relying party assembles an interval by requesting the Segment containing the
+head a response names and then the Segment containing one above each Segment's
+item 4, until one covers the head a Head Consistency Statement names. It MUST
+stop and treat the interval as uncovered on a `404`, on a Segment whose item 3
+is not one greater than the item 4 of the Segment below it, or on a Segment
+carrying a signature that does not verify. The first Segment it fetches has no
+Segment below it and is subject only to the last of those.
+Addressing per entry rather than per collection
+is what makes the cost of assembling an interval proportional to the interval
+rather than to the witness's publication history; the interval itself is
+unbounded, so a relying party MAY decline to assemble one longer than it is
+prepared to fetch and holds no evidence from that witness where it does.
+
+A witness MUST retain and serve every Segment it has published for a Ledger for
+as long as it publishes Segments for that Ledger, and for at least one year
+after its last publication for it. The period is stated against the witness's own
+publication history because a witness is party to no Bilateral Register
+Agreement and cannot compute the retention period of {{delivery}}. A relying
+party that cannot obtain the Segments covering an interval holds no evidence for
+that interval from that witness, which is the same outcome as an unreachable
+origin.
+
+Two Segments by one witness for one Ledger whose intervals intersect, and whose
+linkage arrays differ at any entry in the intersection, are a **witness
+equivocation**. A relying party holding both MUST NOT count that witness toward
+a quorum under {{quorum-rule}}. Detection is opportunistic in the way
+{{settlement-ledger}} says detection of two entries at one Entry Sequence Number
+is opportunistic: the addressing above returns one Segment per entry, so a party
+sees a pair only where it retained an earlier Segment, or compared with another
+party, and no single request reveals one. What the rules above establish is not
+that equivocation is caught but that it is the **only** way a witness can present
+two chains over one interval, since a conforming witness publishes each interval
+once and serves one Segment for each entry. That is the property the append-only
+claim of {{quorum-rule}} rests on, and its enforcement is an audit obligation
+rather than a verifier-side test.
+
+A Segment carries no Reconciliation Hash, no Claim Hash and no structural
+metadata, because a linkage array carries none. What its unauthenticated
+publication adds over the entitled read of {{read-operations}} is set out in
+{{privacy}}.
+
 #### The quorum rule {#quorum-rule}
 
 The **Witness Quorum** is an integer `t` with `0 <= t <= n`, where `n` is the
@@ -3681,27 +3951,63 @@ under {{read-responses}} when it holds Head Consistency Statements from at least
 - each covers the head the response names, that is, item 2 of the Statement
   equals the response's `as-of-sequence-number` and item 3 equals the Self-Entry
   Hash that response names; or covers a head at a higher Entry Sequence Number
-  **and** the relying party additionally holds the linkage triples between the
-  two, read under {{read-operations}}, and has verified all three of: that the
-  Self-Entry Hash of the triple at the Statement's Entry Sequence Number equals
-  item 3 of that Statement; that the Self-Entry Hash of the triple at the named
-  head equals the one the response names; and that the triple at each sequence
-  number carries, as its Prior-Entry Hash, the Signing Input Digest that the
-  linkage array of the entry below it reports. The linkage projection carries
-  that digest as its fourth element precisely so this condition is computable by
-  the party required to compute it: a Signing Input Digest is taken over the
+  **and** the relying party additionally holds the Witness Linkage Segments of
+  {{witness-linkage}} covering the two, **obtained from that witness's own
+  origin and not from the responding service**, and has verified all six of:
+
+    1. that each Segment verifies under the same key material as the Statement,
+       carries the same `arp-witness-identifier`, and carries as its item 6 a
+       time no later than the Witness Observation Time of that Statement, so
+       that the chain and the head are one witness's observation, not two
+       parties', and not one witness's later account of an earlier interval;
+    2. that item 2 of each names the Authority Origin of the responding
+       reconciliation server;
+    3. that item 3 of each Segment above the lowest it holds is one greater
+       than item 4 of the Segment below it, and that between them they cover
+       every Entry Sequence Number from the named head to the head the Statement
+       covers, inclusive. A span covered by one Segment satisfies this on its
+       second clause alone;
+    4. that the Self-Entry Hash of the linkage array at the Statement's Entry
+       Sequence Number equals item 3 of that Statement;
+    5. that the Self-Entry Hash of the linkage array at the named head equals
+       the one the response names; and
+    6. that the linkage array at each sequence number in that interval above
+       the named head carries, as its Prior-Entry Hash, the Signing Input Digest
+       that the linkage array of the entry below it reports. The named head is
+       the bottom of the interval, the entry below it is outside the Statement's
+       coverage, and check 5 is what pins that end.
+
+  A relying party holding two Segments from one witness that equivocate under
+  {{witness-linkage}} MUST NOT count that witness toward the quorum, whichever
+  branch it would otherwise satisfy. The linkage array carries that
+  digest as its fourth element precisely so this condition is computable by the
+  party required to compute it: a Signing Input Digest is taken over the
   `Sig_structure`, so neither the protected header nor the payload of the entry
-  below is recoverable from a triple of sequence number and two hashes, and the
+  below is recoverable from a sequence number and three hashes, and the
   substitution a reader might reach for instead is the one the next sentence
-  forbids. Those two values are digests over different
+  forbids. Those last two values are digests over different
   preimages -- {{settlement-ledger}} takes a Self-Entry Hash over the entry
   array with two positions nulled and a Prior-Entry Hash over a `Sig_structure`
   -- so a verifier MUST NOT test them for equality against each other; and
-- each carries a Witness Observation Time no earlier than the Statement
-  Timestamp of item 4 and no later than twice the effective ledger-head
-  notarisation interval after it, that interval being the shortest any Bilateral
-  Register Agreement the deployment holds declares, per the direction rule of
-  {{delivery}}.
+- each carries a Witness Observation Time no earlier than sixty seconds before
+  the Statement Timestamp of item 4 and no later than the greater of sixty
+  seconds and twice the effective ledger-head notarisation interval after it,
+  that interval being the shortest
+  any Bilateral Register Agreement the deployment holds declares, per the
+  direction rule of {{delivery}}. The sixty seconds is the allowance this
+  document makes wherever one party's clock is tested against another's, here
+  the witness's against the reconciliation server's: with no allowance a witness
+  whose clock is a second slow fails this condition on every Statement it
+  publishes, permanently and with no party misbehaving, which is the case item
+  26 of {{bra-items}} floors the response freshness tolerance to avoid. The
+  forward bound is floored for the same reason: a deployment notarising every
+  few seconds would otherwise admit a window of a few seconds against a clock
+  this document does not synchronise, and a witness running slightly fast would
+  fail on every Statement it published. {{response-clocks}} gathers the clock
+  bounds this document sets. A witness whose Statements fall outside this window
+  satisfies no condition of this rule and so counts toward no quorum, which is
+  the outcome {{head-consistency-channel}} gathers for every other way a witness
+  can fail to contribute.
 
 A witness MUST publish its Head Consistency Statements at
 `/.well-known/arp-head-consistency` on the Authority Origin of its
@@ -3730,20 +4036,68 @@ countersigned. Where a witness origin is unreachable, the relying party holds
 fewer than `t` Statements and MUST act under {{read-responses}} accordingly,
 rather than accepting a substitute from the service.
 
-The chain requirement in the third condition is what makes the artefact worth
-its name, and it is why the condition pins **both ends** of the chain and not
-only its internal consistency. A witness signature over a head at a higher
-sequence number is, on its own, evidence about whatever branch that witness was
-served, which may not be the reader's: a fork at disjoint sequence numbers is
-precisely a pair of heads neither of which contradicts the other. A chain that
-is merely internally consistent proves only that the entries the responding
-service just served are consistent with each other, which that service controls
-entirely. Anchoring the top of the chain to the digest the witness signed, and
-the bottom to the digest the response named, is what puts the two observations
-on one chain. A Statement covering the named head exactly needs no linkage
-because there is nothing to link.
+**The chain requirement is what makes the artefact worth its name, and the
+requirement that the Segments come from the witness is what makes the chain
+evidence.** A witness signature over a head at a higher sequence number is, on
+its own, evidence about whatever branch that witness was served, which may not
+be the reader's: a fork at disjoint sequence numbers is precisely a pair of
+heads neither of which contradicts the other. So the two observations have to be
+put on one chain, and the chain has to be one the responding service did not
+write.
 
-The window in the fourth condition is measured from the Statement Timestamp of
+Anchoring the ends of a service-supplied chain does not do it, and the
+arithmetic is worth stating because it is not obvious. The condition anchors two
+Self-Entry Hashes, one signed by the witness at the top of the span and one
+named by the response at the bottom, and then walks a chain over two other
+positions, the Prior-Entry Hash and the Signing Input Digest. No anchored value
+sits in a position the chain reads. The reader cannot recompute any value it
+does read, for the reason the previous paragraph gives. And the lower anchor is
+the response's own claim, so it constrains the service against itself and
+nothing else. A service supplying the arrays therefore supplies every value the
+chain is made of, and an equality between two values one party supplies is not
+evidence about that party: it can serve the Self-Entry Hash the witness
+published at the top, its own values in every other position, and satisfy each
+part of the condition. Extending the span makes that easier rather than harder,
+since every interior array is two further values the condition constrains only
+against their neighbours.
+
+Anchoring both ends does better and does not reach. Where the lower anchor is
+a value in a position the chain reads and comes from somewhere other than the
+responding service, the chain values of a three-array span are determined, and
+only those: the interior Self-Entry Hash is constrained by neither anchor nor
+chain even there. A span of four
+is not: the two arrays between the ends are constrained only against each other,
+and every further entry adds another such pair. The condition places no bound on
+the span, and the span is the distance between a head a witness happened to
+observe and a head a response happens to name, so it is not a quantity the
+relying party controls.
+
+Segments served by the witness bound the freedom by a different route: every
+value the chain is made of was observed and signed by a party that is not the
+one being checked, the covering requirement of {{witness-linkage}} leaves no
+Entry Sequence Number in the interval that a service supplies, and the two
+anchors become checks that the witness's chain is the one the Statement and the
+response are about.
+
+**What that buys and where the residue is.** A witness reads the Ledger from the
+reconciliation server, so a witness is not an independent observer of the
+entries; it is an independent *recorder* of what it was served, at a time it
+stamps and under a signature it cannot revise. The property the Segments deliver
+is therefore append-only rather than absolute: a conforming witness publishes
+each interval once and serves one Segment per entry, so an operator rewriting an
+interval that witness has covered can only do so with a witness that equivocates,
+and {{witness-linkage}} states both what that costs the witness and why detecting
+it is opportunistic rather than a verifier-side test. An operator
+that rewrites an interval before any witness has covered it, or that serves a
+rewritten chain to a witness setting its Attestation Floor above the rewrite,
+obtains a witness-signed chain over the rewrite. What bounds that is witness
+diversity and observation frequency, both of which the Witness Set and the
+notarisation interval already govern, and it is the same residue
+{{bra-limits}} concedes for declared independence rather than a new one. A
+Statement covering the named head exactly needs no Segment, because there is
+nothing to link.
+
+The window in the fifth condition is measured from the Statement Timestamp of
 the Ledger Head Statement and not from the Entry Timestamp of the head, and it
 is two intervals and not one, because {{settlement-ledger}} republishes the
 Ledger Head Statement once per notarisation interval and not on every append. An
@@ -3907,6 +4261,85 @@ requires a register operator to corroborate by publishing an Authorised-Origin
 Document, and which is the one declared item this document does provide a
 mechanism to check.
 
+## Aggregate Statements {#aggregates}
+
+Nothing above governs what may be said about a *set* of Reconciliation Outputs.
+That is the gap through which a four-valued vocabulary becomes a percentage.
+
+{{verdict-arithmetic}} forbids the Verdict Arithmetic from combining a
+Non-Answer Reason, and requires an `indeterminate` contribution to propagate
+rather than be resolved. Both hold inside one reconciliation. Neither reaches
+the report that says a deployment ran at ninety-one per cent. The prohibition is
+a rule addressed to an implementer, and the pressure to state a single figure
+arrives from outside engineering, after the vocabulary is public and looks like
+a scoring system. A rule is what an engineer follows and a structure is what a
+spreadsheet cannot get around, and only the second survives that pressure.
+
+An **Aggregate Statement** is the only form in which this document permits a
+count, rate or proportion over more than one Reconciliation Output to be
+published, cited, or supplied under {{regulator-portal}} or {{audit-path}}. It
+is a COSE_Sign1 by the reconciliation-server sealing key whose payload comprises:
+
+- the **Declared Population**: the criterion by which an Output is in the set,
+  and the **Basis** on which it is decided, being one of `catalogue` where the
+  population is a list held before the period began, `enumeration` where it is
+  everything in a stated Entry Sequence Number range, or `declared` where the
+  operator asserts it and nothing else fixes it
+- where the Basis is `enumeration`, the Entry Sequence Number range, so that the
+  denominator is checkable against the Ledger as {{sweep-statements}} checks a
+  sweep
+- the **Denominator**: the count of Outputs in the Declared Population
+- the **Verdict Vector**: one count for each value of the Combined Verdict,
+  including `indeterminate`, in the order {{terminology}} gives
+- the **Non-Answer Vector**: one count for each Non-Answer Reason in the registry
+  of {{iana}} that appears in the set, each naming its reason
+- a Statement Timestamp, a Sealing-Key Identifier and a signature
+
+**The Verdict Vector and the Non-Answer Vector MUST sum to the Denominator, and
+a reader MUST reject an Aggregate Statement in which they do not.**
+
+That sentence is the mechanism and everything else is scaffolding for it. A
+component of a sum that has to balance cannot be averaged away, folded into a
+neighbour, or dropped from a denominator, because each of those breaks the
+arithmetic in a way any reader can see without holding a single Output. There is
+no representation of this Statement in which `indeterminate` is absent and the
+numbers still add up. Compare the rule it replaces, which said an implementation
+must not combine certain values: an implementation that combined them anyway
+produced a document indistinguishable from one that had not.
+
+A deployment MAY publish a rate derived from an Aggregate Statement, and where
+it does it MUST publish the Statement alongside and MUST NOT publish a
+derived figure alone. A rate is a projection of the vector onto one number, and
+this document does not forbid the projection. It requires that the thing
+projected from travels with it, so that a reader who wants to know what the
+other nine per cent were is one artefact away rather than dependent on the
+publisher's goodwill.
+
+**Why the Basis is declared and not assumed.** A proportion is a claim about a
+denominator, and a denominator no one stated is a denominator the publisher
+chose after seeing the numerator. `enumeration` is the strong case and is
+checkable against the Ledger by anyone. `catalogue` is weaker and still
+falsifiable, since the list existed before the period. `declared` is the
+operator's assertion, is not falsifiable, and MUST be recorded as such rather
+than presented as though it were either of the others. The three-way
+distinction, and the requirement that a report account for every unit it did not
+examine rather than reconcile by arithmetic, are taken from the Coverage
+Attestation Profile {{I-D.hillier-coverage-attestation}}, which specifies them
+in a form that is not particular to this protocol.
+
+**What this does not do.** It does not stop a party outside the protocol
+computing whatever it likes from Outputs it holds. Nothing can. What it stops is
+that party doing so *and citing this document*, because a figure published
+without its Statement is non-conforming and a figure published with one carries
+its own contradiction where it has one. The distinction between a number nobody
+can check and a number whose components must balance is not enforcement, it is
+the difference between a claim that has to be believed and a claim that can be
+refused.
+
+**Acknowledged.** The general problem, and the observation that a prohibition on
+averaging is not a mechanism, are Emek Can Doğru's, put to the SCITT mailing list
+on 20 August 2026.
+
 # Agentic Principal Reconciliation {#agentic}
 
 The Agent Friend-or-Foe Determination described in the Requester Identity
@@ -3969,6 +4402,51 @@ Signature's has one per addressed register. A single encoding for both avoids a
 decoder having to infer the type from context. Pending registration,
 implementations MAY use labels from the private-use range of the COSE Header
 Parameters registry; such use is not interoperable.
+
+Every digest this document takes over a CBOR encoding is taken under the Core
+Deterministic Encoding Requirements of Section 4.2.1 of {{RFC8949}}, and this
+document cites that section rather than the word canonical because the two name
+different things. Section 4.2.1 orders the pairs of a map in the bytewise
+lexicographic order of the deterministic encodings of the keys. Section 4.2.3 of
+the same document describes a Length-First Map Key Ordering, in which a shorter
+encoded key sorts ahead of a longer one and ties are broken bytewise, and that
+is what several widely used CBOR libraries produce under an option named
+canonical, the name the length-first rule carried before {{RFC8949}} separated
+the two. **An implementation MUST produce the ordering of Section 4.2.1.** A library
+option named canonical commonly produces Section 4.2.3 instead, and an
+implementation that relies on one without establishing which it produces has not
+met that requirement.
+
+The two orderings agree for any map whose keys are integers or strings and share
+a CBOR major type, at any mix of lengths: for those types the head byte never
+decreases as the encoding lengthens, and where two keys share a head byte the
+bytewise comparison continues into the bytes that follow it, which orders them
+the same way. The head byte of an array, a map or a tag encodes a count rather
+than a length, and the agreement does not hold there; COSE admits only integer
+and string labels, so no map on a digest path in this document has a key of
+those types. Integers span two major types, so a header pairing a positive label
+with a negative one is outside the agreement, and that is the case the next
+paragraph is about. They diverge
+only where a map mixes major types and the key of the higher major type has the
+strictly shorter encoding. A negative label of -1 is the single byte `0x20`; a
+label of 256 is `0x19` and two further bytes. Length-first puts -1 first;
+bytewise puts 256 first, `0x19` being below `0x20`.
+
+No protected header this document specifies reaches that case. The headers it
+defines carry the algorithm identifier, the key identifier and the parameters
+{{iana}} registers, and a map of those sorts identically under both orderings.
+The requirement is stated so that it stays that way: {{cbor-cose}} permits
+labels from the private-use range pending registration, private-use labels are
+negative, and a deployment that pairs one with a registered label of 256 or
+above has built the divergent case out of two permitted choices. An
+implementation that produced Section 4.2.3 there would encode one protected
+header differently from one that produced Section 4.2.1, and so compute a
+different Signing Input Digest over one signing act and a different Prior-Entry
+Hash for the entry above it. The head comparison of {{settlement-ledger}} treats
+that as a fork, against an operator that equivocated about nothing. The entry
+array of {{settlement-ledger}} is an array and not a map for the reason that
+section gives, which places the ordering question at the protected headers and
+not at the entry.
 
 ## Reconciliation Request Binding {#request-binding}
 
@@ -4094,9 +4572,12 @@ commissioning request of {{request-binding}}.
   in {{RFC7638}}. For an Audience Member it MUST equal the Verification Method
   Reference the Output names. For a regulator, a Register Operator or an Audit
   Identity it MUST be a key the corresponding Bilateral Register Agreement
-  declares. For a requester commissioning a reconciliation it is the key that
-  becomes that requester's Verification Method Reference in the resulting
-  Audience Set. Key material is retrieved as that agreement provides, or, for an
+  declares. For a witness reading under {{witness-linkage}} it MUST be the
+  thumbprint a Witness Entry of {{witness-entries}} carries, in a Bilateral
+  Register Agreement the deployment holds. For a requester commissioning a
+  reconciliation it is the key that becomes that requester's Verification Method
+  Reference in the resulting Audience Set. Key material is retrieved as that
+agreement provides, or, for an
   agent, through the Web Bot Auth directory of {{http-sig}}.
 - The reconciliation server MUST publish a Policy Parameters Document at
   `/.well-known/arp-policy-parameters` on its Authority Origin: a COSE_Sign1 by
@@ -4120,11 +4601,15 @@ commissioning request of {{request-binding}}.
 
   The sixth element is present for the same reason as the fifth.
   {{read-responses}} obliges **every** reader of a read response to check that
-  the response time falls within a declared tolerance, and declares that
-  tolerance in the Bilateral Register Agreements. A relying party is party to no
-  Agreement and holds only their hashes, so the tolerance every reader must
-  apply was readable only by the parties who did not have to apply it, which is
-  precisely the defect the Witness Set element was added to fix.
+  the response time falls within an interval whose backward bound is a declared
+  tolerance, and declares that tolerance in the Bilateral Register Agreements.
+  The forward bound of that interval is the fixed sixty seconds of
+  {{read-responses}}, which every reader already holds because this document
+  states it, so it is the backward bound alone that has to be published here.
+  A relying party is party to no Agreement and holds only their hashes, so the
+  tolerance every reader must apply was readable only by the parties who did not
+  have to apply it themselves, which is precisely the defect the Witness Set element was
+  added to fix.
 
   Without that fifth element a
   relying party, which holds only Agreement Hashes, could not evaluate the quorum
@@ -4218,10 +4703,32 @@ that a party holding no entitlement at all can still observe a head.
   additionally entitled to the four-element array of the Entry Sequence Number,
   the Prior-Entry Hash, the Self-Entry Hash and the Signing Input Digest of that
   entry's Entry Signature, by the `fields=linkage` query
-  parameter, for the head linkage of {{quorum-rule}}, **and only for an Entry
-  Sequence Number at or below the head of the most recently published Ledger
-  Head Statement**. A request under that parameter naming a higher sequence
-  number MUST be refused with `404` whether or not the entry exists. Without
+  parameter, which is what a witness reads to produce the Segments of
+  {{witness-linkage}}. The projection is additionally available for a contiguous
+  range, by the OPTIONAL `through` parameter naming an Entry Sequence Number at
+  or above the one in the path, the response carrying the linkage array of every
+  entry from the one in the path up to and including the lowest of the value in
+  `through`, the head bound below, and the highest the server elects to serve. A
+  server MUST serve at least one thousand entries in one such response where
+  that many lie in range, which is the Segment cap of {{witness-linkage}}, so
+  that a witness can produce one Segment from one read. A response that stops
+  short carries the entries it served and the requester continues from the next
+  Entry Sequence Number, so a range longer than a server elects to serve draws
+  no refusal and no status a shorter one would not have drawn. A ranged read counts as
+  one request against the limit of {{read-errors}}, save for the fixed
+  allowance that section makes each interval for a witness principal so that a
+  rate limit cannot void the publication obligation of {{witness-linkage}}. That
+  allowance does distinguish a witness from another principal, by the number of
+  reads admitted rather than by the answer to any one of them, and what it
+  discloses is that the reading key is in a Witness Set some Agreement the
+  deployment holds declares. That is a wider set than the effective Witness Set
+  {{read-signing}} publishes, so the allowance is a disclosure and is recorded
+  as one in {{privacy}}. Every
+  linkage read is **only for an Entry Sequence Number at or below the head of
+  the most recently published Ledger Head Statement**, and a ranged read is
+  bounded at that head in the same way. A
+  linkage read naming a higher sequence number MUST be refused with `404`
+  whether or not the entry exists. Without
   that bound the projection is a live head oracle: the Ledger is contiguous, so
   a requester could binary-search the current head between publications and poll
   it for the write rate, which is the disclosure {{settlement-ledger}} publishes
@@ -4305,16 +4812,41 @@ server serving one party's response to another or replaying a year-old empty
 result; without those the same bytes verify forever and against everybody.
 
 A reader MUST check that the `request-binding` matches the request it sent, that
-the `response-time` is within a declared freshness tolerance, and that the
-`as-of-sequence-number` is at least that of the most recent Ledger Head Statement
-it has seen. A deployment MUST declare that tolerance in its Bilateral Register
-Agreements and it MUST NOT exceed the effective ledger-head notarisation
-interval of {{settlement-ledger}}, being the shortest any Bilateral Register
-Agreement the deployment holds declares, per the direction rule of
-{{delivery}}: a tolerance left to each reader is not a property two
-implementations can be tested against, and one longer than the notarisation
-interval would admit a response naming a head the reader could already know to
-be superseded. Without those checks a server may serve a cached response for a
+the `as-of-sequence-number` is at least that of the most recent Ledger Head
+Statement it has seen, and that the `response-time` is fresh. The `response-time`
+is fresh where it is no earlier than the instant the reader received the response
+less the declared tolerance, and no later than 60 seconds after that instant. A
+reader MUST reject a response whose `response-time` falls outside that interval
+in either direction.
+
+The reference instant is the reader's receipt of the response and the direction
+is backward, stated here for the reason {{replay-defence}} gives for stating them
+there: a tolerance with no reference instant and no direction is a test two
+implementations apply differently to the same response. The forward bound is
+stated because `response-time` is produced on the responding service's clock and
+tested against the reader's, and nothing in this document synchronises the two.
+Without it, a response stamped ahead of the reader's clock and a response
+produced at the instant it claims are one value to the check, and a server whose
+clock runs fast is indistinguishable from one stamping ahead deliberately. The
+sixty seconds is the figure this document already uses wherever one party is
+bounded against another's clock: the reconciliation server against the
+register's, in the Freshness Timestamp of {{replay-defence}}, and the server
+against the requester's, in the `created` parameter of {{read-signing}}. Both of
+those run toward the server. This is the return direction, and it is the one the
+document had not stated. Neither
+party is required to hold a reference clock: the rule bounds the disagreement
+rather than removing it, which is what a two-clock test can do. A deployment
+MUST declare that tolerance in its Bilateral Register Agreements, it MUST be at
+least sixty seconds, and it MUST NOT exceed the effective ledger-head
+notarisation interval of {{settlement-ledger}} or sixty seconds, whichever is
+longer, that interval being the shortest any Bilateral Register Agreement the
+deployment holds declares, per the direction rule of {{delivery}}: a tolerance
+left to each reader is not a property two implementations can be tested against;
+one shorter than the transit and clock disagreement between the two parties
+rejects every honest response, the backward bound running from the reader's
+receipt and the response having been produced before it; and one longer than the
+notarisation interval would admit a response naming a head the reader could
+already know to be superseded. Without those checks a server may serve a cached response for a
 repeated request tuple indefinitely, and the properties below do not hold.
 
 An empty result is therefore an assertion and not an absence: a signed statement
@@ -4433,7 +4965,20 @@ A server MUST rate-limit these operations, per authenticated principal, at the
 most permissive rate any of its Bilateral Register Agreements declares, and MUST answer `429` when the limit
 is reached. The declared rate MUST admit at least one read of each operation per
 Reconciliation Hash per reliance interval, so that a limit cannot silently void
-the obligation of {{reliance-horizon}}. `GET /arp/entries/{n}` in particular
+the obligation of {{reliance-horizon}}. A server MUST NOT count against that
+limit the first sixty ranged linkage reads made in each effective ledger-head
+notarisation interval, being the shortest item 15 any Bilateral Register
+Agreement the deployment holds declares, by a principal whose `keyid` resolves to the key of a
+Witness Entry any Bilateral Register Agreement the deployment holds declares, so
+that a limit cannot silently void the publication obligation
+{{witness-linkage}} places on a witness. The allowance is a fixed count outside
+the declared rate rather than a second rate inside it: item 18 of {{bra-items}}
+carries one request count and one interval, and a per-class rate would be a
+negotiated term sitting outside the Agreement Hash. Sixty reads of the thousand
+entries {{read-operations}} obliges a server to serve in one of them cover sixty
+thousand appends in an interval; a deployment appending faster declares a
+shorter interval or a higher rate, which are its own terms and not a third
+party's cadence. `GET /arp/entries/{n}` in particular
 ranges over the whole Ledger; unlimited, a party entitled to one consistency
 check could sweep for the deployment's entry count, write rate, and the timing of
 retroactive bursts, which is disclosure by aggregation of a surface every
@@ -4762,7 +5307,8 @@ reintroduced through the interop form.
 Every interoperability defect this document has repaired in its digest
 constructions is one defect. A signature that has two byte encodings for one
 signing act. A CBOR item whose major type the text did not fix. A set with no
-ordering rule. An optional member that could be omitted or nulled. A URI that
+ordering rule, or a CBOR map whose key order two libraries decide differently.
+An optional member that could be omitted or nulled. A URI that
 could be normalised on receipt or before sending. A Unicode string in NFC or in
 NFD. A binary value rendered into JSON as base64, base64url or hex. A digest
 taken over transmitted bytes or over a re-encoding.
@@ -4792,8 +5338,13 @@ same information as that input. The classes this document recognises are:
   identifier as `tstr` or `bstr`, a count as `uint` or text, a URI as `tstr` or
   tag 32, a timestamp as `tstr` or tag 0. Handled by the type tables of
   {{bra-hash}}, {{reconciliation-output}}, {{partial-attestation}} and {{iana}}.
-- **Collection order.** The permutations of a set. Handled by the bytewise sort
-  rules stated at each set.
+- **Collection order.** The permutations of a set, and the orderings of the
+  pairs of a CBOR map. Handled by the bytewise sort rules stated at each set,
+  and for a map by the requirement of {{cbor-cose}} that Section 4.2.1 of
+  {{RFC8949}} be produced and that a library option named canonical not be
+  assumed to produce it. The map case is the one place in this class where the
+  freedom is exercised by a library default rather than by an implementer's
+  choice, which is why it is named there as well as here.
 - **Absence.** An optional member omitted, or present and null. Handled by the
   null-substitution rules, which also fix array length.
 - **Text normalisation.** The Unicode normalisation forms of one string.
@@ -5045,6 +5596,69 @@ nonce and created/expires parameter set that {{read-signing}} requires, so that
 a captured signed request
 cannot be replayed to initiate a fresh reconciliation.
 
+## The Clocks a Response Freshness Check Is Decided Across {#response-clocks}
+
+{{read-responses}} bounds the `response-time` of a read response in both
+directions against the reader's receipt of it, because the two values are
+produced on two clocks nothing in this document synchronises. The backward bound
+is the declared tolerance, floored and capped in item 26 of {{bra-items}}; the
+forward bound is a fixed sixty seconds. A deployment applying the tolerance as a
+one-sided test admits a response stamped ahead of the reader's clock, and a
+server whose clock runs fast is then indistinguishable from one stamping ahead
+deliberately, which is the case the forward bound exists to separate. A
+deployment declaring a tolerance below the transit and clock disagreement
+between the two parties rejects every honest response, which is why item 26
+carries a floor as well as a ceiling.
+
+{{replay-defence}} bounds the reconciliation server against the register's clock
+and the `created` parameter of {{read-signing}} bounds the server against the
+requester's. Both run toward the server; this is the return direction, and it is
+the one earlier revisions left unstated. All three bound a party against another
+party's clock over a message it has just received, all three differ in their
+backward bounds -- a declared window in {{replay-defence}}, three hundred
+seconds in {{read-signing}}, a declared tolerance here -- and all three fix the
+forward bound at sixty seconds, that being the direction in which none of them
+has anything but the other party's word.
+
+The witness observation window of {{quorum-rule}} bounds a fourth pair of clocks,
+the witness's against the reconciliation server's, over an artefact published
+once per interval rather than over a message in flight. Its backward bound is
+sixty seconds and its forward bound is the greater of sixty seconds and twice
+the notarisation interval, so sixty seconds is the floor in both directions here
+too and the interval only ever widens the window.
+
+## Where Head-Consistency Evidence Comes From {#head-consistency-channel}
+
+{{quorum-rule}} requires Head Consistency Statements from the witnesses' own
+origins, and requires the linkage chain between two heads from the same origins
+under {{witness-linkage}}. The two are one requirement about one property. A
+relying party that has only the first has not satisfied the second branch at
+all, and holds evidence under the first branch alone, which reaches exactly the
+head a response names and no head above it.
+
+A Statement obtained from the party it is evidence about is that party's own
+selection, countersigned. A linkage chain obtained from that party is that
+party's chain, and the reason is stronger than selection: a relying party cannot
+recompute any value in a linkage array, because a Signing Input Digest is taken
+over a `Sig_structure` and a Self-Entry Hash over the entry array, and the array
+carries neither preimage. Every test the chain condition performs is therefore an
+equality between two values the same party supplied, which is not evidence about
+that party. Anchoring the ends does not repair it: the lower anchor is the
+response's own claim, and the upper anchor is a Self-Entry Hash, which is not a
+position the chain reads. {{quorum-rule}} sets out that arithmetic in full.
+
+The operational consequences follow from {{quorum-rule}} and
+{{witness-linkage}} and are gathered rather than restated here. A witness whose
+origin is unreachable contributes nothing. A witness whose Segment series does
+not reach the head its Statement covers contributes nothing to the second
+branch, though its Statement still serves the first, where it covers the head a
+response names exactly. A witness that has equivocated between two Segments
+contributes nothing at all. And the property the Segments deliver is append-only
+rather than absolute, for the reason {{quorum-rule}} sets out: a witness records
+what the service served it, so the assurance is that an interval a witness has
+covered cannot afterwards be rewritten, and its strength in any deployment is
+the diversity of the Witness Set and the frequency of observation.
+
 ## Post-Quantum Migration {#post-quantum}
 
 The Cryptographic-Primitive-Upgrade Path is the mechanism by which ARP
@@ -5144,6 +5758,88 @@ for the same reason. Both are failures of verification rather than of
 authenticity, and a deployment that reports them as detected tampering will be
 reporting something that did not happen.
 
+## Artefact Identity Across a Change of Signature Algorithm {#pq-artefact-identity}
+
+{{signature-malleability}} establishes that a digest over a signed artefact as
+served identifies that artefact only where the signature has one valid encoding,
+and it names EdDSA as the primitive not reachable by the substitution. That
+exemption is real, and it is temporary. A deployment planning a migration to
+post-quantum signatures should know which of those two facts it is relying on.
+
+The substitution asks what a party holding no key can do to an artefact in
+transit. A registration protocol has to answer a narrower question first, and
+one that does not involve an adversary at all: how many valid enveloped
+byte-strings exist over one signing input when the same signer signs the same
+input more than once. Measured over two hundred ordinary signing operations per
+primitive, one key and one signing input each, with every reported value
+recovered by decoding the served envelope rather than reusing the locals that
+were signed:
+
+| Signature primitive | Distinct signing inputs | Distinct enveloped byte-strings |
+|---|---|---|
+| Ed25519 | 1 of 200 | 1 of 200 |
+| ECDSA P-256 | 1 of 200 | 200 of 200 |
+| ML-DSA-65, hedged | 1 of 200 | 200 of 200 |
+| ML-DSA-65, deterministic | 1 of 200 | 1 of 200 |
+| Ed25519 with a parallel ML-DSA-65 leg | 1 of 200 | 200 of 200 |
+
+Three consequences follow, and the third is not addressed by any document this
+one is aware of.
+
+**The Signing Input Digest is stable on every primitive measured, including
+those whose envelopes are all distinct.** This is the property {{terminology}}
+already relies on, and the table establishes that it does not depend on the
+primitive. A construction bound to the signing input survives a change of
+algorithm; a construction bound to the enveloped bytes does not.
+
+**The enveloped byte-string is a stable identifier on Ed25519 because of
+{{RFC8032}}, not because of anything in COSE or in this document.** Section 5.1.6
+of {{RFC8032}} derives the per-signature nonce from a hash of the private key
+prefix and the message, so one key over one message yields exactly one
+signature. That is a property of one primitive. A deployment that declared only
+EdDSA under item 2 of {{bra-items}} and inferred from {{signature-malleability}}
+that its enveloped digests are stable has inferred correctly, and the inference
+expires the moment a second signature leg is added. A parallel composition of
+Ed25519 with ML-DSA-65 over one signing input produced two hundred distinct
+byte-strings from two hundred signing operations, while the Ed25519 leg alone
+produced one. Composition does not preserve the determinism of its most
+deterministic member. It cannot: the composed artefact is unique whenever any
+member is.
+
+**Two conforming ML-DSA-65 signers disagree about whether the enveloped
+byte-string is stable, and the artefact does not record which one produced it.**
+{{FIPS204}} specifies both hedged and deterministic signing. Both produce
+signatures that verify against the same public key, and
+{{I-D.connolly-cfrg-ml-dsa-security-considerations}} recommends hedged signing
+as the safer default in all environments, on fault-injection grounds that this
+document does not dispute and does not attempt to weigh against anything here.
+The consequence for artefact identity is unremarked rather than contested: the
+recommended mode is the mode under which one signing input has an unbounded
+family of valid envelopes, the selection between the two modes appears nowhere
+in the protected header or anywhere else in the signed object, and a relying
+party holding one envelope therefore cannot determine whether a second envelope
+over the same input would be the same bytes. A registration protocol that
+identifies an entry by its enveloped digest is, under ML-DSA, identifying
+something whose stability is decided by a signer-side flag it cannot observe.
+
+A low-S canonicalisation rule does not reach any of this, and its reach shrinks
+rather than holds. {{signature-malleability}} states why it is partial for
+ECDSA: it removes one encoding from a set with more than one member. Past the
+classical boundary it is not partial but inapplicable, because ML-DSA signatures
+carry no `s` value to canonicalise. A deployment defending enveloped-digest
+identity by mandating low-S is defended for exactly as long as it signs with
+ECDSA.
+
+An implementation MUST NOT treat the digest of an enveloped signed artefact as
+an identifier for the claim the artefact carries, and MUST use the Signing Input
+Digest of {{terminology}} for that purpose, in any construction this document
+defines. Where a Reconciliation Agreement declares a signature primitive under
+item 2 of {{bra-items}}, it MUST additionally declare, for any primitive
+admitting more than one signing mode, which mode the signer operates. That
+declaration is a statement about a signer and not about an artefact, and a
+relying party that requires the distinction has no other place to obtain it.
+
+
 ## Declared Trade-offs {#tradeoffs}
 
 Several properties this document would like to hold cannot hold together. Where
@@ -5161,16 +5857,17 @@ where, can compensate for it, and a reader told that everything holds cannot.
 
 | Wanted | Also wanted | Given up | Stated in | What a reader can check instead |
 |---|---|---|---|---|
-| Reproducibility from enumerated inputs | Uniqueness per reconciliation | Field-for-field identity, for three fields | {{architecture}} | Every other field is identical; the three are carved out by name |
+| A chain between two heads a relying party can check | A chain the responding service did not write | Absolute rewrite detection; what holds is append-only over intervals a witness has covered | {{witness-linkage}} | How many independent witnesses cover the interval, and how often each observes |
+| Reproducible output from enumerated inputs | Uniqueness per reconciliation | Exact identity, for three fields | {{architecture}} | Every other field is identical; the three are carved out by name |
 | Erasure of a subject's data | An append-only record | Permanence of Output content | {{privacy-erasure}} | No chain depends on content; a digest whose preimage is gone is still a valid chain element |
-| A flag-day-free schema upgrade | Telling withheld from never-defined | The upgrade; absence is encoded, not omitted | {{settlement-ledger}} | Array length is fixed by Entry Type, so a short array is a defect and not a version |
+| A schema upgrade with no flag day | Telling withheld from never-defined | The upgrade; absence is encoded, not omitted | {{settlement-ledger}} | Array length is fixed by Entry Type, so a short array is a defect and not a version |
 | A chain stable under re-encoding | A verifier-side test that an entry was signed once | The test | {{signature-malleability}} | The obligation remains and is examinable by an auditor; a re-signature under a different key still moves the chain |
-| Digests unguessable from outside | An auditor who can recompute them | Recomputation without the blinding value | {{audit-path}} | Self-consistency across two reads, and nothing more, which that section now says |
-| A register recognising a returning counterparty | A requester unlinkable across reconciliations | Unlinkability, by default | {{sealing}} | The deployment may substitute a per-reconciliation element; the choice is declared |
+| Digests unguessable from outside | An auditor who can recompute them | Recomputation without the blinding value | {{audit-path}} | Consistency across two reads, and nothing more, which that section now says |
+| A register recognising a returning counterparty | A requester unlinkable from one reconciliation to the next | Unlinkability, by default | {{sealing}} | The deployment may substitute a fresh element each time; the choice is declared |
 | One interoperable register leg | Sovereign registers keeping their own interfaces | The common leg | {{format-profiles}} | Every leg is declared in an Agreement whose hash is committed to |
 | A regulator reading a redacted entry | That regulator verifying the entry's chain | Chain verification under redaction | {{read-operations}} | Redacted fields are null in place, so the length is intact and an unredacted read is available |
 | Errors that tell a requester what went wrong | Endpoints that are not existence oracles | Distinguishing errors, on the read path | {{read-errors}} | The commissioning path distinguishes them and pays for it in rate limit and access log |
-| Coverage measured without cost | Probes indistinguishable from real work | Free measurement | {{coverage-probes}} | A probe consumes a real budget against a real register, which is what makes it uncountable by the operator |
+| Coverage measured without cost | Probes a register cannot tell from real work | Free measurement | {{coverage-probes}} | A probe consumes a real budget against a real register, which is what makes it uncountable by the operator |
 | A quorum proving observer independence | A test a verifier can actually run | Proof of independence | {{bra-limits}} | Distinct declared parties and distinct keys, both mechanically checkable |
 
 Two things follow from having written this table that were not obvious before
@@ -5204,6 +5901,39 @@ is confidential to its Audience Set and carries subject references,
 register-signed attestations and principal identifiers; the Settlement-Layer
 Ledger is broadly readable and carries digests, register origins and structural
 metadata. {{entitlement}} states the division and the rules that rest on it.
+
+What the witness artefacts disclose. {{witness-linkage}} obliges a witness to
+serve Segments to any party without authentication, where the same linkage
+arrays are readable from the reconciliation server only by an entitled requester
+under a rate limit. That is an entitlement change and it is made deliberately:
+an artefact obtainable only from the party it is evidence about is that party's
+selection, so head-consistency evidence has to be world-readable to be evidence
+at all, which is the choice {{head-consistency}} already made for Head
+Consistency Statements. What it adds is the Prior-Entry Hash and the Signing
+Input Digest of each entry alongside the Self-Entry Hash. All three are digests
+over signed artefacts rather than over subject data, none is a low-entropy
+preimage of the kind the Deployment Blinding Value of {{sealing}} exists to
+protect, and the interval a Segment covers is bounded above by a head
+{{settlement-ledger}} already publishes unauthenticated, so the live head oracle
+{{read-operations}} guards against is not reintroduced.
+
+Two residues follow and are recorded here rather than left to be inferred. The
+first is that the linkage values of every covered entry become readable without
+entitlement, where {{read-errors}} rate limits the equivalent read at the
+reconciliation server and a witness serving Segments is not rate limited by this
+document. The entry count and the write rate over time are not part of that
+residue: {{settlement-ledger}} publishes a contiguous head unauthenticated once
+per interval, so both follow from differencing two published heads and were
+public already. What is new is the per-entry chain shape below a published head.
+
+The second is the allowance {{read-errors}} makes for a witness principal. The
+holder of a key can learn, from the number of ranged linkage reads admitted to
+it, that the key sits in a Witness Set some Bilateral Register Agreement the
+deployment holds declares, which is a wider set than the effective Witness Set
+the Policy Parameters Document of {{read-signing}} already publishes. The
+disclosure is membership of a union rather than of an intersection, it is
+available only to the holder of the key in question, and it is the price of a
+publication obligation a rate limit would otherwise void.
 
 What is protected. The Deployment Blinding Value of {{sealing}} keeps the Claim
 Hash and the Policy-Version Hash from being inverted by exhaustive search over
@@ -5323,8 +6053,8 @@ This document requests IANA to register the following:
   - `arp-witness-identifier` (value TBD)
 
   `arp-witness-identifier` is a CBOR text string carrying the identifier of the
-  Witness Entry whose key signed the Head Consistency Statement, and is used by
-  {{head-consistency}};
+  Witness Entry whose key signed the artefact, and is used by
+  {{head-consistency}} and {{witness-linkage}};
   `arp-policy-version-hash` is a CBOR byte string;
   `arp-bilateral-agreement-hash` is a CBOR array of byte strings;
   `arp-source-data-version` is a CBOR array of two-element arrays, each of a list
@@ -5361,6 +6091,17 @@ This document requests IANA to register the following:
   registration that could be combined by the Verdict Arithmetic, and MUST refuse
   a register-attested registration that does not state what the register signs
   over.
+
+- A registry of ARP Excluded-Range Reasons, registration policy Specification
+  Required, initially containing `outside-retention`, where the range predates
+  the retention period of {{delivery}}; `not-in-scope-of-trigger`, where no entry
+  in the range carries a value the trigger reached; and `superseded-in-range`,
+  where every entry in the range was already superseded by an earlier sweep whose
+  Statement is named. A registration MUST name a condition a reader holding the
+  Ledger can check for itself, and the designated expert MUST refuse one that
+  can only be confirmed by the operator asserting it, since a disposition a
+  reader cannot test returns the range to the state that having a disposition was
+  meant to leave behind.
 
 - A registry of ARP Subject Mapping Descriptors, registration policy
   Specification Required, initially containing `identity`, `profile-declared`
@@ -5469,7 +6210,7 @@ This document requests IANA to register the following:
 
 ## Well-Known URIs {#iana-wellknown}
 
-Seven entries are requested in the Well-Known URIs registry of {{RFC8615}}. For
+Eight entries are requested in the Well-Known URIs registry of {{RFC8615}}. For
 each, the change controller is the IETF, the status is permanent, and the
 specification document is this document.
 
@@ -5482,10 +6223,11 @@ specification document is this document.
 | `arp-ledger-head` | {{settlement-ledger}} | none |
 | `arp-policy-parameters` | {{read-signing}} | none |
 | `arp-head-consistency` | {{head-consistency}} | none; served by a witness on the Authority Origin of its Operating-Party Identifier |
+| `arp-witness-linkage` | {{witness-linkage}} | `/{n}`, where `{n}` is an Entry Sequence Number, returns the single Segment covering it; the bare suffix returns the most recent; served by a witness on the same origin as `arp-head-consistency` |
 
 ## Media types {#iana-media}
 
-Twelve media types are requested, registered under the template of {{RFC6838}}.
+Fourteen media types are requested, registered under the template of {{RFC6838}}.
 For each: the type name is `application`; there are no required and no optional
 parameters; the encoding considerations are binary, save for the `+json` type,
 which is 8-bit UTF-8 text; the security and interoperability considerations are
@@ -5514,9 +6256,10 @@ forms.
 | `arp-evaluation-sweep+cose` | an Evaluation Sweep Statement | {{sweep-statements}} |
 | `arp-key-set+cose` | a signed COSE Key Set or an Authorised-Origin Document | {{sealing-key-discovery}} |
 | `arp-head-consistency+cose` | a Head Consistency Statement | {{head-consistency}} |
+| `arp-witness-linkage+cose` | a Witness Linkage Segment | {{witness-linkage}} |
 | `arp-probe-commitment+cose` | a Probe Commitment | {{coverage-probes}} |
 
-# Acknowledgments
+# Acknowledgments {#acknowledgments}
 
 This document benefits from the SCITT Architecture {{RFC9943}}, the SCITT
 Reference APIs {{I-D.ietf-scitt-scrapi}}, COSE Receipts
@@ -5582,6 +6325,20 @@ FIPS 186-5 or {{RFC9053}}. {{signature-malleability}}, and the reconstruction of
 the Prior-Entry Hash of {{settlement-ledger}}, the Post-Seal Evaluation Record
 Hash of {{post-seal}} and the Merkle leaf of {{aggregation}} as Signing Input
 Digests, follow from his measurement.
+
+Iman Schrock separately established that the digest of a COSE_Sign1 envelope,
+the digest of its `Sig_structure` and the digest of the authorization payload
+inside it are three references a relying party has to be able to hold apart,
+and that a protocol identifying a registration entry by the first of them
+forces applications to treat it as the identity of the third. He further
+established the scope of a low-S canonicalisation rule against that question:
+low-S enforcement can reject the high-S encoding at a verifier and does not by
+itself resolve the identity question, particularly where normalisation occurs
+after an envelope has already been registered. The separation stated in
+{{pq-artefact-identity}}, and its limitation of low-S, are his; what this
+document adds is the measurement across signature primitives and the
+observation that the exemption {{signature-malleability}} grants to EdDSA does
+not survive composition with a post-quantum leg.
 
 Henri Sirkkavaara established that a document may carry both the sound and the
 unsound rule at once, each defensible on its own reading, and that the check is
@@ -6111,6 +6868,140 @@ RFC Editor: please remove this section before publication.
 
 ## Since draft-hillier-scitt-arp-03
 
+### The chain a head-consistency check is decided over
+
+The second branch of {{quorum-rule}}, where a witness Statement covers a head
+above the one a response names, now requires the chain between the two heads to
+be obtained from that witness's own origin, as the Witness Linkage Segments of
+{{witness-linkage}}, and forbids taking it from the responding service. -03 had
+the relying party read that chain from the service and anchor its two ends: the
+top to the Self-Entry Hash the witness signed, the bottom to the Self-Entry Hash
+the response named.
+
+Anchoring the ends of a service-supplied chain is not sufficient, and the reason
+is arithmetic rather than cryptographic. The condition anchors two Self-Entry
+Hashes and then walks a chain over two other positions, the Prior-Entry Hash and
+the Signing Input Digest. Neither anchored value sits in a position the chain
+reads. No value the chain does read can be recomputed by a party holding linkage
+arrays, a Signing Input Digest being taken over a `Sig_structure` and the array
+carrying no preimage. And the lower anchor is the response's own claim, so it
+constrains the responding service against itself. Every value the chain is made
+of is supplied by the party the chain exists to check, and an equality between
+two values one party supplies is not evidence about that party.
+
+This was established by executing the condition rather than by reading it. An
+independent construction of the Ledger chain and of the readers this document
+defines, written from the section text with nothing imported from any
+implementation, was run over a four-entry Ledger under six cases: served
+honestly; the digest moved whole; the digest moved with the witness observing
+before the move; one Reconciliation Hash changed at entry 2 with the chain
+re-linked and re-sealed and served plainly; the same rewrite with the
+witness-signed Self-Entry Hash served at the top of the span and the service's
+own values in every other position; and a response naming a head its own arrays
+do not carry. The condition as -03 stated it accepts the fifth. Replacing each
+of the nine hash positions of a three-array span in turn identifies three the
+condition never constrains, one of them an interior Self-Entry Hash, which is a
+value a relying party checking a receipt against a particular entry would
+otherwise take as attested.
+
+Two narrower repairs were constructed and neither reaches. Adding the Signing
+Input Digest of the covered entry to the Head Consistency Statement and checking
+the top array against it is defeated by copying one further value the witness
+already published, that position being one the chain does not read. Anchoring
+both ends in positions the chain does read pins the chain values of a
+three-array span, and only those: the interior Self-Entry Hash is constrained by
+neither anchor nor chain even there. From four arrays up the chain values
+between the ends are unconstrained as well. The span is the distance between a head
+a witness happened to observe and a head a response happens to name, which the
+relying party does not control, so a repair that holds only at three arrays
+holds only by accident.
+
+{{witness-linkage}} defines the artefact, its covering requirement, its
+Attestation Floor, its addressing and its equivocation rule;
+{{head-consistency-channel}} gathers the operational consequences;
+{{iana-media}} and {{iana-wellknown}} register the media type and the well-known
+URI; {{privacy}} records what unauthenticated publication of the arrays
+discloses. {{read-operations}} gains the entitlement and the ranged read a
+witness needs to produce a Segment at all, a Witness Entry key not being reached
+by the roles the other reads name. {{terminology}} gains the artefact and
+restates the Witness Set and Witness Quorum entries, which described Statements
+alone as the evidence.
+
+The property is stated as what it is. A witness reads the Ledger from the
+reconciliation server, so what a Segment records is what that witness was
+served, under a signature it cannot revise and at a time it stamps. The
+assurance is therefore append-only: a conforming witness publishes each interval
+once and serves one Segment per entry, so an operator rewriting an interval a
+witness has covered can only do so with a witness that equivocates. Detection of
+that equivocation is opportunistic in the way {{settlement-ledger}} already says
+detection of two entries at one Entry Sequence Number is, and
+{{witness-linkage}} says so rather than leaving the impression that a single
+verifier-side test catches it. An operator rewriting an interval no witness has yet
+covered is bounded by witness diversity and observation frequency and not by
+this mechanism, which is the residue {{bra-limits}} already concedes for declared
+independence rather than a new one.
+
+The first branch of {{quorum-rule}} is unchanged: a Statement covering the named
+head exactly carries no span and needs no Segment.
+
+### One deterministic encoding, named by section
+
+{{cbor-cose}} now states that Section 4.2.1 of {{RFC8949}} orders the pairs of a
+map in the bytewise lexicographic order of the deterministic encodings of the
+keys, that the Length-First Map Key Ordering of Section 4.2.3 is a different
+ordering which widely used libraries produce under an option named canonical,
+and that an implementation MUST produce the former, a library option named
+canonical not being evidence that it does. The two agree for any map whose keys
+are integers or strings and share a CBOR major type, at any mix of lengths: for
+those types the head byte never decreases as the encoding lengthens, and where
+two keys share a head byte the bytewise comparison runs on into the bytes after
+it and orders them the same way. Those are the keys COSE admits. That is why
+the difference travels, and why a protected header
+carrying COSE labels 1 and 4 is unaffected. They diverge only where a map mixes
+major types and the key of the higher major type has the strictly shorter
+encoding: a label of -1 is the single byte `0x20` and a label of 256 is `0x19`
+and two further bytes. No protected header this document specifies reaches that
+case, and the requirement is stated so that none added later does, since
+{{cbor-cose}} permits private-use labels pending registration and private-use
+labels are negative. Where the case is reached, one protected header has two
+encodings, one signing act has two Signing Input Digests, the entry above has
+two Prior-Entry Hashes, and {{settlement-ledger}} treats that as a fork.
+
+This is the Collection order class of {{representation-invariance}} reaching a
+place that section did not name. Its bullet covered the permutations of a set
+and is extended here to the orderings of the pairs of a map, which is the one
+member of the class where the freedom is exercised by a library default rather
+than by an implementer's choice: an implementation that reads the requirement
+correctly and reaches for the obvious option still departs from it. The eight
+classes are unchanged in number.
+
+### A floor on the response freshness tolerance
+
+Item 26 of {{bra-items}} and {{read-responses}} now floor the declared tolerance
+at sixty seconds as well as capping it. The bound runs backward from the
+reader's receipt of the response and the response was produced before that
+instant, so a tolerance below the transit and clock disagreement between the two
+parties rejects every honest response, and a tolerance of zero rejects all of
+them. That is an outage a deployment could declare itself into with no party
+misbehaving and no conformance test firing, which places it with the Witness Set
+constraint of {{bra-witness}} rather than with the parameters a deployment tunes.
+Sixty seconds is the figure already fixed for the forward bound of this test and
+of the two others that bound a party against another's clock over a message it
+has just received, so the narrowest admissible interval is symmetric. Those
+three differ in their backward bounds and agree in their forward ones. A fourth,
+the witness observation window of {{quorum-rule}}, runs over an artefact
+published on an interval rather than over a message, and this revision floors it
+at sixty seconds in both directions while leaving the interval free to widen the
+forward bound: unfloored, a deployment notarising every few seconds admitted a
+window of a few seconds against an unsynchronised clock. {{response-clocks}}
+states all four rather than leaving them to be collected. Where a
+deployment's effective notarisation interval is shorter than
+sixty seconds the floor governs, a ceiling below a floor being a term no
+deployment can declare, and that deployment trades the supersession property for
+liveness by exactly the difference between the two figures. The trade is stated
+rather than left in the arithmetic, and a deployment wanting both notarises no
+more often than sixty seconds.
+
 ### Certificate Transparency, and the leaf a proof carries
 
 {{merkle-construction}} now states its relationship to Certificate
@@ -6300,6 +7191,10 @@ was therefore normative while the thing that satisfies it was not. The finding
 that this is bounded by observer diversity rather than by any stronger single-log
 property is Walter Hawkins's, carried from -03.
 
+What satisfies the condition in its multi-entry form is stated in the entry
+above rather than here: this entry records the quorum, and the chain a quorum is
+evaluated over comes from the witness under {{witness-linkage}}.
+
 An Agreement now declares a Witness Set and a Witness Quorum, both of which
 enter the Agreement Hash. {{witness-entries}} gives a Witness Entry a form and
 an Operating-Party Identifier with a stated normalisation, so that "distinct"
@@ -6316,16 +7211,24 @@ because a COSE_Sign1 is not dateable from its own bytes and a freshness rule
 over an undateable artefact is a rule no verifier can apply.
 
 {{quorum-rule}} requires that a Statement covering a **higher** head be
-accompanied by the entries linking that head back to the one the response names,
+accompanied by the chain linking that head back to the one the response names,
 verified by Prior-Entry Hash. A witness signature over a higher head is
 otherwise evidence about whichever branch that witness was served, and a fork at
 disjoint sequence numbers is precisely a pair of heads neither of which
 contradicts the other; only the linkage puts the two observations on one chain.
+Where that chain is obtained is settled by the entry above, which replaced a
+chain read from the responding service with the Witness Linkage Segments of
+{{witness-linkage}}: the requirement to link stands, the source of the links
+does not.
+
 It also measures the freshness window from the Statement Timestamp of the Ledger
 Head Statement rather than from the head's own Entry Timestamp, and sets it at
 two notarisation intervals, because {{settlement-ledger}} republishes once per
 interval and a one-interval window measured from an entry's own timestamp closes
-before any witness can see that entry.
+before any witness can see that entry. That window is floored at sixty seconds
+in both directions, for the reason the entry on the response freshness tolerance
+gives: a window narrower than the disagreement between two unsynchronised clocks
+fails an honest party permanently.
 
 {{witness-discovery}} puts the effective Witness Set and Quorum in the Policy
 Parameters Document of {{read-signing}}. A relying party is party to no
@@ -6342,16 +7245,20 @@ diversity was declared, by a named party, in a term that party can be held to.
 {{read-operations}} gains a `fields=linkage` projection returning the Entry
 Sequence Number, Prior-Entry Hash, Self-Entry Hash and the Signing Input Digest
 of the Entry Signature of one entry, entitled to
-any requester whose signature verifies, because {{quorum-rule}} obliges a
-relying party to link two heads and a relying party is entitled to no other read
-that would let it. The fourth element was added after the projection was
-specified with three: the chain condition of {{quorum-rule}} compares a
+any requester whose signature verifies. The projection was specified so that a
+relying party could link two heads itself; the entry above supersedes that use,
+and the projection's reader is now the witness, which needs the same four values
+to publish the Segments of {{witness-linkage}} and reads them for a range. The
+fourth element was added after the projection was specified with three: the
+chain condition of {{quorum-rule}} compares a
 Prior-Entry Hash against the Signing Input Digest of the entry below, that
 digest is taken over a `Sig_structure`, and neither the protected header nor the
 payload of the entry below is recoverable from a triple of one sequence number
-and two hashes. The condition was uncomputable by the only party required to
+and two hashes. The condition was uncomputable by the party then required to
 compute it, and the substitution a reader might have reached for instead is the
-one the same section forbids. The projection is bounded at the head of the most recently
+one the same section forbids. The fourth element is what a witness now commits
+to, so the repair holds under the entry above rather than being superseded by
+it. The projection is bounded at the head of the most recently
 published Ledger Head Statement. Unbounded it would be a live head oracle --
 the Ledger is contiguous, so a requester could binary-search the current head
 between publications and poll it for the write rate, which is the disclosure
@@ -6489,11 +7396,11 @@ obliged to read, which is now stated.
 
 ### Five mechanisms taken from outside this field
 
-The repairs above answer review. These four sections answer questions the
-document could not previously answer at all, and each is a technique this field
+The repairs above answer review. These five answer questions the document
+could not previously answer at all, and each is a technique this field
 has not used and another has.
 
-**{{representation-invariance}} — every encoding defect is one defect.** A
+**{{representation-invariance}} -- every encoding defect is one defect.** A
 signature with two byte forms, a CBOR item whose type is unfixed, a set with no
 order, an optional member omitted or nulled, a URI normalised or not, NFC or
 NFD, base64 or hex, transmitted bytes or a re-encoding. In each the information
@@ -6508,7 +7415,7 @@ than an enumeration of previously observed defects. A runner testing the two
 ECDSA encodings it has heard of confirms what its author knew; a runner
 enumerating the class finds the member nobody thought of.
 
-**{{coverage-probes}} — an estimator where there is no proof.** The sweep
+**{{coverage-probes}} -- an estimator where there is no proof.** The sweep
 identity below closes the gap between the counts and the Ledger. Nothing closes
 the gap between the Ledger and the world, because an operator that never wrote
 an entry has nothing to be caught balancing, and that is the omission problem in
@@ -6526,7 +7433,7 @@ instrument. A retroactive sweep is an instrument of that kind. The commitment
 precedes the probes so that the denominator is fixed before the numerator is
 knowable, which is what makes the fraction evidence rather than a selection.
 
-**The sweep identity in {{sweep-statements}} — accounting rather than
+**The sweep identity in {{sweep-statements}} -- accounting rather than
 signature.** The examined count and the materially-changed count were assertions
 of the signing server. They are now required to balance against the Ledger: the
 Examined-Range Set must be contiguous over the interval it claims, the examined
@@ -6537,14 +7444,14 @@ attributable; an identity makes it checkable against something the asserting
 party does not solely control, which is what double-entry bookkeeping has done
 for six centuries and what a conservation law does in physics.
 
-**The Examined-Range Set — coverage needs a dense space.** A Merkle root over
+**The Examined-Range Set -- coverage needs a dense space.** A Merkle root over
 Claim Hashes proves membership and cannot prove coverage, because Claim Hashes
 are sparse in the digest space and a set commitment has no notion of what is
 missing from it. Entry Sequence Numbers are dense and contiguous, so a gap in
 them is visible. Committing to the same sweep in both spaces lets one artefact
 answer both questions, and the choice of space is the whole of the trick.
 
-**{{tradeoffs}} — locating the loss.** Several properties this document wants
+**{{tradeoffs}} -- locating the loss.** Several properties this document wants
 cannot hold together, and a specification facing that can claim both and be
 wrong somewhere a reader must find, weaken both and deliver neither, or choose
 and say where the loss went. The section is the third, in one table. What makes
@@ -6552,7 +7459,27 @@ it useful is that the loss is located rather than distributed: a reader who
 knows which property was surrendered and where can compensate, and a reader told
 that everything holds cannot. Two rows that stood in earlier revisions have
 already been retired by the mechanisms above, which is the other thing the table
-turns out to be — a list of what to attack next.
+turns out to be -- a list of what to attack next.
+
+### The two clocks a response freshness check is decided across
+
+{{read-responses}} now bounds the two clocks a response freshness check is
+decided across. -03 required only that `response-time` fall within a declared
+tolerance, naming no reference instant, no direction and no forward bound, so a
+`response-time` stamped ahead of the reader's clock was inside the tolerance on
+one reading and outside it on another, and a server whose clock ran fast was
+indistinguishable from one stamping ahead deliberately. The reference instant is
+now the reader's receipt of the response, the direction is backward, and the
+forward bound is sixty seconds. That figure is not new to this document: it is
+what {{replay-defence}} already allowed on the Freshness Timestamp and what
+{{read-signing}} already allowed on `created`, both of which protect the server
+against the reader's clock. The reader was the one party to the exchange the same
+bound had not been applied to. Item 26 of {{bra-items}} now states that the
+declared tolerance is the backward bound only and that the forward bound is not
+negotiable per Agreement. The question is Emek Can Dogru's.
+
+The repair invents no mechanism. It applies, in the return direction, a bound
+this document had already chosen twice in the other one.
 
 ### Mechanical
 
@@ -6566,6 +7493,16 @@ version deployed Certificate Transparency logs implement, so naming only the
 replacement would leave the reader who is actually at risk without the reference
 they hold. Neither is normative -- the construction is fully specified here --
 so no downref is introduced.
+
+Four counts are corrected. {{bra-items}} described two of five items as already
+relied on elsewhere in this document where three of seven are, and said the
+Agreement Hash covers five items it did not cover before where it covers seven,
+items 32 and 33 having been added after that sentence was written. The
+mechanisms taken from outside this field are five, under a heading that says so
+and an opening sentence that said four. {{iana-media}} requested twelve media
+types while listing thirteen, and now requests fourteen. Separately and not as a
+correction, {{iana-wellknown}} requests eight well-known URIs where it requested
+seven, the eighth being the one a Witness Linkage Segment is served at.
 
 ## Since draft-hillier-scitt-arp-02
 

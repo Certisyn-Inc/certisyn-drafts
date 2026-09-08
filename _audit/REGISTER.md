@@ -199,25 +199,69 @@ own Output field and appended to the Reconciliation Identifier.
 
 ---
 
-## OPEN
+## SECOND ROUND: the OPEN list worked through
 
-Recorded rather than repaired. Each is labelled with whether it has been
-verified against the text.
+Every item on the earlier OPEN list was put to a verification pass instructed to
+REFUTE it. Results:
 
-| # | Finding | Verified? | Why not yet fixed |
-|---|---|---|---|
-| O-1 | No Privacy Considerations section meeting RFC 6973; no erasure, rectification, lawful-basis or controller/processor treatment against an append-only ledger and an external transparency service | not verified | Needs a section, not an edit. Flagged by two independent passes as DISCUSS-level. Highest-value remaining item. |
-| O-2 | Notarisation exports Subject References and Audience Member identifiers into an external append-only log with no deletion path | not verified | Interacts with O-1; fix them together |
-| O-3 | The Claim Hash preimage is supplied by the requester and no rule requires the server to check it is canonical | not verified | Plausible and serious; needs a check of the request-binding section |
-| O-4 | The Claim Hash is asserted to bind an Output to its question, and only the server can compute it; the parallel limit is stated for the Policy-Version Hash and not for this | not verified | Likely a stated-limit fix rather than a mechanism change |
-| O-5 | The Evidentiary Provenance Manifest is a Canonical Claim field inside the Claim Hash preimage with no defined structure | not verified | May carry signatures, in which case it is a seventh carrier |
-| O-6 | A decisive `match` can rest on a predicate broader than the one asked; no re-typing ground covers taxonomic broadening off the depth axis | not verified | Needs a fourth re-typing ground or a move of an axis from register-attestable to server-recorded |
-| O-7 | The Reconstruction Proof compares a server-produced value against a server-produced value under a server-only key, over an unpinned preimage | not verified | The vacuity is the substantive half |
-| O-8 | Three "append-only" logs specified with no sequence, chain, head, notarisation or signature, held by the party they record | not verified | "Subpoena-grade" is currently self-attestation |
-| O-9 | The Examined-Set Root's two counts are bare assertions; the "materially changed" count is committed to nothing | not verified | The document already discloses the leaf-count arithmetic; the claim beside it may over-read |
-| O-10 | `notarisation-incomplete` does not distinguish a genuine polling timeout from a submission never attempted | not verified | Same class as the reason-code split already done |
-| O-11 | The register-leg transport is per-Agreement, so ARP is interoperable in its artefacts and not in that leg | verified, disclosed | Already stated in the document as the principal item left for the next revision |
-| O-12 | Numerous smaller encoding, state-machine and wire-format gaps from the implementer pass | not verified | ~60 items; triage before acting |
+| # | Verdict | Outcome |
+|---|---|---|
+| O-1 | confirmed in part | Privacy Considerations existed and was substantive; what was missing was an RFC 6973 threat walk and any treatment of erasure against an append-only record. Both added. |
+| O-2 | confirmed | Notarising an Output exports Subject References to a third-party log with no deletion path. Now normatively prohibited where the disclosure has not been accounted for, and the Ledger is barred from carrying personal data at all. |
+| O-3 | CONFIRMED | The requester supplies the Claim Hash preimage octets and no rule required the server to check they are canonical. NFD and NFC of one claim gave two ledger indices and two retroactive-evaluation keys. Check added. |
+| O-4 | **REFUTED** | The limit is stated in two places, and the premise was wrong: the requester holds the Canonical Claim. No change. |
+| O-5 | CONFIRMED | The Evidentiary Provenance Manifest is inside the Claim Hash preimage and may carry a COSE_Sign1. A **seventh** carrier, and the only one the class rule cannot reach: the preimage is JCS JSON with no byte-string type, and the octets are the requester's. Signed artefacts now prohibited inside it. |
+| O-6 | CONFIRMED | The projection function produces the nearest permitted **ancestor**, so a register answers a broader question, and re-typing covered only narrowing. A decisive `match` on "some US sanctions list" answered a claim about the OFAC SDN list. Fourth re-typing ground added. The one Divergence Axis that names this condition appears exactly once in the document, is register-attestable, optional, and connected to no rule. |
+| O-7 | CONFIRMED on all three limbs | The Reconstruction Proof had no pinned preimage, no wire representation, and compares a server-produced value against a server-produced value under a server-held key. Preimage and wire form fixed; the stated limit was one step too generous and is corrected. |
+| O-8 | confirmed in part | Two such logs, not three. The Regulator Portal trail was called "subpoena-grade" with no sequence, chain, head or notarisation, while the same document applies all four to the Ledger a few sections above. Both logs now chained, headed and notarised. |
+| O-9 | confirmed in part | The examined count is not derivable from the Root — the document's own deduplication rule says so. The materially-changed count is attributable and dated, not verifiable. "Not bare assertions" corrected. |
+| O-10 | **REFUTED** | `notarisation-incomplete` already distinguishes pending, terminal refusal and never-attempted, and Output notarisation is a MAY, so there is no benefit to fabricating it. No change. |
+| O-11 | verified, disclosed | Unchanged; the register leg remains per-Agreement and the document says so. |
+| O-12 | worked through | Ten highest-impact implementer items verified: eight confirmed and repaired, one refuted, one narrowed. Detail below. |
+
+### From the implementer pass
+
+Confirmed and repaired: the Predicate Taxonomy had no stated edges, and the
+`agent:` branch had no parent relation at all; the reproducibility requirement
+was unsatisfiable, three necessarily-fresh fields sitting outside its carve-out;
+the Query Binding preimage had no element types though two parties compute it
+independently; the Audience Member Identifier had no normalisation or comparison
+rule while serving as a sort key in two signed digests; a key identifier had
+three spellings across payload, COSE header and path segment with equality tests
+between them; the freshness window had no reference instant and no direction;
+`fields=linkage` returned three values where the chain condition it exists to
+serve needs four, making that condition uncomputable by the only party required
+to compute it; suspension had no defined exit; and the response freshness
+tolerance every reader must apply was readable only by the parties who do not
+have to apply it.
+
+**REFUTED:** the register key discovery root has an encoding, a media type and a
+trust anchor. One residue -- whether the root key set is itself signed -- was a
+wording ambiguity and is corrected.
+
+**Narrowed:** the containment requirement is satisfiable, because the
+prohibition binds the service-operator entity and not the reconciliation server.
+What was true is that its named enforcement measure cannot reach six fields the
+server is obliged to read in the clear, and the conformance test asked only
+about a register record, so the payload half had no test. Both now stated.
+
+---
+
+## STILL OPEN after two rounds
+
+Not a residue of things thought unimportant. These are what a second full pass
+would start from.
+
+- **The ~50 remaining implementer-pass items.** Ten were verified and nine
+  repaired. The rest are unverified, and on this round's hit rate roughly two in
+  three of a pass survives contact. They are wire-format, state-machine and
+  error-path items rather than integrity defects.
+- **The adversary pass's privacy and abuse items beyond those repaired.** The
+  open screening oracle, the Remediation Advisory disclosing Pattern-Library
+  identifiers to a prober, Audience-Set flooding, and the Policy-Version Hash as
+  a stable requester pseudonym. Each is plausible, none verified.
+- **The register leg.** Per-Agreement by design, and the principal thing that
+  keeps this document from being end-to-end interoperable.
 
 **The IESG pass, the implementer pass and the adversary pass are recorded in
 full at `_audit/pass-iesg.md`, `_audit/pass-implementer.md` and

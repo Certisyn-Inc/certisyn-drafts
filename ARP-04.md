@@ -744,9 +744,21 @@ mentions 4.2.1 only to argue against using a map. Definite versus indefinite
 length is the divergence, and the document's own remedy for a Self-Entry Hash
 mismatch is to declare a fork.
 
-### 2.9.2 The Source-Data Version Identifier Set. BLOCKING, and now urgent
+### 2.9.2 The Source-Data Version Identifier Set. CLOSED in -04
 
-Three defects, all in one component, verified:
+All three defects below are repaired in `draft-hillier-scitt-arp.md`, verified
+against the normative text on 7 September rather than against this note:
+the ordering rule ("MUST be encoded as a CBOR array sorted in bytewise
+lexicographic order of the deterministic CBOR encoding of each member"); the
+form discriminator ("a two-element CBOR array of a form discriminator and a
+value", `token` or `digest`, with the digest branch taken over "the octets the
+publisher serves for that state, taken as served and before any decompression");
+and the equality rule, now naming three parameters rather than two, with the
+draft recording that "an earlier revision applied the rule to the first two
+only". The Document History carries all three. The 20 August statement to the
+list was accurate when it was made and remains accurate.
+
+The three defects as originally found:
 
 1. **No ordering rule.** Five other collections in the document carry an
    explicit bytewise sort. This one is called a Set in its own section heading,
@@ -1139,6 +1151,129 @@ arrives from outside engineering once the vocabulary is public and looks like a
 scoring system. A value that must not be averaged has to be structurally
 unaveragable rather than merely forbidden from being averaged, and ARP's is
 not. Recorded as an open problem rather than answered.
+
+### 2.16 Hawkins' CAP-1 break, applied to ARP one level up
+
+Five substantive replies to the CAP-1 announcement inside ninety minutes.
+Hawkins and Schrock broke it from opposite ends and converged on one defect:
+**the population is not committed.**
+
+**Hawkins.** Run 500 checks, forty come back ugly, declare a stratum of 460 on
+the `declared` basis with nothing unexamined. All eight rules pass and the
+document reports `complete: true`. R1 constrains the remainder *inside* the
+edge and says nothing about where the edge falls, and under `declared` the edge
+is held by the party who has already seen the results. His sentence: *the
+information did not survive being moved from the remainder to the denominator,
+it just moved.* Plus an incentive inversion: R7 blocks `complete` on `failed`,
+`resource_exhausted` and `unavailable` but not on `disabled_by_policy`, so a
+check expected to error is safer never dispatched.
+
+**Schrock**, independently, from the other side: nothing commits to the
+identities of the examined units, so `eligible: 2, examined: 2, unexamined: []`
+cannot be told apart from examining one unit twice. And three more: the JSON
+Schema is declared normative and no verifier enforces it; `withheld` makes the
+word "examined" mean two things; and **the document names R0 through R8, which
+is nine, and says eight.**
+
+That last one is the class `check_self_claims.py` was built for, posted to the
+list the same day, running against ARP and not against CAP-1. Confirmed from
+the published run record rather than taken on trust: five R0 units alongside a
+statement reading "eight of eight".
+
+**The finding that matters here.** Hawkins' ladder says CAP-1 has rung 1 and
+nothing above it. Rung 2 is a pinned seal over the population. Rung 3 is a
+denominator that cannot be chosen after the fact. **ARP already has both** --
+the Examined-Set Root is rung 2, the Probe Commitment of {{coverage-probes}} is
+rung 3 -- and neither was carried into CAP-1.
+
+**So I went looking for the same shape in ARP and it was there.** The sweep
+identity checks that nothing was skipped inside the bracket. Nothing required
+the bracket to abut the previous one, so a sweep could be complete over an
+interval beginning after the entries an operator would rather not examine, and
+every rule passed. Hawkins' denominator edge, in a different subject matter,
+found by reading his review of the other document.
+
+Repaired: the opening head MUST equal the predecessor's closing head, and any
+range inside the bracket deliberately not examined is now individually disposed
+from a new registry, which refuses a reason the reader cannot check for itself.
+Four identity conditions now, not three. His sentence is quoted in the draft
+with his name on it.
+
+**CAP-1 `-01` owes:** the re-derivability axis replacing the trichotomy
+(external artefact, internal artefact, or none) with `derived` as source plus
+predicate; an enumeration digest over the sorted unit-identifier set; a
+commitment to examined identities; `not_sampled`, `not_yet_due` and
+`access_denied` dispositions; `superseded` deferred until the successor pointer
+is right; schema enforcement in both verifiers; the `withheld` conflict; R0
+counted; and both rigour claims restated. Hawkins has offered a fourth
+implementation from the text alone, on the terms asked for.
+
+### 2.17 The CAP-1 break, complete: four reviewers, six verifiers, three hours
+
+By 00:33 UTC on 21 August the CAP-1 announcement had produced more independent
+review than either draft has had in its life. State of it:
+
+**Six verifiers.** Three of ours. One by Hawkins, written from the `-00` prose
+plus `CAP-1.schema.json`, one file, Node built-ins, no network, with our own
+implementations left unread. Two by Doğru, written from the prose alone, the
+second by a reader who had not seen the first and neither changed after the
+other was read. Nobody has read anybody else's code.
+
+**Three independent runs.** Hawkins: fifteen for fifteen on verdicts, five
+conform and ten refuse, strict attribution nine of ten. Doğru: two verifiers
+cross-run over twenty documents, twelve agreements and eight disagreements.
+Schrock: the published class at a pinned commit, baseline fifteen, eight mutants
+killed, JavaScript and Python agreeing.
+
+**One review frozen and OpenTimestamps-stamped before its author read anyone
+else's** — Pinto, who then appended a note crediting Hawkins for a finding he
+had not reached rather than editing his own review in hindsight.
+
+**Fifteen distinct findings.** The two that change what the draft may claim:
+
+- **Section 7.4's production fixtures contain no `cap/1` document.** Both are
+  `certisyn.verdict-document/1.0.0` hosts carrying the older coverage shape.
+  So "correctly refused under R1" has no referent in the artefacts it cites.
+  Hawkins: *the claims most likely to be false are the ones nothing was pointed
+  at; these fixtures were never pointed at a CAP-1 verifier.*
+- **Silencing R0 leaves the class passing**, because no vector exercises shape
+  alone. A verifier with no shape checking whatsoever agrees on all fifteen. The
+  schema is normative and untested in the same breath.
+
+**The denominator has two doors.** Hawkins moves the edge after the answers are
+known. Doğru leaves the edge alone and moves the claim: a stratum states which
+claims it supports and nothing requires the cited claim to fall inside what it
+states, so R8 checks presence where the failure it names is containment. Same
+attack, two routes, no guard on either.
+
+**Four routes to one cause.** Pinto could not identify the conformance bytes
+from the text. Schrock found both verifiers accepting documents the normative
+schema rejects. Doğru measured eight disagreements propagating from a single
+`catalogue_digest` reading that the schema would settle in one line. Hawkins
+found R0 untested. All four are the same missing artefact.
+
+**Two findings that landed on ARP rather than CAP-1:**
+
+- Doğru: a verifier that stops at its first refusal makes *refused by the rule
+  it targets* a fact about check order rather than about the rules. **Checked
+  ARP's runners before replying.** They collect the full caught-row set and
+  credit only where it *equals* the designed set, so membership is not enough
+  and an extra catch is a reported mismatch. Written for a different reason,
+  and it is the discipline he describes. Evidence the rule generalises.
+- Hawkins' denominator edge, one level up, in ARP's sweep bracket. Found by
+  reading his review of the other document. Repaired in 2.16.
+
+**CAP-1 `-01` owes fifteen items.** The blocking one is a pinned conformance
+bundle with a manifest, stable URI, per-file digests and a class digest over the
+sorted list, cited from the draft by digest. Hawkins has already demonstrated
+the construction by computing it over the fifteen and publishing it, which is
+the enumeration-digest repair eating its own cooking. Adopt his rather than
+invent a second. Three reviewers are blocked on it.
+
+Pinto's freeze discipline for the independent runs, agreed and extended: each
+implementer hashes implementation and interpretation notes before seeing
+another's, then runs against the pinned bundle. *Agreement would then be worth
+something. Disagreement would be worth more.*
 
 ## 3. Family coherence
 
@@ -1544,6 +1679,8 @@ That check has not been done yet.
 | 2026-08-20 | Round three: ten adversary candidates verified, four refuted, six repaired, including retroactive epoch repudiation by key status and the missing register-record-correction trigger. Five new mechanisms: Representation Invariance, Coverage Probes, the sweep identity, the Examined-Range Set, Declared Trade-offs. |
 | 2026-08-20 | `draft-hillier-coverage-attestation-00` posted, fourth I-D. Announcement drafted for the SCITT list with three specific attacks requested and its own weakest claim named first. Pairs with Coverage Probes as declaration-then-measurement; send a day apart. |
 | 2026-08-20 | Self-claim check built on Doğru's corollary. 10 checks, 10 mutants, 10 kills. Caught two claims made stale by the round-three edit ninety minutes earlier, and its own ordering check survived two mutants before it was worth anything. |
+| 2026-08-21 | Hawkins broke CAP-1's denominator edge and Schrock broke its examined-set identities, independently. Same shape found in ARP's sweep bracket and repaired: brackets must abut, excluded ranges individually disposed, fourth identity condition. CAP-1 -01 scoped. |
+| 2026-08-21 | CAP-1 break complete: four reviewers, six verifiers, three independent runs, one OTS-frozen review, fifteen findings, in about three hours. Section 7.4's fixtures contain no cap/1 document; silencing R0 leaves the class passing. Pinned bundle is the blocking deliverable. |
 | 2026-08-18 | 2.8.7 opened and closed at three: three digests taken over signature-bearing bytes, 0 of 200 stable under ECDSA substitution, now Signing Input Digests at 200 of 200. New Section 7.9. Found by Anton Sokolov, swept on Henri Sirkkavaara's method. |
 | 2026-08-18 | 2.8.6 closed. `arp_uri.py` implements RFC 3986 6.2.2/6.2.3; ten normalisation rows and one mutant added to the class. |
 | 2026-08-18 | Red team broke v0.1: three encoder defects passed it and its builder was blind to all three. 2.5 reopened, class rebuilt at v0.2 with expected bytes computed without the subject, and closed. 2.8.6 opened. `arp_cbor.py` split out so the runner has no third-party dependency. |
@@ -1905,3 +2042,146 @@ Document History subsection. The only numbers that moved are inside Document
 History, which the RFC Editor removes. `tocdepth="4"` was added to the front
 matter, since xml2rfc defaults to 3 and would otherwise omit 4.23.2.x from the
 table of contents.
+---
+
+## Item added 2026-08-24 — two drafts landed inside ARP-03's blind spot
+
+ARP `-03` posted 14 August. Two drafts directly in its composition space posted
+within 48 hours of it and are therefore cited nowhere in `-03`, and were not in
+this plan until today:
+
+| draft | posted | gap |
+|---|---|---|
+| `draft-noa-scitt-ai-agent-receipt-01` | 15 August 2026 | +1 day |
+| `draft-schrock-action-evidence-boundary-04` | 16 August 2026 | +2 days |
+
+A third surfaced on the list on 24 August, `draft-correctover-ccs` (Independent
+Stream, Experimental, `-06` in the Secretariat queue), proposing itself as the
+pre-admission evidence producer feeding both.
+
+**What `-04` has to decide.** AEB defines an ordered executor-side chain: native
+verification, CAID MATCH, AEC SATISFIED, AUTHORIZED, CONSUMED, INVOKED. ARP
+already cites `I-D.schrock-canonical-action-identifier` for CAID and
+`I-D.mih-sato-agent-accountability-composition` for composition, so the CAID
+step is named consistently and the surrounding states are not. If AEB becomes
+the reference vocabulary for the boundary, ARP should compose against those
+state names rather than describe the same sequence in its own words. Two
+documents inventing parallel terms for one chain is the expensive outcome and it
+gets more expensive per revision.
+
+**What is deliberately not decided here.** Whether CCS belongs in ARP's
+references at all. It is Independent Stream and unposted at `-06`, its two open
+questions (what a receipt says when a conformance dimension cannot be evaluated
+rather than fails, and what the quoted 2.7 microsecond P50 covers) have been put
+to its author on the list, and neither answer is in hand. A reference added
+before those answers would be a reference to a document whose verdict vocabulary
+might have the same one-value-two-conditions defect this estate has now found
+four times in other people's work and twice in its own.
+
+**Standing rule this produces.** Before a revision is filed, list every draft
+posted since the previous revision that names CAID, agent action, agent receipt
+or the admission boundary, and record for each whether it is cited, deliberately
+not cited, or unexamined. Unexamined is a value. The gap above was two days wide
+and nothing in this plan would have surfaced it.
+
+---
+
+## 15. Post-quantum artefact identity, and the prior-art section (2026-08-25)
+
+Two additions to the draft source, one of them normative and one of them the
+thing a reviewer will look for first.
+
+### 15.1 New `{#pq-artefact-identity}` under Security Considerations
+
+`{#signature-malleability}` names EdDSA as the primitive not reachable by the
+ECDSA substitution. That exemption is correct and it is temporary, and the
+document said nothing about which of those a deployment was relying on.
+
+Measured, 200 ordinary signing operations per primitive, one key and one
+signing input each, every value recovered by decoding the served envelope:
+
+| primitive | distinct signing inputs | distinct enveloped bytes |
+|---|---|---|
+| Ed25519 | 1 of 200 | 1 of 200 |
+| ECDSA P-256 | 1 of 200 | 200 of 200 |
+| ML-DSA-65 hedged | 1 of 200 | 200 of 200 |
+| ML-DSA-65 deterministic | 1 of 200 | 1 of 200 |
+| Ed25519 + parallel ML-DSA-65 | 1 of 200 | 200 of 200 |
+
+Three results carried into the text.
+
+1. The Signing Input Digest is stable on every primitive measured. The
+   construction `{#terminology}` already relies on does not depend on the
+   algorithm, which is the property that makes it survive a migration.
+
+2. **The EdDSA exemption does not survive composition.** Ed25519 alone is 1 of
+   200; Ed25519 with a parallel ML-DSA-65 leg is 200 of 200. The composed
+   artefact is unique whenever any member is. Any deployment that read
+   `{#signature-malleability}`, declared only EdDSA under item 2 of
+   `{#bra-items}`, and concluded its enveloped digests are stable, has a
+   conclusion that expires at its own PQ migration.
+
+3. **Two conforming ML-DSA-65 signers disagree on whether the enveloped digest
+   is stable, and nothing in the artefact says which one signed it.** FIPS 204
+   specifies hedged and deterministic signing; both verify against the same key;
+   the selector appears in no header. Checked against
+   `draft-connolly-cfrg-ml-dsa-security-considerations-02` before writing this:
+   that draft covers the hedged/deterministic distinction thoroughly and
+   recommends hedged in all environments on fault-injection grounds, and says
+   nothing about multiple valid signatures over one input or about any
+   consequence for artefact identity, transparency logs or registration. So the
+   recommended mode is the mode that destroys enveloped-digest stability, and
+   that tension is currently unremarked rather than contested. Cited, not
+   claimed.
+
+Normative additions: an implementation MUST NOT use the digest of an enveloped
+signed artefact as the identifier of the claim it carries, and a Reconciliation
+Agreement declaring a primitive with more than one signing mode MUST declare
+which mode the signer operates. The second is new obligation on the Agreement
+and belongs in the `{#bra-items}` conformance list at the Stage B pass.
+
+Low-S is extended rather than repeated: `{#signature-malleability}` already says
+it is partial for ECDSA. Past the classical boundary it is inapplicable, because
+ML-DSA carries no `s`. A registry defending enveloped-digest identity by
+mandating low-S is defended for exactly as long as it signs with ECDSA.
+
+Evidence: `conformance/runners/pq_signature_stability_probe.mjs`, sha256
+`df3d8b423eb3a4b26f2120df2706055166d5cf56a4353d846abb62c1194655d4`, run record
+`conformance/runs/pq_signature_stability_run.json`, sha256
+`c419a057923731638d45976160c5a304ebab745a43c58fcd4c10e030e2e6d2b3`. Identical
+counts on two architectures. Committed at `d35bdd4`, manifest 30 of 30.
+
+### 15.2 New `{#relationship}` section, after the Introduction
+
+Manu Sporny made this critique publicly on `public-credentials@w3.org` on
+24 August against an unrelated protocol: a specification that re-uses existing
+design without a "Relationship to other Technologies" section, and without
+citing where its designs came from, reads as re-invention at best. Steve Capell
+added the volume argument. Neither was aimed here and both apply here, and the
+grep that settles it returned nothing: no section named the relationship, and
+"builds on", "rather than reinvent", "does not replace" and "existing work"
+appeared nowhere in 7,243 lines.
+
+The new section states, in four parts: what the document builds on (`RFC9943`,
+`SCRAPI`, `RFC9942`, `RFC9334`, `RFC6962`, `RFC9162`, `RFC8949`, `RFC8785`,
+`RFC9052`, `RFC9053`, `RFC9421`, web bot auth), what it does not replace
+(VC/DID, a register's own API, any trust framework or policy language), why it
+is a separate document rather than an extension to any of the three obvious
+hosts, and where the design was taken from other people. It also names the
+alternative that was rejected -- a `RFC9943` profile carrying reconciliation
+semantics in an uninterpreted payload -- so a reader can disagree with the
+choice rather than assume it was never made.
+
+Acknowledgments gains Iman Schrock's second finding: the three-way separation of
+envelope digest, `Sig_structure` digest and authorization-payload digest, and
+the scope of low-S against it. `{#pq-artefact-identity}` credits it at the point
+of use and states precisely what this document adds to it, which is the
+measurement and the composition result.
+
+**Standing rule this produces.** The prior-art sweep is now the same class of
+obligation as the citation sweep in section 14: before filing, every mechanism
+in the normative text is either sourced or declared original, and "unexamined"
+is a value that must be recorded rather than left blank. Three instances of the
+sweep-every-instance rule turned up in one runner this week after two earlier
+passes each left one behind. Provenance is not a smaller set than identity
+digests.

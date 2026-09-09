@@ -212,6 +212,7 @@ which is the intended behaviour and not a defect in the runner.
     #      deterministic ML-DSA-65 and 200 of 200 on ECDSA P-256, on hedged
     #      ML-DSA-65 and on any parallel composition containing either.
     #      Every value is recovered by decoding the served envelope.
+    # from conformance/, where package.json declares the pinned version
     npm install @noble/post-quantum@0.6.1
     node runners/pq_signature_stability_probe.mjs
 
@@ -382,6 +383,7 @@ two rows; see CHANGES-v2.1.md.
     8ce61405fc02755c4950c44bdacada84e3379356e20cd552ffd2d43d41393a36  reference/fixture-eo-v0.1.json
     6e50ea9014fc348d8ddd632fb8b36a0103c44a965d26af4be1607b5107651af7  runners/run_existence_oracle_vectors.py
     e75e9e594c589aa449ed8b816a9e42c75ded2e4107789d44dbf45fc5a8ee7d66  vectors/arp-existence-oracle-v0.1.json
+    4f9e675302ea33f225f77df2c375389fe1484a8c3823952a0a7c870962dac11f  package.json
     1e5d6a6b156f956e846ef3f4a5df6fa35efbe8197b5556106d2e060c70f59f2e  vectors/arp-aeb-adapter-v0.1.json   (EMILIA's, as received)
 
 The v1 harness that produced the first posted run remains byte-identical and

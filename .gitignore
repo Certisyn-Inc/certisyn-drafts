@@ -54,3 +54,11 @@ tracker.log
 # ignore rule, so this catches the archive by location as well as by name.
 archive/**/*.txt
 _rt.txt
+# The internal audit and review record. Added 2026-09-08 after
+# CS-IPR-RECONCILIATION-ARP-04, marked CONFIDENTIAL and carrying the patent
+# estate position, was found tracked on the local filed/revision-04 branch of
+# this public repository. It was never pushed. Everything under _audit/ is the
+# internal record of how the draft was made -- adversarial passes, IESG-posture
+# reviews, IPR reconciliations -- and the policy above already says that record
+# does not belong here. This makes the policy enforceable rather than stated.
+_audit/

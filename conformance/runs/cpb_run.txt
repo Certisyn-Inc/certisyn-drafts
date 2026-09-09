@@ -1,0 +1,77 @@
+
+====================================================================================================
+ARP against draft-mih-sokolov-scitt-payload-binding conformance vectors
+====================================================================================================
+  suite            : 21 vectors
+  cpb reference lib: available
+
+  ARP constructions carried into this run:
+    arp-subject-digest/1     id=f23ecefd99c54182
+    arp-canonical-claim/1    id=7d90aa1cbee90ef9
+
+  jcs-n = exclusion set, THEN absent-field normalization, then JCS,
+  then SHA-256, and it refuses digest-bearing floats and unsafe integers.
+  ARP implements the JCS and SHA-256 steps and none of the other three.
+  Divergence on a vector that exercises them is the CORRECT result.
+
+----------------------------------------------------------------------------------------------------
+1. jcs-n known-answer tests
+----------------------------------------------------------------------------------------------------
+  vector           cpb        subject-digest   canonical-claim  cause
+  jcs-n-kat-01     repro      agree            agree            -
+  jcs-n-kat-02     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-03     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-04     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-05     repro      agree            agree            -
+  jcs-n-kat-06     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-07     repro      diverge          diverge          absent-field-normalization-applied
+  jcs-n-kat-08     repro      diverge          diverge          exclusion-set-applied
+  jcs-n-kat-09     repro      diverge          diverge          exclusion-set-applied
+  jcs-n-kat-10     REFUSED    gate refuses                      digest-bearing-value-refused-by-jcs-n
+  jcs-n-kat-11     repro      agree            agree            -
+
+----------------------------------------------------------------------------------------------------
+2. Vectors ARP cannot reach, and why. Reported, not skipped.
+----------------------------------------------------------------------------------------------------
+  jcs-n/derived-id         3 vector(s)
+      Derived identifiers are computed over a payload minus a declared exclusion set. ARP-01
+      defines no exclusion-set mechanism; its subject_digest is computed over the action as a
+      whole, though the draft does not use that phrase. These vectors are therefore outside ARP's
+      scope rather than failed by it.
+
+  typed-refs               5 vector(s)
+      Typed digest references carry a declared artifact type, digest context and representation.
+      ARP-01 defines no general typed-reference mechanism; the only construction tagging it
+      carries is the two-valued profile tag on the authority-reference digest in Appendix D, which
+      distinguishes a digest over a COSE_Sign1 transparency receipt from one over the canonical
+      JSON of an offline receipt payload. That is not a registry and does not cover the artifact
+      types these vectors exercise, so ARP has nothing of its own to run against them. Whether ARP
+      should define a general mechanism or cite this draft's is open.
+
+  profile-independence     2 vector(s)
+      these test that one payload profile does not reach inside another. ARP has a single profile
+      and no cross-profile surface, so the property is vacuously satisfied and testing it would
+      prove nothing.
+
+====================================================================================================
+SELF-CHECK
+====================================================================================================
+  CPB reference library reproduces 10/10 of its own pinned digests.
+  CPB library refuses 1/1 MUST-FAIL vectors (two-sided: a suite that only mismatched would pass a verifier that never refuses).
+  arp-subject-digest/1 agrees with jcs-n on 3/10 positive vectors.
+  Every one of the 7 divergences is attributed to a declared jcs-n step ARP does not implement.
+  10 vectors are out of ARP's scope and are listed above with the reason, not omitted.
+
+  The boundary, stated so it survives this suite:
+    jcs-n and arp-subject-digest/1 coincide exactly when the payload
+    (a) carries no null or empty member,
+    (b) has no exclusion set applied, AND
+    (c) is accepted by jcs-n's digest-bearing-value guards -- no float,
+        no integer outside the ECMAScript safe range.
+    (c) is not implied by (a) and (b): 1 vector(s) in this
+    suite satisfy (a) and (b) and are still refused outright by jcs-n,
+    which emits no digest while ARP emits one.
+  No unattributed agreement or divergence.
+  SELF-CHECK: PASS
+
+  machine-readable result written to runs/cpb_run.json

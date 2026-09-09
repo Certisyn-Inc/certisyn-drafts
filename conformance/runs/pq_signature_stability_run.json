@@ -1,0 +1,55 @@
+{
+  "probe": "pq_signature_stability_probe.mjs",
+  "trials": 200,
+  "library": "@noble/post-quantum 0.6.1",
+  "note": "Environment-independent: every reported count is a property of the algorithms, not of the machine. Verified identical on Linux/Node 22 and any conformant Node.",
+  "legs": [
+    {
+      "leg": "Ed25519",
+      "alg": "EdDSA (-8), RFC 8032",
+      "verify": "200/200",
+      "sig_len_bytes": 64,
+      "distinct_signing_input_digests": 1,
+      "distinct_entry_digests": 1
+    },
+    {
+      "leg": "ECDSA P-256",
+      "alg": "ES256 (-7)",
+      "verify": "200/200",
+      "sig_len_bytes": 64,
+      "distinct_signing_input_digests": 1,
+      "distinct_entry_digests": 200
+    },
+    {
+      "leg": "ML-DSA-65 hedged",
+      "alg": "FIPS 204, default",
+      "verify": "200/200",
+      "sig_len_bytes": 3309,
+      "distinct_signing_input_digests": 1,
+      "distinct_entry_digests": 200
+    },
+    {
+      "leg": "ML-DSA-65 determ.",
+      "alg": "FIPS 204, extraEntropy false",
+      "verify": "200/200",
+      "sig_len_bytes": 3309,
+      "distinct_signing_input_digests": 1,
+      "distinct_entry_digests": 1
+    }
+  ],
+  "ecdsa_twin": {
+    "both_verify": true,
+    "distinct_entry_digests": 2,
+    "of": 2
+  },
+  "parallel_ed25519_mldsa65": {
+    "ed25519_leg_alone_distinct": 1,
+    "composed_pair_distinct": 200,
+    "of": 200
+  },
+  "ml_dsa_65_key_sizes": {
+    "public_key_bytes": 1952,
+    "secret_key_bytes": 4032
+  },
+  "verdict": "SIGNING-INPUT DIGEST STABLE ON ALL LEGS; ENTRY DIGEST STABLE ON Ed25519 AND DETERMINISTIC ML-DSA-65 ONLY"
+}

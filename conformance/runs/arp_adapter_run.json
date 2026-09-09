@@ -1,0 +1,142 @@
+{
+  "adapter": "EP-ARP-ADAPTER-v0.1",
+  "arp_constructions": {
+    "arp-canonical-claim/1": "7d90aa1cbee90ef9",
+    "arp-subject-digest/1": "f23ecefd99c54182",
+    "ep-canonicalization/1": "dc7df29214870f78"
+  },
+  "fixtures": [
+    {
+      "adapter_verdict": "MATCH",
+      "agrees": true,
+      "arp_disposition": "APPROVE",
+      "fixture_expected": "MATCH",
+      "id": "shared-action-preimage",
+      "legs": [
+        {
+          "axis": null,
+          "provenance": "computed",
+          "source": "canonical-bytes",
+          "verdict": "match"
+        },
+        {
+          "axis": null,
+          "provenance": "computed",
+          "source": "subject-digest",
+          "verdict": "match"
+        },
+        {
+          "axis": null,
+          "provenance": "computed",
+          "source": "caid-binding",
+          "verdict": "match"
+        }
+      ],
+      "notes": [
+        "App.D subject_digest  = sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43",
+        "S2  Canonical Claim   = sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43",
+        "S2 and App.D COINCIDE on this input. They are still different constructions; this action simply carries no member name outside the BMP and no string whose normalization form differs. The divergence is input-dependent, which is why it must be declared rather than observed.",
+        "CAID recomputed       = caid:1:payment.release.1:jcs-sha256:RJLCOOL5IkrZ_C1Ee4Luz7WMXHApKTsA7mnicGY4m0M"
+      ],
+      "refused_at": null
+    },
+    {
+      "adapter_verdict": "INDETERMINATE",
+      "agrees": true,
+      "arp_disposition": "INDETERMINATE",
+      "fixture_expected": "INDETERMINATE",
+      "id": "missing-preimage",
+      "legs": [
+        {
+          "axis": "canonicalization-unverified",
+          "provenance": "computed",
+          "source": "construction-id",
+          "verdict": "indeterminate"
+        },
+        {
+          "axis": "caid-binding-unverified",
+          "provenance": "computed",
+          "source": "caid-binding",
+          "verdict": "indeterminate"
+        }
+      ],
+      "notes": [
+        "ARP holds rather than refuses. The admission decision is still REFUSED, and that is the correct division of labour: an unverifiable digest is not a reconciliation failure, but it is not admissible evidence either."
+      ],
+      "refused_at": "construction-id"
+    },
+    {
+      "adapter_verdict": "NO_MATCH",
+      "agrees": true,
+      "arp_disposition": "REFUSE",
+      "fixture_expected": "NO_MATCH",
+      "id": "material-action-mutation",
+      "legs": [
+        {
+          "axis": "digest-mismatch",
+          "provenance": "computed",
+          "source": "subject-digest",
+          "verdict": "no-match"
+        }
+      ],
+      "notes": [
+        "pre-mutation  sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43",
+        "post-mutation sha256:6ac102a4f07f1ba93b68cf26c0590636e1a17d0290a1d9b1e5e356739fa207d1",
+        "Recomputed here from the mutated action, not read from the fixture's expectation."
+      ],
+      "refused_at": "subject-digest"
+    },
+    {
+      "adapter_verdict": "DIVERGENCE",
+      "agrees": true,
+      "arp_disposition": "REFUSE",
+      "fixture_expected": "DIVERGENCE",
+      "id": "same-party-evidence-not-independent",
+      "legs": [
+        {
+          "axis": "agent-impersonation-suspected",
+          "provenance": "computed",
+          "source": "independence",
+          "verdict": "no-match"
+        }
+      ],
+      "notes": [
+        "Maps to the filed ARP-01 axis agent-impersonation-suspected (S2, S4, A.3). The same construction fires on EP-BOUNDARY's same_party_evidence_presented_as_independent in the frozen-v1 run."
+      ],
+      "refused_at": "independence"
+    },
+    {
+      "adapter_verdict": "INDETERMINATE",
+      "agrees": true,
+      "arp_disposition": "INDETERMINATE",
+      "fixture_expected": "INDETERMINATE",
+      "id": "controller-outcome-is-not-physical-completion",
+      "legs": [
+        {
+          "axis": "outcome-reported-only",
+          "provenance": "computed",
+          "source": "outcome",
+          "verdict": "indeterminate"
+        },
+        {
+          "axis": "physical-completion-unproven",
+          "provenance": "computed",
+          "source": "completion",
+          "verdict": "indeterminate"
+        }
+      ],
+      "notes": [
+        "Both axes are SOFT: they HOLD at indeterminate and never refuse. Admission is therefore UNCHANGED, and post-effect reconciliation is REQUIRED, exactly as the fixture expects.",
+        "outcome-reported-only clears on an ex post attestation from a party OTHER than the actor. A named human APPROVER does not clear it: approval is ex ante and says the act was permitted, not that it occurred.",
+        "physical-completion-unproven fires ADDITIONALLY, not instead, where the act is irreversible with no rollback handle."
+      ],
+      "refused_at": "outcome"
+    }
+  ],
+  "join_construction": "ep-arp-reconciliation-join/0.1",
+  "profile_obliged_by_spec": {
+    "arp-canonical-claim/1": "NO -- S2 does not pin its member-sort code unit (that is the 19-vs-20)",
+    "arp-subject-digest/1": "NO -- App.D names JCS; -01 carries no reference to RFC 8785",
+    "ep-canonicalization/1": "YES -- EP-CANONICALIZATION-v1 cites RFC 8785 normatively"
+  }
+}

@@ -1,0 +1,5114 @@
+{
+ "axes_substantive": [
+  "agent-action-scope-divergence",
+  "agent-credential-absent",
+  "agent-impersonation-suspected",
+  "agent-principal-unverifiable",
+  "artifact-class-not-authorization-evidence",
+  "artifact-tampered",
+  "canonicalization-gate-failed",
+  "chain-link-broken",
+  "currency-unknown",
+  "digest-mismatch",
+  "freshness-stale",
+  "log-proof-broken",
+  "quorum-not-met",
+  "raw-claim-not-covered-by-signature",
+  "replay-detected",
+  "revocation-binding-invalid",
+  "signature-invalid",
+  "signature-malformed",
+  "version-replay"
+ ],
+ "axes_used": [
+  "agent-action-scope-divergence",
+  "agent-credential-absent",
+  "agent-impersonation-suspected",
+  "agent-principal-unverifiable",
+  "artifact-class-not-authorization-evidence",
+  "artifact-tampered",
+  "canonicalization-gate-failed",
+  "chain-link-broken",
+  "currency-unknown",
+  "digest-mismatch",
+  "freshness-stale",
+  "leg-not-independently-verified",
+  "log-proof-broken",
+  "quorum-not-met",
+  "raw-claim-not-covered-by-signature",
+  "replay-detected",
+  "revocation-binding-invalid",
+  "signature-invalid",
+  "signature-malformed",
+  "version-replay"
+ ],
+ "boundary": [
+  {
+   "arp_subject_digest": null,
+   "disposition": "INDETERMINATE",
+   "expect_valid": true,
+   "id": "accept_pre_execution_receipt",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": null,
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "attribution_substituted_for_authorization",
+   "legs": [
+    {
+     "axis": "attribution-substituted-for-authorization",
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "artifact-class"
+  },
+  {
+   "arp_subject_digest": null,
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "raw_claim_pass_through",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "raw-claim-not-covered-by-signature",
+     "provenance": "computed",
+     "source": "raw-claim",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "arp_subject_digest": null,
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "same_party_evidence_presented_as_independent",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "agent-impersonation-suspected",
+     "provenance": "computed",
+     "source": "independence",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "arp_subject_digest": null,
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "policy_decision_presented_as_human_authorization",
+   "legs": [
+    {
+     "axis": "machine-decision-not-human-authorization",
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "artifact-class"
+  }
+ ],
+ "canonicalization": [
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "arp_canonical_claim_utf16sort": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "arp_section_2": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "ep_pinned": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "id": "accept_nfc_composed",
+   "note": "NFC \"cafe\u0301\" spelled with precomposed U+00E9; digest pins the composed bytes",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "a959c3552a14d635acca3d4315e9097d11a2ff9d4ab2185dbfe4e66a90b06ed0",
+   "arp_canonical_claim_utf16sort": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "arp_section_2": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "ep_pinned": "a959c3552a14d635acca3d4315e9097d11a2ff9d4ab2185dbfe4e66a90b06ed0",
+   "id": "accept_nfd_decomposed",
+   "note": "NFD spelling of the same text (e + combining U+0301); MUST digest differently from NFC",
+   "sec2_agrees": false,
+   "sec2_utf16_agrees": false
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "arp_canonical_claim_utf16sort": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "arp_section_2": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "ep_pinned": "a84c174531ab46d58aaeb9c85aed22981d418f25bead412cd282e97f427a0ba1",
+   "id": "accept_escape_alias_of_nfc",
+   "note": "escaped \\u00e9 decodes to the same code point as literal NFC; MUST digest identically to accept_nfc_composed",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "f560f24d1654b3584612956a4d8a4c25961e3305f05ad8a2c6e6a5365b76e416",
+   "arp_canonical_claim_utf16sort": "08eb5b93c008738e0af881f0227f44b24ddb73bb7c3c12b74a4dcd9e0e8683bb",
+   "arp_section_2": "08eb5b93c008738e0af881f0227f44b24ddb73bb7c3c12b74a4dcd9e0e8683bb",
+   "ep_pinned": "f560f24d1654b3584612956a4d8a4c25961e3305f05ad8a2c6e6a5365b76e416",
+   "id": "accept_angstrom_sign_not_normalized",
+   "note": "U+212B ANGSTROM SIGN is NOT NFC-normalized to U+00C5 by JCS; raw code point pinned",
+   "sec2_agrees": false,
+   "sec2_utf16_agrees": false
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "08eb5b93c008738e0af881f0227f44b24ddb73bb7c3c12b74a4dcd9e0e8683bb",
+   "arp_canonical_claim_utf16sort": "08eb5b93c008738e0af881f0227f44b24ddb73bb7c3c12b74a4dcd9e0e8683bb",
+   "arp_section_2": "08eb5b93c008738e0af881f0227f44b24ddb73bb7c3c12b74a4dcd9e0e8683bb",
+   "ep_pinned": "08eb5b93c008738e0af881f0227f44b24ddb73bb7c3c12b74a4dcd9e0e8683bb",
+   "id": "accept_latin_a_ring_distinct",
+   "note": "U+00C5 LATIN CAPITAL A WITH RING; MUST digest differently from U+212B",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "e6438b4f8dc53adfcb492fd6a196c1a17fd25a019b777e76e4ddb35523388d46",
+   "arp_canonical_claim_utf16sort": "e6438b4f8dc53adfcb492fd6a196c1a17fd25a019b777e76e4ddb35523388d46",
+   "arp_section_2": "e6438b4f8dc53adfcb492fd6a196c1a17fd25a019b777e76e4ddb35523388d46",
+   "ep_pinned": "e6438b4f8dc53adfcb492fd6a196c1a17fd25a019b777e76e4ddb35523388d46",
+   "id": "accept_bidi_rlo_override_raw",
+   "note": "U+202E RIGHT-TO-LEFT OVERRIDE and U+202C inside a string are emitted raw, not escaped or stripped",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "d923ab32e713e672a0eec4249db62facaddb155c1ba7bb215e8a3c36ac451c93",
+   "arp_canonical_claim_utf16sort": "d923ab32e713e672a0eec4249db62facaddb155c1ba7bb215e8a3c36ac451c93",
+   "arp_section_2": "d923ab32e713e672a0eec4249db62facaddb155c1ba7bb215e8a3c36ac451c93",
+   "ep_pinned": "d923ab32e713e672a0eec4249db62facaddb155c1ba7bb215e8a3c36ac451c93",
+   "id": "accept_control_chars_escaped",
+   "note": "C0 controls canonicalize to lowercase \\u00xx escapes",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "arp_canonical_claim_utf16sort": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "arp_section_2": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "ep_pinned": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "id": "accept_shorthand_escapes",
+   "note": "backspace/tab/newline/formfeed/carriage-return canonicalize to the shorthand escapes",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "arp_canonical_claim_utf16sort": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "arp_section_2": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "ep_pinned": "b087fcbc53f88174f9c3ccf7d6cb1c3906ab32d0198eb62c3e541c4aebdcdad0",
+   "id": "accept_long_escape_alias_of_shorthand",
+   "note": "the same five controls written as \\u00xx decode identically; MUST digest identically to accept_shorthand_escapes",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "9a9d531e258f511a4c2b113d9da41b2d647b11a7599125ec51cf46026470b0ff",
+   "arp_canonical_claim_utf16sort": "9a9d531e258f511a4c2b113d9da41b2d647b11a7599125ec51cf46026470b0ff",
+   "arp_section_2": "9a9d531e258f511a4c2b113d9da41b2d647b11a7599125ec51cf46026470b0ff",
+   "ep_pinned": "9a9d531e258f511a4c2b113d9da41b2d647b11a7599125ec51cf46026470b0ff",
+   "id": "accept_format_chars_raw",
+   "note": "U+2028/U+2029 (ES line separators), U+007F DEL, U+FEFF, U+200B are all >= U+0020 and emitted raw",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "arp_canonical_claim_utf16sort": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "arp_section_2": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "ep_pinned": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "id": "accept_non_bmp_escaped_pair",
+   "note": "escaped surrogate pair \\ud83d\\ude00 decodes to U+1F600 and canonicalizes to the raw 4-byte UTF-8 sequence",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "arp_canonical_claim_utf16sort": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "arp_section_2": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "ep_pinned": "f9949e1006d1ca22bc0b60ea94f09779f11a8f0a29bae250fc7ab313d879f5e7",
+   "id": "accept_non_bmp_literal_alias",
+   "note": "literal U+1F600 in the raw text; MUST digest identically to accept_non_bmp_escaped_pair",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "bb5ef4528fd81606eabbfe0eb7c25784e924c22a03817fac46366381d32da411",
+   "arp_canonical_claim_utf16sort": "bb5ef4528fd81606eabbfe0eb7c25784e924c22a03817fac46366381d32da411",
+   "arp_section_2": "628a8a163a5223e70b4b700500e6fef15c5660199a104ec2e99df114203ee029",
+   "ep_pinned": "bb5ef4528fd81606eabbfe0eb7c25784e924c22a03817fac46366381d32da411",
+   "id": "accept_astral_key_utf16_sort_order",
+   "note": "member sort is by UTF-16 code units: U+1F600 (D83D DE00) sorts BEFORE U+FF61 (FF61); a code-point sort diverges here",
+   "sec2_agrees": false,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "arp_canonical_claim_utf16sort": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "arp_section_2": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "ep_pinned": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "id": "accept_integer_one",
+   "note": "baseline integer token",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "arp_canonical_claim_utf16sort": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "arp_section_2": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "ep_pinned": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "id": "accept_number_alias_one_point_zero",
+   "note": "token 1.0 is integer-valued; canonicalizes to \"1\"; MUST digest identically to accept_integer_one",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "arp_canonical_claim_utf16sort": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "arp_section_2": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "ep_pinned": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "id": "accept_number_alias_exponent",
+   "note": "token 1e0 is integer-valued; canonicalizes to \"1\"",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "arp_canonical_claim_utf16sort": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "arp_section_2": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "ep_pinned": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "id": "accept_negative_zero_integer",
+   "note": "token -0 canonicalizes to \"0\" (ECMAScript JSON.stringify semantics)",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "arp_canonical_claim_utf16sort": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "arp_section_2": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "ep_pinned": "f3013f933b9fb80ab6d995e7ad9da36f683837ba1d81e950c943d40111eac2f0",
+   "id": "accept_negative_zero_real_alias",
+   "note": "token -0.0 also canonicalizes to \"0\"; MUST digest identically to accept_negative_zero_integer",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "e1da48c6a6089f06ecb4e0a2259e658e3786b2420f52baccdf929ec6460d7b41",
+   "arp_canonical_claim_utf16sort": "e1da48c6a6089f06ecb4e0a2259e658e3786b2420f52baccdf929ec6460d7b41",
+   "arp_section_2": "e1da48c6a6089f06ecb4e0a2259e658e3786b2420f52baccdf929ec6460d7b41",
+   "ep_pinned": "e1da48c6a6089f06ecb4e0a2259e658e3786b2420f52baccdf929ec6460d7b41",
+   "id": "accept_max_safe_integer",
+   "note": "2^53-1, the largest magnitude inside the EP profile",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "arp_canonical_claim_utf16sort": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "arp_section_2": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "ep_pinned": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "id": "accept_key_order_whitespace_alias",
+   "note": "unsorted members plus interior whitespace; MUST digest identically to the compact sorted twin",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "arp_canonical_claim_utf16sort": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "arp_section_2": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "ep_pinned": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+   "id": "accept_key_order_canonical_twin",
+   "note": "compact sorted form of the same object",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  },
+  {
+   "appd_agrees": true,
+   "arp_appendix_d": "3d521fae0e2ae82f37583c72212182e80a3feb5140dfa5bb61492804112644a7",
+   "arp_canonical_claim_utf16sort": "3d521fae0e2ae82f37583c72212182e80a3feb5140dfa5bb61492804112644a7",
+   "arp_section_2": "3d521fae0e2ae82f37583c72212182e80a3feb5140dfa5bb61492804112644a7",
+   "ep_pinned": "3d521fae0e2ae82f37583c72212182e80a3feb5140dfa5bb61492804112644a7",
+   "id": "accept_nested_depth_at_limit",
+   "note": "container depth exactly 64 is accepted with a pinned digest",
+   "sec2_agrees": true,
+   "sec2_utf16_agrees": true
+  }
+ ],
+ "constructions": {
+  "arp-canonical-claim/1": {
+   "array_order": "as-declared",
+   "hash": "sha256",
+   "id": "7d90aa1cbee90ef9",
+   "key_sort": "unicode-codepoint",
+   "numbers": "rfc8259-canonical",
+   "profile_obliged_by_spec": "NO -- S2 does not pin its member-sort code unit (that is the 19-vs-20)",
+   "spec": "draft-hillier-scitt-arp-01 S2 Canonical Claim (NFC applied)",
+   "undefined": "stripped",
+   "unicode": "nfc-applied-to-strings-and-member-names"
+  },
+  "arp-subject-digest/1": {
+   "array_order": "as-declared",
+   "hash": "sha256",
+   "id": "f23ecefd99c54182",
+   "key_sort": "utf16-code-unit (RFC 8785 JCS)",
+   "numbers": "rfc8785-es6",
+   "profile_obliged_by_spec": "NO -- App.D names JCS; -01 carries no reference to RFC 8785",
+   "spec": "draft-hillier-scitt-arp-01 App.D subject_digest = SHA-256(JCS(action))",
+   "undefined": "n/a",
+   "unicode": "none (JCS does not normalize)"
+  },
+  "ep-canonicalization/1": {
+   "array_order": "as-declared",
+   "hash": "sha256",
+   "id": "dc7df29214870f78",
+   "key_sort": "utf16-code-unit (RFC 8785 JCS)",
+   "numbers": "rfc8785-es6, safe integers only",
+   "profile_obliged_by_spec": "YES -- EP-CANONICALIZATION-v1 cites RFC 8785 normatively",
+   "spec": "EMILIA EP-CANONICALIZATION-v1 (RFC 8785 JCS over I-JSON)",
+   "undefined": "n/a",
+   "unicode": "none (JCS does not normalize)"
+  }
+ },
+ "noa": [
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "valid-chain.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "valid-chain.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "INDETERMINATE",
+   "file": "valid-chain.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/cross-chain-splice.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/cross-chain-splice.json",
+   "id": "rcpt_other_genesis",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-scope-mismatch",
+     "provenance": "computed",
+     "source": "chain-scope",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-sequence-duplicate",
+     "provenance": "computed",
+     "source": "chain-seq",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "chain-scope"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/cross-chain-splice.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": "checkpoint-scope-mismatch",
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-scope"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/dup-seq.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "attack/dup-seq.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "REFUSE",
+   "file": "attack/dup-seq.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-sequence-duplicate",
+     "provenance": "computed",
+     "source": "chain-seq",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "content-hash"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/dup-seq.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-head-truncated",
+     "provenance": "computed",
+     "source": "checkpoint-head",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-head"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/forged-checkpoint-chain.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "attack/forged-checkpoint-chain.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/forged-checkpoint-chain.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-head-truncated",
+     "provenance": "computed",
+     "source": "checkpoint-head",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-head"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/forged-checkpoint-chain.json",
+   "id": "<companion-cp>",
+   "legs": [
+    {
+     "axis": "checkpoint-signer-untrusted",
+     "provenance": "computed",
+     "source": "companion-cp-signer",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "companion-cp-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "companion-cp-head",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": "companion-cp-signer"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/forged-checkpoint-cp.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": "checkpoint-signer-untrusted",
+     "provenance": "computed",
+     "source": "checkpoint-signer",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-signer"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/forged-genesis.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-link-broken",
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "chain-link"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/forged-genesis.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-link-broken",
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "chain-link"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "INDETERMINATE",
+   "file": "attack/forged-genesis.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/head-truncated.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-link-broken",
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "chain-link"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "INDETERMINATE",
+   "file": "attack/head-truncated.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/key-swap-resigned.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "attack/key-swap-resigned.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "REFUSE",
+   "file": "attack/key-swap-resigned.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "computed",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/key-swap-resigned.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-head-divergent",
+     "provenance": "computed",
+     "source": "checkpoint-head",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-head"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/key-swap.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "attack/key-swap.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "REFUSE",
+   "file": "attack/key-swap.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "computed",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "content-hash"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/key-swap.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-head-divergent",
+     "provenance": "computed",
+     "source": "checkpoint-head",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-head"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/relinked.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "attack/relinked.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "REFUSE",
+   "file": "attack/relinked.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-link-broken",
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "chain-link"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/relinked.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-head-divergent",
+     "provenance": "computed",
+     "source": "checkpoint-head",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-head"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/seq-gap.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "REFUSE",
+   "file": "attack/seq-gap.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-link-broken",
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "chain-sequence-gap",
+     "provenance": "computed",
+     "source": "chain-seq",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "chain-link"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/tail-truncated.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "attack/tail-truncated.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/tail-truncated.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-head-truncated",
+     "provenance": "computed",
+     "source": "checkpoint-head",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-head"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/tampered-content.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "7e05394fd9ea92f4b3952a580f2e37d9e3a817be865d1069ee2e14d3ee98df19",
+   "disposition": "REFUSE",
+   "file": "attack/tampered-content.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": "content-hash"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "INDETERMINATE",
+   "file": "attack/tampered-content.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/unknown-kid.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "computed",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/unknown-kid.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "computed",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "REFUSE",
+   "file": "attack/unknown-kid.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "computed",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "attack/unknown-kid.json",
+   "id": "<checkpoint>",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "checkpoint-signer",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "checkpoint-scope",
+     "verdict": "match"
+    },
+    {
+     "axis": "chain-head-divergent",
+     "provenance": "computed",
+     "source": "checkpoint-head",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "checkpoint-head"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/wrong-signature.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "authorization"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "attack/wrong-signature.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-malformed",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "INDETERMINATE",
+   "file": "attack/wrong-signature.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "malformed/deep-nest.json",
+   "id": null,
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "shape",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "shape"
+  },
+  {
+   "arp_subject_digest": null,
+   "disposition": "REFUSE",
+   "file": "malformed/duplicate-key.json",
+   "id": "y",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "shape",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "shape"
+  },
+  {
+   "arp_subject_digest": null,
+   "disposition": "REFUSE",
+   "file": "malformed/float-number.json",
+   "id": null,
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "shape",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "shape"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "malformed/lone-high-surrogate.json",
+   "id": null,
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "shape",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "shape"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "malformed/lone-low-surrogate.json",
+   "id": null,
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "shape",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "shape"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "REFUSE",
+   "file": "malformed/pii-smuggle.json",
+   "id": "rcpt_0000000000000000000000000A",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "no-match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "content-hash"
+  },
+  {
+   "arp_subject_digest": "e4d0bbf20381ff0a0d046833b9ee3e0c44ac1515d6a948787563a0d435ca0369",
+   "disposition": "INDETERMINATE",
+   "file": "malformed/pii-smuggle.json",
+   "id": "rcpt_0000000000000000000000000B",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "match"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "physical-completion-unproven",
+     "provenance": "computed",
+     "source": "completion",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": "402233932335c354c9fbb6dee2650d5e08f892314b20326b2cd947439e631ad8",
+   "disposition": "INDETERMINATE",
+   "file": "malformed/pii-smuggle.json",
+   "id": "rcpt_0000000000000000000000000C",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "content-hash",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "chain-link",
+     "verdict": "match"
+    },
+    {
+     "axis": "caid-binding-unverified",
+     "provenance": "computed",
+     "source": "caid-binding",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "human-authorization-unproven",
+     "provenance": "computed",
+     "source": "authorization",
+     "verdict": "indeterminate"
+    },
+    {
+     "axis": "outcome-reported-only",
+     "provenance": "computed",
+     "source": "outcome",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "caid-binding"
+  },
+  {
+   "arp_subject_digest": null,
+   "disposition": "REFUSE",
+   "file": "malformed/proto-pollution.json",
+   "id": null,
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "shape",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "shape"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "malformed/reversed-surrogate-pair.json",
+   "id": null,
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "shape",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "shape"
+  },
+  {
+   "disposition": "REFUSE",
+   "file": "malformed/trailing-garbage.json",
+   "id": null,
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "parse",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "parse"
+  }
+ ],
+ "noa_adversarial": {
+  "detected": 23,
+  "total": 23
+ },
+ "noa_detection": {
+  "attack/cross-chain-splice.json": [
+   "chain-scope-mismatch",
+   "chain-sequence-duplicate",
+   "checkpoint-scope-mismatch"
+  ],
+  "attack/dup-seq.json": [
+   "artifact-tampered",
+   "chain-head-truncated",
+   "chain-sequence-duplicate",
+   "signature-invalid"
+  ],
+  "attack/forged-checkpoint-chain.json": [
+   "chain-head-truncated",
+   "checkpoint-signer-untrusted"
+  ],
+  "attack/forged-checkpoint-cp.json": [
+   "checkpoint-signer-untrusted"
+  ],
+  "attack/forged-genesis.json": [
+   "chain-link-broken"
+  ],
+  "attack/head-truncated.json": [
+   "chain-link-broken"
+  ],
+  "attack/key-swap-resigned.json": [
+   "agent-principal-unverifiable",
+   "chain-head-divergent"
+  ],
+  "attack/key-swap.json": [
+   "agent-principal-unverifiable",
+   "artifact-tampered",
+   "chain-head-divergent"
+  ],
+  "attack/relinked.json": [
+   "chain-head-divergent",
+   "chain-link-broken"
+  ],
+  "attack/seq-gap.json": [
+   "chain-link-broken",
+   "chain-sequence-gap"
+  ],
+  "attack/tail-truncated.json": [
+   "chain-head-truncated"
+  ],
+  "attack/tampered-content.json": [
+   "artifact-tampered",
+   "signature-invalid"
+  ],
+  "attack/unknown-kid.json": [
+   "agent-principal-unverifiable",
+   "chain-head-divergent"
+  ],
+  "attack/wrong-signature.json": [
+   "signature-malformed"
+  ],
+  "malformed/deep-nest.json": [
+   "canonicalization-gate-failed"
+  ],
+  "malformed/duplicate-key.json": [
+   "canonicalization-gate-failed"
+  ],
+  "malformed/float-number.json": [
+   "canonicalization-gate-failed"
+  ],
+  "malformed/lone-high-surrogate.json": [
+   "canonicalization-gate-failed"
+  ],
+  "malformed/lone-low-surrogate.json": [
+   "canonicalization-gate-failed"
+  ],
+  "malformed/pii-smuggle.json": [
+   "artifact-tampered",
+   "signature-invalid"
+  ],
+  "malformed/proto-pollution.json": [
+   "canonicalization-gate-failed"
+  ],
+  "malformed/reversed-surrogate-pair.json": [
+   "canonicalization-gate-failed"
+  ],
+  "malformed/trailing-garbage.json": [
+   "canonicalization-gate-failed"
+  ],
+  "valid-chain.json": []
+ },
+ "other": [
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_genuine_transition",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "consumption-proof",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "consumption-proof",
+   "suite": "consumption-proof"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_larger_tree",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "consumption-proof",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "consumption-proof",
+   "suite": "consumption-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_present_at_h1",
+   "legs": [
+    {
+     "axis": "replay-detected",
+     "provenance": "expectation-derived",
+     "source": "consumption-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "consumption-proof",
+   "suite": "consumption-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_absent_at_h2",
+   "legs": [
+    {
+     "axis": "log-proof-broken",
+     "provenance": "expectation-derived",
+     "source": "consumption-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "consumption-proof",
+   "suite": "consumption-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_non_append_only",
+   "legs": [
+    {
+     "axis": "chain-link-broken",
+     "provenance": "expectation-derived",
+     "source": "consumption-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "consumption-proof",
+   "suite": "consumption-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_tampered_value",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "expectation-derived",
+     "source": "consumption-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "consumption-proof",
+   "suite": "consumption-proof"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "unknown_offline_no_head",
+   "legs": [
+    {
+     "axis": "currency-unknown",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "unknown_null_head",
+   "legs": [
+    {
+     "axis": "currency-unknown",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "fresh_recent_within_window",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "fresh_different_target_not_revoked",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "stale_head_too_old",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "stale_scalar_revoked",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "stale_status_list_revokes_this",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "stale_required_but_absent",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "stale_no_policy_bound",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "stale_negative_bound",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "unknown_bad_now",
+   "legs": [
+    {
+     "axis": "currency-unknown",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "unknown_malformed_head",
+   "legs": [
+    {
+     "axis": "currency-unknown",
+     "provenance": "expectation-derived",
+     "source": "currency",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "currency",
+   "suite": "currency"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_two_link_sha256_then_sha384",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "evidence-record",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "evidence-record",
+   "suite": "evidence-record"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_broken_renewal",
+   "legs": [
+    {
+     "axis": "chain-link-broken",
+     "provenance": "expectation-derived",
+     "source": "evidence-record",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "evidence-record",
+   "suite": "evidence-record"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unpinned_tsa",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "evidence-record",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "evidence-record",
+   "suite": "evidence-record"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_protected_mismatch",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "evidence-record",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "evidence-record",
+   "suite": "evidence-record"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_non_monotonic_time",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "evidence-record",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "evidence-record",
+   "suite": "evidence-record"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_minimal",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_bare_uppercase_digest",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_hostile_statement_neutralized",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_homoglyph_statement",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_missing_model_id",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_empty_model_version",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_malformed_digest",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_missing_digest",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unknown_member",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_wrong_version",
+   "legs": [
+    {
+     "axis": "version-replay",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_statement_over_cap",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "initiator-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "initiator-attestation",
+   "suite": "initiator-attestation"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_valid_chain",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "provenance.exec",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "provenance.exec",
+   "suite": "provenance.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_scope_violation",
+   "legs": [
+    {
+     "axis": "agent-action-scope-divergence",
+     "provenance": "expectation-derived",
+     "source": "provenance.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "provenance.exec",
+   "suite": "provenance.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_tampered_proof",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "expectation-derived",
+     "source": "provenance.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "provenance.exec",
+   "suite": "provenance.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unpinned_delegator",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "provenance.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "provenance.exec",
+   "suite": "provenance.exec"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_two_hop_constraints_narrowed",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "provenance.exec",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "provenance.exec",
+   "suite": "provenance.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_constraints_relaxed",
+   "legs": [
+    {
+     "axis": "agent-action-scope-divergence",
+     "provenance": "expectation-derived",
+     "source": "provenance.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "provenance.exec",
+   "suite": "provenance.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_nonnumeric_child_cap",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "provenance.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "provenance.exec",
+   "suite": "provenance.exec"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_ordered_3of3",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_threshold_2of3",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_under_threshold",
+   "legs": [
+    {
+     "axis": "quorum-not-met",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_duplicate_human",
+   "legs": [
+    {
+     "axis": "quorum-not-met",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_out_of_order",
+   "legs": [
+    {
+     "axis": "quorum-not-met",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_action_mismatch",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_expired_window",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_one_bad_signature",
+   "legs": [
+    {
+     "axis": "signature-invalid",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_wrong_role",
+   "legs": [
+    {
+     "axis": "agent-action-scope-divergence",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_broken_chain",
+   "legs": [
+    {
+     "axis": "chain-link-broken",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_duplicate_key",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_initiator_is_approver",
+   "legs": [
+    {
+     "axis": "agent-impersonation-suspected",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_distinct_humans_false_shared_key",
+   "legs": [
+    {
+     "axis": "agent-impersonation-suspected",
+     "provenance": "expectation-derived",
+     "source": "quorum",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "quorum",
+   "suite": "quorum"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_pinned_exact_binding",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "revocation.exec",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "revocation.exec",
+   "suite": "revocation.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unpinned_revoker",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "revocation.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "revocation.exec",
+   "suite": "revocation.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_key_substitution",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "revocation.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "revocation.exec",
+   "suite": "revocation.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_revoke_a_for_b",
+   "legs": [
+    {
+     "axis": "revocation-binding-invalid",
+     "provenance": "expectation-derived",
+     "source": "revocation.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "revocation.exec",
+   "suite": "revocation.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_tampered_field",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "expectation-derived",
+     "source": "revocation.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "revocation.exec",
+   "suite": "revocation.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_stale_freshness",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "revocation.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "revocation.exec",
+   "suite": "revocation.exec"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_valid",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_structural_ceremony_type",
+   "legs": [
+    {
+     "axis": "artifact-class-not-authorization-evidence",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_crypto_wrong_key",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_crypto_malformed_sig",
+   "legs": [
+    {
+     "axis": "signature-malformed",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_action_binding_hash",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_action_binding_nonce",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_audience_wrong_rp",
+   "legs": [
+    {
+     "axis": "agent-action-scope-divergence",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_lifecycle_uv_absent",
+   "legs": [
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_lifecycle_up_absent",
+   "legs": [
+    {
+     "axis": "agent-credential-absent",
+     "provenance": "expectation-derived",
+     "source": "signoffs",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signoffs",
+   "suite": "signoffs"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_pinned_hash_bounds",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "time-attestation",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "time-attestation",
+   "suite": "time-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unpinned_tsa",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "time-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "time-attestation",
+   "suite": "time-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_tsa_key_substitution",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "time-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "time-attestation",
+   "suite": "time-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_tampered_time",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "expectation-derived",
+     "source": "time-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "time-attestation",
+   "suite": "time-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_wrong_covered_hash",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "time-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "time-attestation",
+   "suite": "time-attestation"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_out_of_bounds_time",
+   "legs": [
+    {
+     "axis": "freshness-stale",
+     "provenance": "expectation-derived",
+     "source": "time-attestation",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "time-attestation",
+   "suite": "time-attestation"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_authentic_pinned_rsa_sha256",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_second_token_bound_to_other_digest",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_pinned_key_in_array_with_decoy",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_expected_digest_bare_hex",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_missing_token",
+   "legs": [
+    {
+     "axis": "signature-malformed",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_malformed_expected_digest",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unpinned_tsa_empty",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unloadable_pinned_key",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_digest_mismatch",
+   "legs": [
+    {
+     "axis": "digest-mismatch",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_wrong_pinned_key",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_tampered_signature",
+   "legs": [
+    {
+     "axis": "signature-malformed",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unparseable_garbage",
+   "legs": [
+    {
+     "axis": "signature-malformed",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_not_signed_data",
+   "legs": [
+    {
+     "axis": "raw-claim-not-covered-by-signature",
+     "provenance": "expectation-derived",
+     "source": "timestamp-proof",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "timestamp-proof",
+   "suite": "timestamp-proof"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_valid_receipt",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_tampered_action",
+   "legs": [
+    {
+     "axis": "artifact-tampered",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_wrong_log_key",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_broken_inclusion",
+   "legs": [
+    {
+     "axis": "log-proof-broken",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_v2_inclusion",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_legacy_v1_by_default",
+   "legs": [
+    {
+     "axis": "version-replay",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_legacy_v1_when_opted_in",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_non_canonicalizable_number",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_empty_path_tree_size_not_1",
+   "legs": [
+    {
+     "axis": "log-proof-broken",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_empty_path_nonzero_leaf_index",
+   "legs": [
+    {
+     "axis": "log-proof-broken",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_pinned_class_a_bare_signature_downgrade",
+   "legs": [
+    {
+     "axis": "signature-malformed",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.exec",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.exec",
+   "suite": "trust-receipt.exec"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_canonical_z",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.timestamp-forms",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "trust-receipt.timestamp-forms",
+   "suite": "trust-receipt.timestamp-forms"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_numeric_offset",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.timestamp-forms",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "trust-receipt.timestamp-forms",
+   "suite": "trust-receipt.timestamp-forms"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_no_timezone",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.timestamp-forms",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.timestamp-forms",
+   "suite": "trust-receipt.timestamp-forms"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_date_only",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.timestamp-forms",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.timestamp-forms",
+   "suite": "trust-receipt.timestamp-forms"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_required_approvals_string",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.timestamp-forms",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "trust-receipt.timestamp-forms",
+   "suite": "trust-receipt.timestamp-forms"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_required_approvals_int",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "trust-receipt.timestamp-forms",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "trust-receipt.timestamp-forms",
+   "suite": "trust-receipt.timestamp-forms"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_3_of_3_over_one_head",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "witness",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "witness",
+   "suite": "witness"
+  },
+  {
+   "disposition": "INDETERMINATE",
+   "id": "accept_exactly_k",
+   "legs": [
+    {
+     "axis": "leg-not-independently-verified",
+     "provenance": "expectation-derived",
+     "source": "witness",
+     "verdict": "indeterminate"
+    }
+   ],
+   "refused_at": "witness",
+   "suite": "witness"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_k_minus_1",
+   "legs": [
+    {
+     "axis": "quorum-not-met",
+     "provenance": "expectation-derived",
+     "source": "witness",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "witness",
+   "suite": "witness"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_duplicate_counts_once",
+   "legs": [
+    {
+     "axis": "quorum-not-met",
+     "provenance": "expectation-derived",
+     "source": "witness",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "witness",
+   "suite": "witness"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_unpinned_ignored",
+   "legs": [
+    {
+     "axis": "agent-principal-unverifiable",
+     "provenance": "expectation-derived",
+     "source": "witness",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "witness",
+   "suite": "witness"
+  },
+  {
+   "disposition": "REFUSE",
+   "id": "reject_different_head_ignored",
+   "legs": [
+    {
+     "axis": "chain-link-broken",
+     "provenance": "expectation-derived",
+     "source": "witness",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "witness",
+   "suite": "witness"
+  }
+ ],
+ "receipts": [
+  {
+   "disposition": "APPROVE",
+   "expect_valid": true,
+   "id": "accept_minimal",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": null
+  },
+  {
+   "disposition": "APPROVE",
+   "expect_valid": true,
+   "id": "accept_nested_context",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": null
+  },
+  {
+   "disposition": "APPROVE",
+   "expect_valid": true,
+   "id": "accept_key_order_independent",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": null
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_legacy_v1_anchor_by_default",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "version-replay",
+     "provenance": "computed",
+     "source": "anchor",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "anchor"
+  },
+  {
+   "disposition": "APPROVE",
+   "expect_valid": true,
+   "id": "accept_with_merkle_anchor_v2",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "anchor",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": null
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_v2_unbound_leaf",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "anchor-leaf-not-bound-to-payload",
+     "provenance": "crypto-verified",
+     "source": "anchor",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "anchor"
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_unsupported_version",
+   "legs": [
+    {
+     "axis": "version-replay",
+     "provenance": "computed",
+     "source": "version-gate",
+     "verdict": "no-match"
+    },
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    }
+   ],
+   "refused_at": "version-gate"
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_missing_signature",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-malformed",
+     "provenance": "computed",
+     "source": "signature",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_tampered_payload",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_tampered_nested_param",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_wrong_key",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-invalid",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_malformed_signature",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": "signature-malformed",
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "signature"
+  },
+  {
+   "disposition": "REFUSE",
+   "expect_valid": false,
+   "id": "reject_tampered_anchor",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "artifact-class",
+     "verdict": "match"
+    },
+    {
+     "axis": null,
+     "provenance": "crypto-verified",
+     "source": "signature",
+     "verdict": "match"
+    },
+    {
+     "axis": "version-replay",
+     "provenance": "computed",
+     "source": "anchor",
+     "verdict": "no-match"
+    }
+   ],
+   "refused_at": "anchor"
+  }
+ ],
+ "strict_parse_gate": [
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_nfc_composed",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "NFC \"cafe\u0301\" spelled with precomposed U+00E9; digest pins the composed bytes",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_nfd_decomposed",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "NFD spelling of the same text (e + combining U+0301); MUST digest differently from NFC",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_escape_alias_of_nfc",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "escaped \\u00e9 decodes to the same code point as literal NFC; MUST digest identically to accept_nfc_composed",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_angstrom_sign_not_normalized",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "U+212B ANGSTROM SIGN is NOT NFC-normalized to U+00C5 by JCS; raw code point pinned",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_latin_a_ring_distinct",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "U+00C5 LATIN CAPITAL A WITH RING; MUST digest differently from U+212B",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_bidi_rlo_override_raw",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "U+202E RIGHT-TO-LEFT OVERRIDE and U+202C inside a string are emitted raw, not escaped or stripped",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_control_chars_escaped",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "C0 controls canonicalize to lowercase \\u00xx escapes",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_shorthand_escapes",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "backspace/tab/newline/formfeed/carriage-return canonicalize to the shorthand escapes",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_long_escape_alias_of_shorthand",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "the same five controls written as \\u00xx decode identically; MUST digest identically to accept_shorthand_escapes",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_format_chars_raw",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "U+2028/U+2029 (ES line separators), U+007F DEL, U+FEFF, U+200B are all >= U+0020 and emitted raw",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "duplicate-member-name",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_duplicate_key_literal",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "same member name twice in one object",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "duplicate-member-name",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_duplicate_key_escape_alias",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "\"\\u0061\" decodes to \"a\": still a duplicate after escape decoding",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "duplicate-member-name",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_duplicate_key_nested",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "duplicate detection applies at every nesting level",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "duplicate-member-name",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_duplicate_key_non_bmp_alias",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "literal U+1F600 and its escaped surrogate pair are the same name",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "unpaired-surrogate-in-string",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_lone_high_surrogate",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "unpaired \\ud800 escape is not valid Unicode",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "unpaired-surrogate-in-string",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_lone_low_surrogate",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "unpaired \\udc00 escape is not valid Unicode",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "unpaired-surrogate-in-string",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_reversed_surrogate_pair",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "low-then-high escape order does not form a code point",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "unpaired-surrogate-in-string",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_high_surrogate_then_bmp_escape",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "a high surrogate escape must be followed by a low surrogate escape, not \\u0041",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "unpaired-surrogate-in-member-name",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_lone_surrogate_in_member_name",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "unpaired surrogate in a member name is equally malformed",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_non_bmp_escaped_pair",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "escaped surrogate pair \\ud83d\\ude00 decodes to U+1F600 and canonicalizes to the raw 4-byte UTF-8 sequence",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_non_bmp_literal_alias",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "literal U+1F600 in the raw text; MUST digest identically to accept_non_bmp_escaped_pair",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_astral_key_utf16_sort_order",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "member sort is by UTF-16 code units: U+1F600 (D83D DE00) sorts BEFORE U+FF61 (FF61); a code-point sort diverges here",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_integer_one",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "baseline integer token",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_number_alias_one_point_zero",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "token 1.0 is integer-valued; canonicalizes to \"1\"; MUST digest identically to accept_integer_one",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_number_alias_exponent",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "token 1e0 is integer-valued; canonicalizes to \"1\"",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_negative_zero_integer",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "token -0 canonicalizes to \"0\" (ECMAScript JSON.stringify semantics)",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_negative_zero_real_alias",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "token -0.0 also canonicalizes to \"0\"; MUST digest identically to accept_negative_zero_integer",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_max_safe_integer",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "2^53-1, the largest magnitude inside the EP profile",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "integer-outside-safe-range",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_unsafe_integer_2_53",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "2^53 is outside the safe-integer profile (fail-closed)",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "integer-outside-safe-range",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_unsafe_large_exponent",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "1e21 is integer-valued but far outside the safe-integer profile",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "non-integer-real",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_non_integer_real",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "non-integer reals are outside the EP profile; encode as strings",
+   "refused_at": "strict-parse"
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_key_order_whitespace_alias",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "unsorted members plus interior whitespace; MUST digest identically to the compact sorted twin",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_key_order_canonical_twin",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "compact sorted form of the same object",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": null,
+   "disposition": "APPROVE",
+   "expected_valid": true,
+   "id": "accept_nested_depth_at_limit",
+   "legs": [
+    {
+     "axis": null,
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "match"
+    }
+   ],
+   "note": "container depth exactly 64 is accepted with a pinned digest",
+   "refused_at": null
+  },
+  {
+   "agrees_with_suite": true,
+   "cause": "nesting-depth-exceeded",
+   "disposition": "REFUSE",
+   "expected_valid": false,
+   "id": "reject_nested_depth_over_limit",
+   "legs": [
+    {
+     "axis": "canonicalization-gate-failed",
+     "provenance": "computed",
+     "source": "strict-parse",
+     "verdict": "no-match"
+    }
+   ],
+   "note": "container depth 65 exceeds the suite-pinned bound of 64",
+   "refused_at": "strict-parse"
+  }
+ ],
+ "unmapped": []
+}

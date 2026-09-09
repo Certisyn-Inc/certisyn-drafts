@@ -1,0 +1,17 @@
+{
+  "claim": "none made",
+  "decision_rule": "reported, not adjudicated",
+  "environment": {
+    "platform": "win32",
+    "python": "3.13.14"
+  },
+  "environment_note": "This record is environment-dependent by design and is NOT pinned in REPRODUCE.md. The deterministic record is.",
+  "invocation": "python3 run_existence_oracle_vectors.py --timing-samples 60",
+  "median_absent_s": 0.003997,
+  "median_present_s": 0.00404,
+  "note": "Loopback timing is not evidence about a deployed network path. A timing-resistance claim requires the population and threshold this run does not have.",
+  "population": "loopback, single host, no network placement",
+  "run_of": "existence_oracle_run.json",
+  "samples_per_arm": 60,
+  "standardised_median_difference": 0.0067
+}

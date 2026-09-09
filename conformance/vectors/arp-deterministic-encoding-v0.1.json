@@ -1,0 +1,113 @@
+{
+  "original": {
+    "builder": "runners/build_deterministic_encoding_vectors.py",
+    "built_against": {
+      "corroborating_implementation": "cbor2 6.1.4",
+      "reference_sha256": "1a7af14d483d45ee3bf75ae06a9c56ec4a1ac76716d683899626377bba43f3d2"
+    },
+    "class": "arp-deterministic-encoding",
+    "closes": "the encoder-independence gap declared by the arp-existence-oracle class",
+    "corroboration_boundary": "cbor2 corroborates item encodings only. It does NOT corroborate map key order: its canonical mode implements the length-first ordering of RFC 8949 Section 4.2.3 and not the bytewise ordering of Section 4.2.1 that this document requires. Two numbers produced by one construction are one measurement, and two implementations that disagree are not a vote -- the RFC decides it. Standing rule 8.",
+    "defective_encoders": [
+      {
+        "channel": "map keys sorted by encoded length then bytewise, RFC 8949 Section 4.2.3 instead of Section 4.2.1",
+        "defect": "length-first-ordering",
+        "discriminator": "DE-06 expected_hex mismatch",
+        "id": "NV-ARP-DE-01"
+      },
+      {
+        "channel": "arguments encoded in a wider field than needed",
+        "defect": "non-shortest-argument",
+        "discriminator": "DE-01 expected_hex mismatch",
+        "id": "NV-ARP-DE-02"
+      },
+      {
+        "channel": "indefinite-length containers, which Section 4.2.1 forbids",
+        "defect": "indefinite-length",
+        "discriminator": "DE-04 expected_hex mismatch",
+        "id": "NV-ARP-DE-03"
+      }
+    ],
+    "measured_divergence": {
+      "cbor2_canonical_hex": "a50a012003186402617a0462616105",
+      "cbor2_canonical_matches_s423": true,
+      "finding": "cbor2 6.1.4 in canonical mode emits the Section 4.2.3 ordering. An implementation that computes ARP digests with it ships non-conforming bytes and raises no error, because both orderings are well-formed CBOR and only one is the one this document cites.",
+      "input_repr": "{10: 1, 100: 2, -1: 3, 'z': 4, 'aa': 5}",
+      "rfc8949_s421_hex": "a50a011864022003617a0462616105",
+      "rfc8949_s423_length_first_hex": "a50a012003186402617a0462616105"
+    },
+    "property": "The deterministic encoder is conformant to bytes fixed outside it. No expected value in this file is derived at run time by the implementation under test.",
+    "spec": "RFC 8949 Section 4.2.1, as cited by draft-hillier-scitt-arp for every digest preimage and every signed payload",
+    "vectors": [
+      {
+        "expected_hex": "8b00010a171818181918641903e820293863",
+        "expected_sha256": "38fb16dbf1d998786f85f76d740569923f67bb42dc2a1b00d56e0d075265ffd1",
+        "id": "DE-01",
+        "input_repr": "[0, 1, 10, 23, 24, 25, 100, 1000, -1, -10, -100]",
+        "provenance": "corroborated by cbor2 6.1.4",
+        "purpose": "integers across every argument-width boundary"
+      },
+      {
+        "expected_hex": "8617181818ff19010019ffff1a00010000",
+        "expected_sha256": "6b2f9ff8a1f5a6af6159380c44a2b0255c20a044797c9cde78802e7acf2ee62e",
+        "id": "DE-02",
+        "input_repr": "[23, 24, 255, 256, 65535, 65536]",
+        "provenance": "corroborated by cbor2 6.1.4",
+        "purpose": "shortest-form arguments: 24 is one extra byte, not two"
+      },
+      {
+        "expected_hex": "87404401020304606161644945544662c3bc63e6b0b4",
+        "expected_sha256": "fcf8b952ce2e9081e6805553e36d30eb342652bea76051b064a0af912f4a2b61",
+        "id": "DE-03",
+        "input_repr": "[b'', b'\\x01\\x02\\x03\\x04', '', 'a', 'IETF', '\u00fc', '\u6c34']",
+        "provenance": "corroborated by cbor2 6.1.4",
+        "purpose": "byte and text strings, empty and multi-octet UTF-8"
+      },
+      {
+        "expected_hex": "8380830102038301820203820405",
+        "expected_sha256": "bc29228ac959284397fc0e574ce61d48bc8a12f7b61d511d5ffd8d84d82ac7be",
+        "id": "DE-04",
+        "input_repr": "[[], [1, 2, 3], [1, [2, 3], [4, 5]]]",
+        "provenance": "corroborated by cbor2 6.1.4",
+        "purpose": "nested definite-length arrays"
+      },
+      {
+        "expected_hex": "a3616101616202616303",
+        "expected_sha256": "7213412782d89839dc4fcb6b300d6f9b37d8c420d15a9e0603109b538ac2d065",
+        "id": "DE-05",
+        "input_repr": "{'a': 1, 'b': 2, 'c': 3}",
+        "provenance": "item encodings corroborated by cbor2 6.1.4; the key ORDER is this document's, from RFC 8949 Section 4.2.1, and cbor2's canonical mode disagrees with it",
+        "purpose": "map whose keys encode to equal lengths, so the two orderings cannot diverge and this row isolates the item encodings"
+      },
+      {
+        "expected_hex": "a50a011864022003617a0462616105",
+        "expected_sha256": "635ce02332670dfeec011f4ab9094a7a993735b9cc46a16b804e961acc20e00a",
+        "id": "DE-06",
+        "input_repr": "{10: 1, 100: 2, -1: 3, 'z': 4, 'aa': 5}",
+        "provenance": "item encodings corroborated by cbor2 6.1.4; the key ORDER is this document's, from RFC 8949 Section 4.2.1, and cbor2's canonical mode disagrees with it",
+        "purpose": "map whose keys encode to DIFFERENT lengths. This is the row that separates RFC 8949 Section 4.2.1 from Section 4.2.3, and the row a length-first encoder fails"
+      },
+      {
+        "expected_hex": "8463474554782968747470733a2f2f6172702e6578616d706c652f6172702f6f7574707574732f525f70726573656e74726e2d3030303030303030303030303030303167702d6f74686572",
+        "expected_sha256": "21629351d6d4788b1fbfd234d5c025add80af3b6d6a14a8d63cfd1b1021fb95a",
+        "id": "DE-07",
+        "input_repr": "['GET', 'https://arp.example/arp/outputs/R_present', 'n-0000000000000001', 'p-other']",
+        "note": "the target is already in its RFC 3986 Sections 6.2.2 and 6.2.3 normalised form; normalisation is tested by DE-08, not here, so a normalisation defect cannot hide in this row",
+        "provenance": "corroborated by cbor2 6.1.4",
+        "purpose": "Section 6.4.1 request-binding: the deterministic CBOR array of the four covered values, and the SHA-256 over it"
+      },
+      {
+        "expected_hex": "846a5369676e61747572653143a1012740527061796c6f61642d756e6465722d74657374",
+        "expected_sha256": "051bd25f0569fee11d7d350f249628c66f78975fa3702bbd9f0652c9fc6f70d5",
+        "id": "DE-08",
+        "input_repr": "['Signature1', b\"\\xa1\\x01'\", b'', b'payload-under-test']",
+        "provenance": "corroborated by cbor2 6.1.4",
+        "purpose": "RFC 9052 Section 4.4 Sig_structure preimage as this document builds it, with the EdDSA protected header"
+      }
+    ],
+    "version": "v0.1"
+  },
+  "reason": "Three encoder defects passed this vector set completely: a widened length argument on byte strings, arrays and maps at 24 octets and above (no row here reaches that length, and every ARP digest is a 32-octet byte string); a depth-dependent map ordering defect (no row here contains a map below the top level); and the builder's own blindness -- every expected byte string in this file was emitted by the implementation under test, so regenerating it against a broken encoder produced an identical file. Kept so the supersession is checkable rather than asserted. DO NOT USE.",
+  "superseded_by": "arp-deterministic-encoding-v0.2.json",
+  "superseded_on": "2026-08-18"
+}

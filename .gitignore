@@ -1,0 +1,64 @@
+# Build artifacts -- rendered from draft-hillier-scitt-arp.md
+draft-hillier-scitt-arp.txt
+draft-hillier-scitt-arp.html
+draft-hillier-scitt-arp.pdf
+
+# Keep the .xml: it is the structured source uploaded to the datatracker and
+# the only durable proof of which bytes were filed.
+# (do not ignore draft-hillier-scitt-arp.xml)
+
+.DS_Store
+*.swp
+__pycache__/
+
+*.pyc
+
+# Local bibliographic reference cache. Build aid only -- see seed-refcache.ps1.
+# bib.ietf.org's bibxml paths hang; this lets the build run without them.
+.refcache/
+
+# Versioned copies of the rendered text, made for idnits and for the
+# datatracker upload. Same reason as above: the .xml is the durable record.
+draft-hillier-scitt-arp-*.txt
+
+# Scratch. Files retired during a session land here for the human to remove.
+_to_delete/
+_send/
+
+# Pinned lint tooling, installed with
+#   npm install --prefix .tools @ietf-tools/idnits@3.1.0
+# and the idnits transcript verify-03.ps1 leaves there.
+.tools/
+
+# Working notes, handoffs, session records and internal reviews.
+# This repository is public. It carries the draft, the build and the
+# conformance evidence -- not the internal record of how they were made.
+ARP-03-BLOCKERS.md
+ARP-03-CONTINUATION-REVIEW.md
+ARP-03-FILING-STATUS.md
+ARP-03-adoption-plan.md
+ARP-HANDOFF.md
+ARP-HANDOFF-2.md
+SESSION-NOTE-*.md
+REBUTTAL-*.md
+REVISION-PLAN-*.md
+RECOVERY.md
+_notes-local/
+tracker.log
+
+# Built draft text is never tracked here. The IETF archive serves it and
+# README.md carries its digest. Added 2026-08-14 after _rt.txt was found tracked
+# in this public repository holding a whole revision of the draft: it evaded the
+# draft-hillier-scitt-arp-*.txt rule above purely because of its filename. An
+# ignore rule that can be defeated by naming a file something else is not an
+# ignore rule, so this catches the archive by location as well as by name.
+archive/**/*.txt
+_rt.txt
+# The internal audit and review record. Added 2026-09-08 after
+# CS-IPR-RECONCILIATION-ARP-04, marked CONFIDENTIAL and carrying the patent
+# estate position, was found tracked on the local filed/revision-04 branch of
+# this public repository. It was never pushed. Everything under _audit/ is the
+# internal record of how the draft was made -- adversarial passes, IESG-posture
+# reviews, IPR reconciliations -- and the policy above already says that record
+# does not belong here. This makes the policy enforceable rather than stated.
+_audit/

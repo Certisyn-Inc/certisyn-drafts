@@ -1,0 +1,246 @@
+
+======================================================================================================================
+ARP reconciliation harness v2.1 -- draft-hillier-scitt-arp
+======================================================================================================================
+Construction identifiers carried by this run (each digest commits to the
+declared canonicalization parameters, so compatibility is CHECKABLE):
+
+  arp-canonical-claim/1      id=7d90aa1cbee90ef9  draft-hillier-scitt-arp-01 S2 Canonical Claim (NFC applied)
+                             profile obliged by its own spec? NO -- S2 does not pin its member-sort code unit (that is the 19-vs-20)
+  arp-subject-digest/1       id=f23ecefd99c54182  draft-hillier-scitt-arp-01 App.D subject_digest = SHA-256(JCS(action))
+                             profile obliged by its own spec? NO -- App.D names JCS; -01 carries no reference to RFC 8785
+  ep-canonicalization/1      id=dc7df29214870f78  EMILIA EP-CANONICALIZATION-v1 (RFC 8785 JCS over I-JSON)
+                             profile obliged by its own spec? YES -- EP-CANONICALIZATION-v1 cites RFC 8785 normatively
+
+  Appendix D NAMES JCS and agrees with the EP profile 22/22. It does not
+  identify WHICH JCS: the string "8785" does not occur anywhere in -01,
+  and "JCS" occurs exactly once. The 22/22 therefore records that two
+  implementations independently CHOSE RFC 8785 -- not that -01 obliges it.
+  Section 2's Canonical Claim applies NFC and agrees 19-20/22; two of the
+  divergences are COLLISIONS. Section 2 does not pin its member-sort code
+  unit either, which is the 19-versus-20. The two constructions are not
+  interchangeable, and -01 does not say so -- hence the identifiers.
+
+  The obligation line above is reported, NOT hashed: the identifier
+  commits to canonicalization parameters, so identical bytes keep an
+  identical id. ALL THREE IDS ARE UNCHANGED FROM THE v1 RUN.
+
+  cryptography backend available: True
+
+======================================================================================================================
+CORPUS 1 -- EMILIA clean-room frozen-v1
+======================================================================================================================
+
+1a. EP-BOUNDARY-v1 -- 5 published vectors covering 4 of the 6 behaviours
+    in the proposed interop set; real Ed25519 verification
+    (authorization/attribution boundary; claim-matrix C-011/C-012)
+----------------------------------------------------------------------------------------------------------------------
+vector                                        ARP verdict     per-source leg -> divergence axis
+----------------------------------------------------------------------------------------------------------------------
+accept_pre_execution_receipt                  INDETERMINATE   artifact-class:match  signature:match  caid-binding:indeterminate[caid-binding-unverified]
+attribution_substituted_for_authorization     REFUSE          artifact-class:no-match[attribution-substituted-for-authorization]  signature:match  caid-binding:indeterminate[caid-binding-unverified]
+raw_claim_pass_through                        REFUSE          artifact-class:match  signature:no-match[signature-invalid]  raw-claim:no-match[raw-claim-not-covered-by-signature]
+same_party_evidence_presented_as_independent  REFUSE          artifact-class:match  signature:no-match[signature-invalid]  independence:no-match[agent-impersonation-suspected]  caid-binding:indeterminate[caid-binding-unverified]
+policy_decision_presented_as_human_authorizatiREFUSE          artifact-class:no-match[machine-decision-not-human-authorization]  signature:match  caid-binding:indeterminate[caid-binding-unverified]
+
+1b. EP-RECEIPT-v1 (receipts.v1.json) -- real Ed25519 over JCS(payload)
+----------------------------------------------------------------------------------------------------------------------
+vector                                        ARP verdict     per-source leg -> divergence axis
+----------------------------------------------------------------------------------------------------------------------
+accept_minimal                                APPROVE         artifact-class:match  signature:match
+accept_nested_context                         APPROVE         artifact-class:match  signature:match
+accept_key_order_independent                  APPROVE         artifact-class:match  signature:match
+reject_legacy_v1_anchor_by_default            REFUSE          artifact-class:match  signature:match  anchor:no-match[version-replay]
+accept_with_merkle_anchor_v2                  APPROVE         artifact-class:match  signature:match  anchor:match
+reject_v2_unbound_leaf                        REFUSE          artifact-class:match  signature:match  anchor:no-match[anchor-leaf-not-bound-to-payload]
+reject_unsupported_version                    REFUSE          version-gate:no-match[version-replay]  artifact-class:match  signature:match
+reject_missing_signature                      REFUSE          artifact-class:match  signature:no-match[signature-malformed]
+reject_tampered_payload                       REFUSE          artifact-class:match  signature:no-match[signature-invalid]
+reject_tampered_nested_param                  REFUSE          artifact-class:match  signature:no-match[signature-invalid]
+reject_wrong_key                              REFUSE          artifact-class:match  signature:no-match[signature-invalid]
+reject_malformed_signature                    REFUSE          artifact-class:match  signature:no-match[signature-malformed]
+reject_tampered_anchor                        REFUSE          artifact-class:match  signature:match  anchor:no-match[version-replay]
+
+1c. EP-CANONICALIZATION-v1 -- ARP-01's two constructions measured against
+    the pinned EP digests. Appendix D is the cross-capsule correlation key;
+    Section 2 is the ledger index. They are NOT interchangeable.
+----------------------------------------------------------------------------------------------------------------------
+    vectors with a pinned digest and parseable input : 22
+    App.D  subject_digest = SHA-256(JCS(action))    agrees: 22/22
+    S2     Canonical Claim, sort = UTF-16 unit      agrees: 20/22
+    S2     Canonical Claim, sort = code point       agrees: 19/22
+
+    Appendix D interoperates exactly. Section 2 is a DIFFERENT
+    construction (it applies NFC) and must never be substituted for it;
+    two of its divergences below are collisions, not just other bytes.
+    Its member sort is also unpinned -- that is the 19 vs 20 difference.
+
+    Section 2 (code-point sort) diverges from EP on 3 vector(s):
+----------------------------------------------------------------------------------------------------------------------
+    vector                                      why
+----------------------------------------------------------------------------------------------------------------------
+    accept_nfd_decomposed                       NFD spelling of the same text (e + combining U+030  [both readings]
+    accept_angstrom_sign_not_normalized         U+212B ANGSTROM SIGN is NOT NFC-normalized to U+00  [both readings]
+    accept_astral_key_utf16_sort_order          member sort is by UTF-16 code units: U+1F600 (D83D
+
+1c-bis. EP-CANONICALIZATION-v1 strict-parse gate -- the 13 reject_*
+    vectors. NEW IN v2: v1 skipped these entirely (the suite is in the
+    skip set, and they carry no pinned digest, so the construction
+    comparison returned before json.loads). v2 implements the gate the
+    suite specifies in its own profile field: duplicate member names
+    compared after escape decoding, unpaired surrogate escapes, nesting
+    deeper than 64, and the EP I-JSON scalar predicate.
+----------------------------------------------------------------------------------------------------------------------
+    vector                                      ARP verdict   cause computed here
+----------------------------------------------------------------------------------------------------------------------
+    reject_duplicate_key_literal                REFUSE        duplicate-member-name
+    reject_duplicate_key_escape_alias           REFUSE        duplicate-member-name
+    reject_duplicate_key_nested                 REFUSE        duplicate-member-name
+    reject_duplicate_key_non_bmp_alias          REFUSE        duplicate-member-name
+    reject_lone_high_surrogate                  REFUSE        unpaired-surrogate-in-string
+    reject_lone_low_surrogate                   REFUSE        unpaired-surrogate-in-string
+    reject_reversed_surrogate_pair              REFUSE        unpaired-surrogate-in-string
+    reject_high_surrogate_then_bmp_escape       REFUSE        unpaired-surrogate-in-string
+    reject_lone_surrogate_in_member_name        REFUSE        unpaired-surrogate-in-member-name
+    reject_unsafe_integer_2_53                  REFUSE        integer-outside-safe-range
+    reject_unsafe_large_exponent                REFUSE        integer-outside-safe-range
+    reject_non_integer_real                     REFUSE        non-integer-real
+    reject_nested_depth_over_limit              REFUSE        nesting-depth-exceeded
+
+    13/13 reject_* vectors refused, each with a cause this harness
+    computed rather than read; 22/22 accept_* vectors passed the gate.
+    Two-sided: 35/35 agree with the suite's own expectation.
+
+1d. Remaining EMILIA suites -- EXPECTATION-DERIVED legs.
+    This harness does not implement WebAuthn, RFC 3161, Merkle inclusion
+    or TSA renewal-chain verification, so these legs consume the suite's
+    own expected verdict. They are reported so the axis vocabulary can be
+    aligned; they are NOT evidence that ARP verified anything.
+----------------------------------------------------------------------------------------------------------------------
+    suites: 13   cases: 111
+    dispositions: INDETERMINATE=32  REFUSE=79
+    distinct axes emitted: 20 (19 substantive divergence axes + 1 provenance placeholder)
+    every reject_* id routed through this path mapped to a named axis.
+    Decomposition of the 95 reject_* occurrences (94 distinct --
+    reject_unpinned_tsa appears in two of the 16 suites):
+      73 routed through this map (72 distinct)
+       9 receipts.v1.json, decided by the EP-RECEIPT reconciler
+      13 canonicalization.v1.json, decided by the v2 strict-parse gate
+    v1 exercised 0 of those 13 while its banner said otherwise. Fixed.
+
+======================================================================================================================
+CORPUS 2 -- Noa (NordenSoft/noa), draft-noa-scitt-ai-agent-receipt-00
+======================================================================================================================
+
+Real verification: chain.hash recomputed over JCS(receipt minus chain.hash,
+minus sig.value); Ed25519 over b"NOA-Receipt-v0.1-sig:" + SHA-256(that).
+----------------------------------------------------------------------------------------------------------------------
+file:receipt                                  ARP verdict     per-source leg -> divergence axis
+----------------------------------------------------------------------------------------------------------------------
+valid-chain.json:00000000000A                 REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+valid-chain.json:00000000000B                 INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+valid-chain.json:00000000000C                 INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+attack/cross-chain-splice.json:00000000000A   REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/cross-chain-splice.json:ther_genesis   REFUSE          content-hash:match  signature:match  chain-scope:no-match[chain-scope-mismatch]  chain-link:match  chain-seq:no-match[chain-sequence-duplicate]  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/cross-chain-splice.json:<checkpoint>   REFUSE          checkpoint-signer:match  checkpoint-scope:no-match[checkpoint-scope-mismatch]
+attack/dup-seq.json:00000000000A              REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/dup-seq.json:00000000000B              INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/dup-seq.json:00000000000C              REFUSE          content-hash:no-match[artifact-tampered]  signature:no-match[signature-invalid]  chain-link:match  chain-seq:no-match[chain-sequence-duplicate]  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]
+attack/dup-seq.json:<checkpoint>              REFUSE          checkpoint-signer:match  checkpoint-scope:match  checkpoint-head:no-match[chain-head-truncated]
+attack/forged-checkpoint-chain.json:0000000000REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/forged-checkpoint-chain.json:0000000000INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/forged-checkpoint-chain.json:<checkpoinREFUSE          checkpoint-signer:match  checkpoint-scope:match  checkpoint-head:no-match[chain-head-truncated]
+attack/forged-checkpoint-chain.json:<companionREFUSE          companion-cp-signer:no-match[checkpoint-signer-untrusted]  companion-cp-scope:match  companion-cp-head:match
+attack/forged-checkpoint-cp.json:<checkpoint> REFUSE          checkpoint-signer:no-match[checkpoint-signer-untrusted]
+attack/forged-genesis.json:00000000000A       REFUSE          content-hash:match  signature:match  chain-link:no-match[chain-link-broken]  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/forged-genesis.json:00000000000B       REFUSE          content-hash:match  signature:match  chain-link:no-match[chain-link-broken]  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/forged-genesis.json:00000000000C       INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+attack/head-truncated.json:00000000000B       REFUSE          content-hash:match  signature:match  chain-link:no-match[chain-link-broken]  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/head-truncated.json:00000000000C       INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+attack/key-swap-resigned.json:00000000000A    REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/key-swap-resigned.json:00000000000B    INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/key-swap-resigned.json:00000000000C    REFUSE          content-hash:match  signature:no-match[agent-principal-unverifiable]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]
+attack/key-swap-resigned.json:<checkpoint>    REFUSE          checkpoint-signer:match  checkpoint-scope:match  checkpoint-head:no-match[chain-head-divergent]
+attack/key-swap.json:00000000000A             REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/key-swap.json:00000000000B             INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/key-swap.json:00000000000C             REFUSE          content-hash:no-match[artifact-tampered]  signature:no-match[agent-principal-unverifiable]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]
+attack/key-swap.json:<checkpoint>             REFUSE          checkpoint-signer:match  checkpoint-scope:match  checkpoint-head:no-match[chain-head-divergent]
+attack/relinked.json:00000000000A             REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/relinked.json:00000000000B             INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/relinked.json:00000000000C             REFUSE          content-hash:match  signature:match  chain-link:no-match[chain-link-broken]  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+attack/relinked.json:<checkpoint>             REFUSE          checkpoint-signer:match  checkpoint-scope:match  checkpoint-head:no-match[chain-head-divergent]
+attack/seq-gap.json:00000000000A              REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/seq-gap.json:00000000000C              REFUSE          content-hash:match  signature:match  chain-link:no-match[chain-link-broken]  chain-seq:no-match[chain-sequence-gap]  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+attack/tail-truncated.json:00000000000A       REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/tail-truncated.json:00000000000B       INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+attack/tail-truncated.json:<checkpoint>       REFUSE          checkpoint-signer:match  checkpoint-scope:match  checkpoint-head:no-match[chain-head-truncated]
+attack/tampered-content.json:00000000000A     REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/tampered-content.json:00000000000B     REFUSE          content-hash:no-match[artifact-tampered]  signature:no-match[signature-invalid]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match
+attack/tampered-content.json:00000000000C     INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+attack/unknown-kid.json:00000000000A          REFUSE          content-hash:match  signature:no-match[agent-principal-unverifiable]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/unknown-kid.json:00000000000B          REFUSE          content-hash:match  signature:no-match[agent-principal-unverifiable]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match
+attack/unknown-kid.json:00000000000C          REFUSE          content-hash:match  signature:no-match[agent-principal-unverifiable]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]
+attack/unknown-kid.json:<checkpoint>          REFUSE          checkpoint-signer:match  checkpoint-scope:match  checkpoint-head:no-match[chain-head-divergent]
+attack/wrong-signature.json:00000000000A      REFUSE          content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+attack/wrong-signature.json:00000000000B      REFUSE          content-hash:match  signature:no-match[signature-malformed]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match
+attack/wrong-signature.json:00000000000C      INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+malformed/deep-nest.json:<non-object>         REFUSE          shape:no-match[canonicalization-gate-failed]
+malformed/duplicate-key.json:y                REFUSE          shape:no-match[canonicalization-gate-failed]
+malformed/float-number.json:?                 REFUSE          shape:no-match[canonicalization-gate-failed]
+malformed/lone-high-surrogate.json:<non-objectREFUSE          shape:no-match[canonicalization-gate-failed]
+malformed/lone-low-surrogate.json:<non-object>REFUSE          shape:no-match[canonicalization-gate-failed]
+malformed/pii-smuggle.json:00000000000A       REFUSE          content-hash:no-match[artifact-tampered]  signature:no-match[signature-invalid]  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:no-match[agent-credential-absent]
+malformed/pii-smuggle.json:00000000000B       INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:match  outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+malformed/pii-smuggle.json:00000000000C       INDETERMINATE   content-hash:match  signature:match  chain-link:match  caid-binding:indeterminate[caid-binding-unverified]  authorization:indeterminate[human-authorization-unproven]  outcome:indeterminate[outcome-reported-only]
+malformed/proto-pollution.json:?              REFUSE          shape:no-match[canonicalization-gate-failed]
+malformed/reversed-surrogate-pair.json:<non-obREFUSE          shape:no-match[canonicalization-gate-failed]
+malformed/trailing-garbage.json               REFUSE          parse:no-match[canonicalization-gate-failed]
+
+Per-file attack detection (integrity axes only; the authorization leg is
+excluded because the genesis receipt is DEFERRED in every chain, valid or not):
+----------------------------------------------------------------------------------------------------------------------
+  attack/cross-chain-splice.json              DETECTED      chain-scope-mismatch, chain-sequence-duplicate, checkpoint-scope-mismatch
+  attack/dup-seq.json                         DETECTED      artifact-tampered, chain-head-truncated, chain-sequence-duplicate, signature-invalid
+  attack/forged-checkpoint-chain.json         DETECTED      chain-head-truncated, checkpoint-signer-untrusted
+  attack/forged-checkpoint-cp.json            DETECTED      checkpoint-signer-untrusted
+  attack/forged-genesis.json                  DETECTED      chain-link-broken
+  attack/head-truncated.json                  DETECTED      chain-link-broken
+  attack/key-swap-resigned.json               DETECTED      agent-principal-unverifiable, chain-head-divergent
+  attack/key-swap.json                        DETECTED      agent-principal-unverifiable, artifact-tampered, chain-head-divergent
+  attack/relinked.json                        DETECTED      chain-head-divergent, chain-link-broken
+  attack/seq-gap.json                         DETECTED      chain-link-broken, chain-sequence-gap
+  attack/tail-truncated.json                  DETECTED      chain-head-truncated
+  attack/tampered-content.json                DETECTED      artifact-tampered, signature-invalid
+  attack/unknown-kid.json                     DETECTED      agent-principal-unverifiable, chain-head-divergent
+  attack/wrong-signature.json                 DETECTED      signature-malformed
+  malformed/deep-nest.json                    DETECTED      canonicalization-gate-failed
+  malformed/duplicate-key.json                DETECTED      canonicalization-gate-failed
+  malformed/float-number.json                 DETECTED      canonicalization-gate-failed
+  malformed/lone-high-surrogate.json          DETECTED      canonicalization-gate-failed
+  malformed/lone-low-surrogate.json           DETECTED      canonicalization-gate-failed
+  malformed/pii-smuggle.json                  DETECTED      artifact-tampered, signature-invalid
+  malformed/proto-pollution.json              DETECTED      canonicalization-gate-failed
+  malformed/reversed-surrogate-pair.json      DETECTED      canonicalization-gate-failed
+  malformed/trailing-garbage.json             DETECTED      canonicalization-gate-failed
+
+  23/23 adversarial files produced at least one
+  integrity-class divergence axis.
+
+======================================================================================================================
+SELF-CHECK
+======================================================================================================================
+  EP-BOUNDARY: 4/4 negative vectors refused or held; 0 collapsed to a single 'valid'.
+  EP-RECEIPT: 13 vectors, 9 negative, 0 wrongly approved.
+  No case APPROVEd while carrying an unproven binding (no silent upgrade).
+  Construction divergence: Canonical Claim vs EP JCS disagree on 3/22 (code-point sort) or 2/22 (UTF-16 sort) pinned vectors.
+  v2 strict-parse gate: 35/35 agree with the suite's expectation (two-sided), and every reject_* cause matches what its vector is named for (v1 exercised 0 of these).
+  Axis closure: all 34 axes emitted are declared HARD or SOFT. compose() fails CLOSED on any that is not (v1 failed open).
+  outcome-reported-only: emitted on 18 leg(s), every one held at indeterminate; caused 0 refusals (4 sit on rows refused for other reasons).
+  physical-completion-unproven: emitted on 10 leg(s), every one held at indeterminate; caused 0 refusals (2 sit on rows refused for other reasons).
+  Detection closure: 23/23 adversarial files produced at least one integrity-class axis.
+  Predicate nesting: physical-completion-unproven (10 rows) is a strict subset of outcome-reported-only (18 rows).
+  Companion-checkpoint pairs evaluated: 1 (v1 evaluated 0 and scored the chain half alone).
+  Head axes: 7 emitted, each from an actual headHash comparison against the recomputed chain head (v1 compared sequence numbers only and never read headHash).
+
+  SELF-CHECK: PASS
+  machine-readable result written to runs/arp_run_v21.json

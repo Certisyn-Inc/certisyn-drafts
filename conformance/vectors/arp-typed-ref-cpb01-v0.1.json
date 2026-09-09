@@ -1,0 +1,329 @@
+{
+  "suite": "ARP contribution to the CPB typed-reference conformance vectors",
+  "target": "draft-mih-sokolov-scitt-payload-binding-01",
+  "version": "v0.1",
+  "generated_by": "conformance/runners/build_typed_ref_vectors.py",
+  "generated_from": {
+    "cpb_reference_library": "cpb.canonicalize (canonical_digest, jcs, normalize). The builder does not import cpb.typed_ref; that is used by the runner.",
+    "cpb_lib_sha256": {
+      "__init__.py": "e44115cad35b963dc362eaba18429090cc9579ba899a781ef3e9f40fac59eda8",
+      "canonicalize.py": "4a536c0aef64077f3cb9b0ba73930ceb417ef39c732a0a942536aad93a290a43",
+      "derive_id.py": "8df98c045b6f86aac84176b899e2fc0c91bc00112cfd6d2e22c7613ccf1c1bab",
+      "typed_ref.py": "b88323dc1ee0984444770e6d2a0bc39aa52937babcc47f48ac1d8970eba8c5c5"
+    },
+    "caid_reference_issuer_sha256": "d5edfdef62093eadffba06d7846f31f20691f7b658f14035bd95250280b24651",
+    "caid_registry_sha256": "8352b1d5e33d608999d6e285cf67fa3bdd7ac5b818d54700193b09ad49daf9d6",
+    "arp_harness": "conformance/harness/arp_reconcile.py",
+    "arp_harness_sha256": "00b10162e7bba48b9fc300cf07be124e9b454d86a8b9453aa716ce4a2b6e03bf",
+    "note": "Every side is pinned by content hash, not just ARP's, so the whole provenance is checkable."
+  },
+  "standing_rules": [
+    "Two-sided. One PASS control; four MUST-FAIL. A negatives-only set detects a verifier that is too loose and structurally cannot detect one that is too strict. Stated precisely, because the bare count flatters the coverage: against the CPB reference library the set is one PASS and TWO exercised MUST-FAILs (02, 03). 04 is structurally unreachable by that library and says so, and 05's requirement is ARP's own, not CPB-01's.",
+    "Every vector declares its finding_class, and a specification question, a revision-uplift gap and an implementation defect are three different things reported three different ways.",
+    "Preconditions are stated in the vector, not assumed by the runner. Every registry entry a runner needs is a field of the vector that needs it, so a third party can check it without reading the runner.",
+    "One vector fails on the author's own side. A contributed set that only finds defects in the recipient's code has not been run against the contributor.",
+    "Every finding is classed before it is reported, so a specification question, a revision-uplift gap and an implementation defect are never conflated."
+  ],
+  "vectors": [
+    {
+      "id": "typed-ref-cpb01-01",
+      "description": "PASS: conformance baseline for CPB-01 \u00a77. The registry entry, the carried digest_alg, the carried representation and the recomputed digest are all mutually consistent. A verifier MUST report this reference as verified. Present so the set is two-sided: four MUST-FAIL vectors can detect a verifier that is too loose and structurally cannot detect one that is too strict.",
+      "spec_ref": "draft-mih-sokolov-scitt-payload-binding-01 \u00a77, \u00a77.1",
+      "finding_class": "conformance_baseline",
+      "must_fail": false,
+      "artifact_type_registry_entry": {
+        "name": "authorization-doc",
+        "digest_context": "jcs-n; exclusion set {doc_id}; 64-char lowercase hex",
+        "algorithm": "jcs-n",
+        "exclusion_set": [
+          "doc_id"
+        ],
+        "representation": "bare_hex"
+      },
+      "cited_artifact": {
+        "payload": {
+          "doc_id": null,
+          "subject": "WS-42",
+          "scope": "temperature-write",
+          "issued_at": "2026-07-24T00:00:00Z"
+        },
+        "pre_image": "{\"issued_at\":\"2026-07-24T00:00:00Z\",\"scope\":\"temperature-write\",\"subject\":\"WS-42\"}",
+        "derived_id": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      },
+      "typed_reference": {
+        "type": "authorization-doc",
+        "digest_alg": "SHA-256",
+        "digest": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      },
+      "expected": {
+        "verified": true,
+        "recomputed_digest": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      }
+    },
+    {
+      "id": "typed-ref-cpb01-02",
+      "description": "MUST-FAIL: digest_alg is inconsistent with the digest context registered for the artifact type. \u00a713.1 registers jcs-n with SHA-256. The reference carries digest_alg 'SHA-512' while carrying the correct SHA-256 derived identifier, so the digest comparison at step 4 succeeds and the reference still MUST NOT be reported as verified. The check that fails is the one that has no effect on the bytes, which is why nothing catches it by accident.",
+      "spec_ref": "draft-mih-sokolov-scitt-payload-binding-01 \u00a77.1 ('It MUST confirm that digest_alg identifies a hash algorithm consistent with that context.'), \u00a713.1 (jcs-n: 'RFC 8785 JCS over a normalized JSON object (null, empty-array, and empty-object members removed bottom-up); SHA-256; lowercase hex'), and \u00a77 (the digest_alg row: 'The canonicalization context of the cited artifact is resolved from its artifact type's registry entry (Section 13.2), not from this field.')",
+      "finding_class": "revision_uplift_gap",
+      "revision_note": "The reference library declares its target in lib/cpb/typed_ref.py line 4: 'Reference: draft-mih-sokolov-scitt-payload-binding-00 \u00a76' -00 \u00a77.1 requires the verifier to confirm that the carried IDENTIFIER is consistent with the established context; it says nothing about digest_alg. The digest_alg sentence is new in -01. So the library is conformant to the revision it targets and this is not a defect in it. It is what a -01 uplift has to add.",
+      "must_fail": true,
+      "failure_reason": "digest_alg_inconsistent_with_registered_context",
+      "artifact_type_registry_entry": {
+        "name": "authorization-doc",
+        "digest_context": "jcs-n; exclusion set {doc_id}; 64-char lowercase hex",
+        "algorithm": "jcs-n",
+        "exclusion_set": [
+          "doc_id"
+        ],
+        "representation": "bare_hex",
+        "hash_algorithm_registered_by_algorithm_entry": "SHA-256"
+      },
+      "cited_artifact": {
+        "payload": {
+          "doc_id": null,
+          "subject": "WS-42",
+          "scope": "temperature-write",
+          "issued_at": "2026-07-24T00:00:00Z"
+        },
+        "pre_image": "{\"issued_at\":\"2026-07-24T00:00:00Z\",\"scope\":\"temperature-write\",\"subject\":\"WS-42\"}",
+        "derived_id": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      },
+      "typed_reference": {
+        "type": "authorization-doc",
+        "digest_alg": "SHA-512",
+        "digest": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      },
+      "expected": {
+        "verified": false,
+        "reason": "digest_alg_inconsistent_with_registered_context"
+      },
+      "note_second_form": "The same missing check admits an unregistered algorithm name entirely. Measured on the same code path: 'SHA-512', 'not-a-hash-algorithm', 'MD5' and the empty string are all accepted. Recorded here rather than as four more vectors because it is one missing check, not four."
+    },
+    {
+      "id": "typed-ref-cpb01-03",
+      "description": "SPECIFICATION QUESTION, carried as a MUST-FAIL so it is checkable rather than only arguable. \u00a74.1 lists three representations, one of which is a raw 32-byte octet sequence, and \u00a713.2's registration template requires an entry to declare 'the representation of the output'. So an artifact type may be registered with representation 'raw'. But \u00a77's field table types `digest` as a JSON string, and 32 arbitrary octets have no form as a JSON string. The draft is not inconsistent about this: \u00a74.1 permits a deterministic conversion ONLY WHERE the specification or the applicable payload profile expressly defines both the conversion and the resulting comparison representation. Note the modal -- \u00a74.1 conditions a permission and obliges nobody. The consequence of defining no conversion falls on the VERIFIER, at \u00a77.1: it MUST NOT report the reference as verified. So a registrant who registers 'raw' and defines nothing has violated nothing; their references simply never verify. The question is narrow and is about where that is discoverable. \u00a713.2's template asks for a representation and mentions neither \u00a74.1's condition nor \u00a77's string typing, so a registrant reading \u00a713.2 alone learns nothing about either.",
+      "spec_ref": "draft-mih-sokolov-scitt-payload-binding-01 \u00a74.1 (three representations, 'distinct and are not implicitly interchangeable'; 'A verifier MUST NOT silently coerce among representations'; 'A deterministic conversion MAY be applied only where this specification or the applicable payload profile expressly defines both the conversion and the resulting comparison representation.'), \u00a77 (field table: digest, type string), \u00a77.1 ('if a required deterministic conversion to a common comparison representation is not expressly defined, the verifier MUST NOT report the typed reference as verified'), \u00a713.2 (registration template)",
+      "finding_class": "specification_question",
+      "not_a_defect_note": "This is not reported against the reference library. Its verify_typed_ref takes `digest: str`, so raw octets cannot be handed to it at all, and its _check_representation applying the bare-hex test to the 'raw' branch is a consequence of that API shape rather than a misreading of the draft. The observation below records what the library does only so the question is grounded in something runnable.",
+      "must_fail": true,
+      "failure_reason": "registrable_representation_has_no_form_in_the_digest_field",
+      "artifact_type_registry_entry": {
+        "name": "authorization-doc-raw",
+        "digest_context": "jcs-n; exclusion set {doc_id}; 32 raw octets",
+        "algorithm": "jcs-n",
+        "exclusion_set": [
+          "doc_id"
+        ],
+        "representation": "raw"
+      },
+      "cited_artifact": {
+        "payload": {
+          "doc_id": null,
+          "subject": "WS-42",
+          "scope": "temperature-write",
+          "issued_at": "2026-07-24T00:00:00Z"
+        },
+        "pre_image": "{\"issued_at\":\"2026-07-24T00:00:00Z\",\"scope\":\"temperature-write\",\"subject\":\"WS-42\"}",
+        "derived_id_bare_hex": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      },
+      "typed_reference": {
+        "type": "authorization-doc-raw",
+        "digest_alg": "SHA-256",
+        "digest": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb",
+        "note": "This carries bare hex because there is nothing else it could carry. That is the question, not a workaround for it."
+      },
+      "expected": {
+        "verified": false,
+        "reason": "registrable_representation_has_no_form_in_the_digest_field"
+      },
+      "two_ways_to_close_it": [
+        {
+          "change": "\u00a713.2's registration template gains a line: an entry declaring a representation not expressible as a JSON string MUST also cite the section defining its conversion under \u00a74.1.",
+          "cost": "This is new normative behaviour on registrants, not a clarification. It moves the failure from verification time to registration time and makes an entry that is well-formed today non-conforming. That is the point of it, but it should be stated rather than sold as free."
+        },
+        {
+          "change": "\u00a77.1 or \u00a713.2 expressly defines the lowercase-hex transcription of the raw form as the common comparison representation, discharging \u00a74.1 centrally rather than per profile.",
+          "cost": "It makes 'raw' and 'bare_hex' operationally identical in the digest field, which arguably empties 'raw' of meaning as a distinct registrable representation for typed references. It also takes back a delegation \u00a74.1 appears to have made deliberately."
+        }
+      ],
+      "preference": "The first, on the reasoning that \u00a74.1's delegation to the payload profile looks deliberate and the second option reverses it. A preference, not a finding, and the cost above is real.",
+      "an_answer_this_vector_does_not_have": "\u00a74.1 and \u00a77 both locate the representation declaration in the PAYLOAD CLASS, while \u00a713.2's Digest Context separately lists 'the representation of the output'. This vector treats those as one declaration. If they are not -- if \u00a77's digest field carries the payload class's representation and not the registry entry's -- the question above is answered and the vector should be withdrawn. That reading is the author's to give."
+    },
+    {
+      "id": "typed-ref-cpb01-04",
+      "description": "MUST-FAIL: leaf constructed over the hex-string encoding of the derived identifier instead of over its raw bytes. \u00a76.1 states the rule in both directions and writes the wrong form out explicitly. No vector in the suite exercises it. The failure it describes is silent: a wrong leaf hashes cleanly and produces a well-formed inclusion proof that no correct log will accept.",
+      "spec_ref": "draft-mih-sokolov-scitt-payload-binding-01 \u00a76.1 ('the log leaf MUST be computed over the raw bytes of the derived identifier, not over its hex-string encoding')",
+      "finding_class": "suite_coverage_gap",
+      "revision_note": "\u00a76.1 is NOT new in -01. It appears verbatim in -00 at the same section number, with the same MUST and the same two code lines, and -00 Appendix C.1.2 carries the same rule for the GAR session block.",
+      "must_fail": true,
+      "failure_reason": "leaf_input_is_hex_encoding_not_raw_bytes",
+      "reachable_by_reference_library": false,
+      "reachability_note": "lib/cpb implements no leaf construction, so there is nothing in the reference library for this vector to accept or refuse. It is offered as coverage for implementations that key a log on the derived identifier, and it is checked here only against its own recorded bytes. A runner reporting it as a library pass or a library failure would be inventing a result.",
+      "derived_identifier": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb",
+      "correct_leaf_input": {
+        "rule": "leaf_input = bytes.fromhex(D)",
+        "length_bytes": 32,
+        "bytes_hex": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      },
+      "incorrect_leaf_input": {
+        "rule": "leaf_input = D.encode(\"utf-8\")",
+        "length_bytes": 64,
+        "bytes_hex": "30633833376430316661613431303663363333363766313939616639626661373239643139313766333664633931663964666562366465366563376336626462"
+      },
+      "vds_note": "\u00a76 states this profile is VDS-agnostic and imposes no VDS requirement, so CPB-01 does not say how leaf_input is hashed. \u00a76.1 constrains the INPUT only. The derivations below are recorded so the vector is byte-checkable by an implementer who has already chosen a VDS; they are illustrative and are NOT CPB-01 requirements. An implementation on a different VDS checks \u00a76.1 by comparing leaf_input, not these.",
+      "illustrative_derivations": {
+        "sha256_of_correct_leaf_input": "35d4a07c03e93e4f1975f4edda1ba185dcc2f37e7a677816c86d9cce9f30458c",
+        "sha256_of_incorrect_leaf_input": "0f1383e62400bb9f72073ea2fc973e57eae14cbe54611caf911cd6ce57c24e5d",
+        "rfc6962_leaf_hash_correct": "47558aa80ca9f9e08e31c315fd25aebca8504948b65250591d0891f3c1610430",
+        "rfc6962_leaf_hash_incorrect": "35258dc3ebb8640fae55e8a6efec10bf54d8d8a40d6145c4250c0885c9431fc5",
+        "rfc6962_note": "RFC 6962 \u00a72.1 prefixes a leaf with 0x00 before hashing (0x01 is the interior-node prefix). Shown for one concrete VDS because 'raw bytes' and 'hash of raw bytes' are themselves easy to conflate, which is the same class of error \u00a76.1 is about."
+      },
+      "expected": {
+        "verified": false,
+        "reason": "leaf_input_is_hex_encoding_not_raw_bytes",
+        "check": "A verifier constructing the leaf per \u00a76.1 produces correct_leaf_input. Any implementation producing incorrect_leaf_input fails this vector. The two are distinguishable by length alone, 32 against 64, which is the cheapest possible guard and worth writing down."
+      },
+      "prior_evidence": "GAR CT leaf 166 (Tom Sato, gar-core.ts fe18f24) already constructs the leaf as SHA-256 over bytes.fromhex(id) rather than over id.encode('utf-8'), and the vectors README files it under historical evidence, explicitly not a suite member. This vector turns that evidence into a test. The evidence remains Tom's and under his own digest context; nothing here relabels it."
+    },
+    {
+      "id": "typed-ref-cpb01-05",
+      "description": "FAILS ON THE CONTRIBUTOR'S SIDE, and is in this set for that reason. Five action records are all conforming instances of the registered CAID type payment.release.1, each one minted by the reference issuer rather than accepted by inspection. TWO of the five carry a CPB typed digest reference; the other three cite nothing at all, and that asymmetry is the finding. ARP's Appendix D subject_digest is SHA-256(JCS(action)) over the whole action, so it produces five identifiers -- and it already produces the second one at `memo`, a field the registry declares optional, in a record that cites nothing. Whatever is happening here, it is not about typed references. A contributed vector set that only finds defects in the recipient's code has not been run against the contributor.",
+      "spec_ref": "draft-hillier-scitt-arp-01 Appendix D (subject_digest = SHA-256(JCS(action))), against the CAID action-type registry entry for payment.release.1, which declares `memo` optional. draft-mih-sokolov-scitt-payload-binding-01 \u00a77 ('Additional fields MAY be present and MUST be ignored by verifiers that do not understand them.') is cited only for the fifth record, which is the one that exercises it.",
+      "finding_class": "contributor_side_defect",
+      "gap_owner": "draft-hillier-scitt-arp",
+      "must_fail": true,
+      "failure_reason": "arp_appendix_d_does_not_say_what_kind_of_identifier_it_defines",
+      "artifact_type_registry_entry": {
+        "name": "authorization-doc",
+        "digest_context": "jcs-n; exclusion set {doc_id}; 64-char lowercase hex",
+        "algorithm": "jcs-n",
+        "exclusion_set": [
+          "doc_id"
+        ],
+        "representation": "bare_hex"
+      },
+      "cited_artifact": {
+        "note": "cited by two of the five records only; see records[].cites_an_artifact",
+        "payload": {
+          "doc_id": null,
+          "subject": "WS-42",
+          "scope": "temperature-write",
+          "issued_at": "2026-07-24T00:00:00Z"
+        },
+        "pre_image": "{\"issued_at\":\"2026-07-24T00:00:00Z\",\"scope\":\"temperature-write\",\"subject\":\"WS-42\"}",
+        "derived_id": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+      },
+      "caid_conformance": {
+        "registry": "caid-action-types v1, updated 2026-07-20",
+        "registry_owner": "EMILIA Protocol, not ARP. Third-party input to this tree, read from the reader's own checkout at the pinned commit and listed as such in REPRODUCE.md \u00a76.",
+        "action_type": "payment.release.1",
+        "required_fields": [
+          "amount",
+          "currency",
+          "beneficiary_account",
+          "payment_instruction_id"
+        ],
+        "optional_fields": [
+          "memo"
+        ],
+        "every_action_object_here_was_minted_by_the_reference_issuer": true,
+        "note": "beneficiary_account is typed `digest` in the registry: sha256:<lowercase hex> of the normalized account identifier. The builder mints every object here through the reference issuer and stops if any is refused."
+      },
+      "the_observation": "draft-hillier-scitt-arp-01 Appendix D defines subject_digest = SHA-256(JCS(action)). That IS a statement of what the digest is: a content digest over the canonical JSON of the action. What it does not do is reconcile that construction with the role it simultaneously assigns it -- 'the capsules are bound to a common action through a shared subject digest', and 'each capsule is admitted to ARP as a Partial-Attestation source KEYED ON the shared subject digest'. A content digest must be injective over content: two actions differing in any byte must differ, or a receipt bound to one does not bind the other. A key must be stable under permitted variation: two producers reporting the same act, one of whom sends an optional field the other omits, must land on the same value. Those are contradictory and no single digest holds both. Note that the word 'correlation' does not appear in -01; the draft's term is subject_digest. -02 has to say which role the digest serves, and build the other.",
+      "is_this_property_stated_by_arp_01": false,
+      "records": [
+        {
+          "variant": "base",
+          "what_it_changes": "the four required material fields of payment.release.1 and nothing else. Cites no artifact",
+          "cites_an_artifact": false,
+          "action": {
+            "action_type": "payment.release.1",
+            "amount": "1250.00",
+            "currency": "USD",
+            "beneficiary_account": "sha256:56dd6d50306de30f7828376cf0a43848be82d5538bd44a02171ad85e752bcc95",
+            "payment_instruction_id": "pi-2026-0731-0007"
+          },
+          "caid": "caid:1:payment.release.1:jcs-sha256:LI_YX_VM7aQBFZv4WR9sDBD7boSnlcIe3q-PyqFc5Sg",
+          "arp_subject_digest": "2c8fd85ff54ceda401159bf8591f6c0c10fb6e84a795c21edeaf8fcaa15ce528"
+        },
+        {
+          "variant": "registered_optional_field_memo",
+          "what_it_changes": "adds `memo`, which the CAID registry declares an OPTIONAL FIELD of this exact action type. Cites no artifact -- which is the point: the identifier moves here, before any typed reference appears",
+          "cites_an_artifact": false,
+          "action": {
+            "action_type": "payment.release.1",
+            "amount": "1250.00",
+            "currency": "USD",
+            "beneficiary_account": "sha256:56dd6d50306de30f7828376cf0a43848be82d5538bd44a02171ad85e752bcc95",
+            "payment_instruction_id": "pi-2026-0731-0007",
+            "memo": "purchase order 4471"
+          },
+          "caid": "caid:1:payment.release.1:jcs-sha256:W_3kapXFjz9eZmvhcmCZTuw-7BYvnX0MYBqEXgpN8x4",
+          "arp_subject_digest": "5bfde46a95c58f3f5e666be17260994eec3eec162f9d7d0c601a845e0a4df31e"
+        },
+        {
+          "variant": "registered_optional_field_memo_empty_string",
+          "what_it_changes": "the same registered optional field carrying the empty string, which the issuer accepts and which changes the bytes. Cites no artifact",
+          "cites_an_artifact": false,
+          "action": {
+            "action_type": "payment.release.1",
+            "amount": "1250.00",
+            "currency": "USD",
+            "beneficiary_account": "sha256:56dd6d50306de30f7828376cf0a43848be82d5538bd44a02171ad85e752bcc95",
+            "payment_instruction_id": "pi-2026-0731-0007",
+            "memo": ""
+          },
+          "caid": "caid:1:payment.release.1:jcs-sha256:aN-_SfmSkzCQ27xgR5AWloeRxgyPBvJY2h855Qe-Ca4",
+          "arp_subject_digest": "68dfbf49f992933090dbbc60479016968791c60c8f06f258da1f39e507be09ae"
+        },
+        {
+          "variant": "typed_digest_reference_added",
+          "what_it_changes": "adds a CPB typed digest reference to the authorising document. The issuer accepts it; it is not a registered field of the type",
+          "cites_an_artifact": true,
+          "action": {
+            "action_type": "payment.release.1",
+            "amount": "1250.00",
+            "currency": "USD",
+            "beneficiary_account": "sha256:56dd6d50306de30f7828376cf0a43848be82d5538bd44a02171ad85e752bcc95",
+            "payment_instruction_id": "pi-2026-0731-0007",
+            "authorization": {
+              "type": "authorization-doc",
+              "digest_alg": "SHA-256",
+              "digest": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb"
+            }
+          },
+          "caid": "caid:1:payment.release.1:jcs-sha256:v3kOGzpZVYILGiMUUrVM5jrfsdv4WDkmO2yZl-_yqfI",
+          "arp_subject_digest": "bf790e1b3a5955820b1a231452b54ce63adfb1dbf85839263b6c9997eff2a9f2"
+        },
+        {
+          "variant": "optional_member_inside_the_typed_reference",
+          "what_it_changes": "the same typed reference carrying an additional member, which CPB \u00a77 permits and requires a verifier that does not understand it to ignore. This is the only record that exercises \u00a77's ignore rule",
+          "cites_an_artifact": true,
+          "action": {
+            "action_type": "payment.release.1",
+            "amount": "1250.00",
+            "currency": "USD",
+            "beneficiary_account": "sha256:56dd6d50306de30f7828376cf0a43848be82d5538bd44a02171ad85e752bcc95",
+            "payment_instruction_id": "pi-2026-0731-0007",
+            "authorization": {
+              "type": "authorization-doc",
+              "digest_alg": "SHA-256",
+              "digest": "0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb",
+              "note": "purchase order 4471"
+            }
+          },
+          "caid": "caid:1:payment.release.1:jcs-sha256:PscygxebLtbnbAB1kxebC8fpHqG_8po_YoWLqU2lHdw",
+          "arp_subject_digest": "3ec73283179b2ed6e76c007593179b0bc7e91ea1bff29a3f62858ba94da51ddc"
+        }
+      ],
+      "what_this_vector_does_not_claim": {
+        "not_a_cpb_defect": "CPB verifies the typed reference in both records that carry one and is right to; the differing members are outside the cited artifact's digest context. \u00a77's ignore rule is exercised by exactly one of the five records, and it works.",
+        "not_a_caid_defect": "Five distinct CAIDs from five distinct action objects is correct and required. CAID is a content identifier and a collision across a memo change would mean a receipt bound to a CAID did not bind the memo.",
+        "and_the_caid_count_is_not_a_second_measurement": "MEASURED: caid.canonicalize(action) is byte-identical to arp.jcs_bytes(action), and the CAID digest field equals 'sha256:' + the ARP subject digest, for every record here. The two counts are one digest in two encodings, and must not be reported side by side as corroboration: agreement between two views of one construction is code identity, not independent measurement."
+      },
+      "why_arp_does_not_simply_adopt_an_exclusion_set": "ARP implements no exclusion set deliberately: a correlation digest that omitted fields could correlate two materially different actions. The reading-B counterexample above is that failure, produced on purpose.",
+      "who_does_not_move": "CPB. Narrowing \u00a77's MUST-ignore so it did not extend to a typed reference in a digest-bearing position would have \u00a78 against it: a payload profile MUST NOT impose requirements on the internal structure or field values of another payload profile.",
+      "one_open_question_for_the_arp_side": "REVISION-PLAN-02 A4 says a CAID or signed reference travels as a separate field and is never conflated with the digest. Two of the five records here nest a typed digest reference inside the action, so it enters subject_digest. Whether A4 already forbids that placement, or speaks only to CAIDs and signed references and not to citations, is not settled -- and the three records that nest nothing carry the observation regardless."
+    }
+  ]
+}

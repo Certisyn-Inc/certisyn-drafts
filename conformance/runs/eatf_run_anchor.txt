@@ -1,0 +1,58 @@
+
+====================================================================================================
+ARP reconcile legs over the Tyche EATF / AEP envelope corpus  (v2)
+====================================================================================================
+Question (A. Sokolov, 27 Jul): which envelope-integrity negatives are
+visible at the reconcile layer at all?
+
+  cryptography backend : True
+  trust anchors loaded : 1  from <corpus>/keys
+
+----------------------------------------------------------------------------------------------------
+VALID  (corpus expects verify=true)
+----------------------------------------------------------------------------------------------------
+  mcp-tools-call-denied-policyREFUSE         completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:match  issuer-trust:no-match[agent-principal-unverifiable]  receipt-binding:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+  mcp-tools-call-valid        REFUSE         completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:match  issuer-trust:no-match[agent-principal-unverifiable]  receipt-binding:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+  minimal-roundtrip           INDETERMINATE  completeness:match  content-binding:match  metadata-binding:match  signature:match  issuer-trust:match  receipt-binding:match  receipt-signature:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+  valid-overt-profile         REFUSE         completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:match  issuer-trust:no-match[agent-principal-unverifiable]  receipt-binding:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+
+----------------------------------------------------------------------------------------------------
+INVALID  (corpus expects verify=false)
+----------------------------------------------------------------------------------------------------
+  bad-signature-classical     REFUSE         completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:no-match[signature-invalid]  issuer-trust:match  receipt-binding:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+  bad-timestamp               INDETERMINATE  completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:match  issuer-trust:match  receipt-binding:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+  missing-canonical-bin       REFUSE         completeness:no-match[capsule-component-absent]
+  tampered-canonical-bin      REFUSE         completeness:match  content-binding:no-match[artifact-tampered]  metadata-binding:no-match[artifact-tampered]  signature:no-match[signature-invalid]  issuer-trust:match  receipt-binding:indeterminate[leg-not-independently-verified]  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+  tampered-metadata           REFUSE         completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:match  issuer-trust:match  receipt-binding:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:no-match[profile-cross-check-divergent]  caid-binding:indeterminate[caid-binding-unverified]
+  tampered-overt-receipt      REFUSE         completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:match  issuer-trust:no-match[agent-principal-unverifiable]  receipt-binding:no-match[digest-mismatch]  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+  untrusted-issuer            REFUSE         completeness:match  content-binding:match  metadata-binding:indeterminate[metadata-not-signature-bound]  signature:no-match[signature-invalid]  issuer-trust:no-match[agent-principal-unverifiable]  receipt-binding:match  timestamp:indeterminate[leg-not-independently-verified]  profile-cross-check:match  caid-binding:indeterminate[caid-binding-unverified]
+
+====================================================================================================
+LAYERING RESULT
+====================================================================================================
+  valid packages   : 4   falsely refused: 3
+  invalid packages : 7
+    SEEN    : 6  ['bad-signature-classical', 'missing-canonical-bin', 'tampered-canonical-bin', 'tampered-metadata', 'tampered-overt-receipt', 'untrusted-issuer']
+    HELD    : 1  ['bad-timestamp']
+    BENEATH : 0  []
+
+  Leg information content across the corpus:
+    completeness          2 distinct value(s)
+    content-binding       2 distinct value(s)
+    metadata-binding      3 distinct value(s)
+    signature             2 distinct value(s)
+    issuer-trust          2 distinct value(s)
+    receipt-binding       3 distinct value(s)
+    timestamp             1 distinct value(s)   <- constant, carries no information
+    profile-cross-check   2 distinct value(s)
+    caid-binding          1 distinct value(s)   <- constant, carries no information
+    receipt-signature     1 distinct value(s)   <- constant, carries no information
+
+  Signature encodings observed:
+    digestinfo-no-null    4  ['mcp-tools-call-denied-policy', 'mcp-tools-call-valid', 'valid-overt-profile', 'tampered-overt-receipt']
+    strict-pkcs1v15       3  ['minimal-roundtrip', 'bad-timestamp', 'tampered-metadata']
+
+  metadata.json OUTSIDE the signed surface: 9 package(s)
+    ['mcp-tools-call-denied-policy', 'mcp-tools-call-valid', 'valid-overt-profile', 'bad-signature-classical', 'bad-timestamp', 'tampered-canonical-bin', 'tampered-metadata', 'tampered-overt-receipt', 'untrusted-issuer']
+
+  machine-readable: runs/eatf_run_anchor.json

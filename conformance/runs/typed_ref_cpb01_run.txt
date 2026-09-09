@@ -1,0 +1,108 @@
+====================================================================================================
+CPB-01 typed-reference vectors -- ARP contribution
+  target   draft-mih-sokolov-scitt-payload-binding-01
+  vectors  vectors/arp-typed-ref-cpb01-v0.1.json  sha256 88153dd1c4b62cfd...
+  cpb lib  cpb/lib
+  5 vectors
+====================================================================================================
+
+typed-ref-cpb01-01   [conformance_baseline]   PASS
+    PASS: conformance baseline for CPB-01 §7. The registry entry, the carried digest_alg, the
+    carried representation and the recomputed digest are all mutually consistent. A verifier
+    MUST report this reference as verified. Present so the set is two-sided: four MUST-FAIL
+    vectors can detect a verifier that is too loose and structurally cannot detect one that is
+    too strict.
+    spec        draft-mih-sokolov-scitt-payload-binding-01 §7, §7.1
+    requires    verified
+    observed    verified
+        recomputed 0c837d01faa4106c...
+    prediction  held
+
+typed-ref-cpb01-02   [revision_uplift_gap]   MUST-FAIL
+    MUST-FAIL: digest_alg is inconsistent with the digest context registered for the artifact
+    type. §13.1 registers jcs-n with SHA-256. The reference carries digest_alg 'SHA-512' while
+    carrying the correct SHA-256 derived identifier, so the digest comparison at step 4 succeeds
+    and the reference still MUST NOT be reported as verified. The check that fails is the one
+    that has no effect on the bytes, which is why nothing catches it by accident.
+    spec        draft-mih-sokolov-scitt-payload-binding-01 §7.1 ('It MUST confirm that digest_alg identi
+    requires    MUST NOT be verified
+    observed    verified
+        library accepted digest_alg 'SHA-512' against a jcs-n (SHA-256) registry entry. The
+        field is bound into TypedRef and never read again, so it constrains nothing.
+    prediction  held
+
+typed-ref-cpb01-03   [specification_question]   MUST-FAIL
+    SPECIFICATION QUESTION, carried as a MUST-FAIL so it is checkable rather than only arguable.
+    §4.1 lists three representations, one of which is a raw 32-byte octet sequence, and §13.2's
+    registration template requires an entry to declare 'the representation of the output'. So an
+    artifact type may be registered with representation 'raw'. But §7's field table types
+    `digest` as a JSON string, and 32 arbitrary octets have no form as a JSON string. The draft
+    is not inconsistent about this: §4.1 permits a deterministic conversion ONLY WHERE the
+    specification or the applicable payload profile expressly defines both the conversion and
+    the resulting comparison representation. Note the modal -- §4.1 conditions a permission and
+    obliges nobody. The consequence of defining no conversion falls on the VERIFIER, at §7.1: it
+    MUST NOT report the reference as verified. So a registrant who registers 'raw' and defines
+    nothing has violated nothing; their references simply never verify. The question is narrow
+    and is about where that is discoverable. §13.2's template asks for a representation and
+    mentions neither §4.1's condition nor §7's string typing, so a registrant reading §13.2
+    alone learns nothing about either.
+    spec        draft-mih-sokolov-scitt-payload-binding-01 §4.1 (three representations, 'distinct and ar
+    requires    MUST NOT be verified
+    observed    verified
+        library accepted a 64-char hex string under a registry entry declaring representation
+        'raw'. Its _check_representation applies the bare-hex test to the 'raw' branch, which
+        follows from verify_typed_ref taking digest as a str -- raw octets cannot be handed to
+        it at all. Recorded to ground the question, not as a defect against the library.
+    prediction  held
+
+typed-ref-cpb01-04   [suite_coverage_gap]   MUST-FAIL
+    MUST-FAIL: leaf constructed over the hex-string encoding of the derived identifier instead
+    of over its raw bytes. §6.1 states the rule in both directions and writes the wrong form out
+    explicitly. No vector in the suite exercises it. The failure it describes is silent: a wrong
+    leaf hashes cleanly and produces a well-formed inclusion proof that no correct log will
+    accept.
+    spec        draft-mih-sokolov-scitt-payload-binding-01 §6.1 ('the log leaf MUST be computed over the
+    requires    MUST NOT be verified
+    observed    NOT APPLICABLE -- the reference library cannot reach this vector
+        swept lib/cpb for leaf-related substrings and found none. That is a substring sweep over
+        .py files, not a proof of absence: it reads comments, and it would miss a leaf
+        constructor written with binascii.unhexlify. The claim that this library constructs no
+        leaf rests on its module set, canonicalize, derive_id, typed_ref, none of which does.
+        Either way there is nothing there for this vector to accept or refuse, so it is scored
+        on its own preconditions: 8/8 hold. Correct leaf_input 32 bytes, incorrect 64.
+    precond     8/8 hold
+    prediction  NOT APPLICABLE -- this class makes no claim about the reference library
+
+typed-ref-cpb01-05   [contributor_side_defect]   MUST-FAIL
+    FAILS ON THE CONTRIBUTOR'S SIDE, and is in this set for that reason. Five action records are
+    all conforming instances of the registered CAID type payment.release.1, each one minted by
+    the reference issuer rather than accepted by inspection. TWO of the five carry a CPB typed
+    digest reference; the other three cite nothing at all, and that asymmetry is the finding.
+    ARP's Appendix D subject_digest is SHA-256(JCS(action)) over the whole action, so it
+    produces five identifiers -- and it already produces the second one at `memo`, a field the
+    registry declares optional, in a record that cites nothing. Whatever is happening here, it
+    is not about typed references. A contributed vector set that only finds defects in the
+    recipient's code has not been run against the contributor.
+    spec        draft-hillier-scitt-arp-01 Appendix D (subject_digest = SHA-256(JCS(action))), against t
+    requires    verified
+    observed    not verified
+        CPB verified the typed reference in every record that carries one (correct); the
+        differing members are outside the cited artifact's digest context. ARP produced 5
+        distinct identifiers from 5 records. The CAID count is NOT reported beside it:
+        caid.canonicalize is byte-identical to arp.jcs_bytes and the CAID digest field is
+        'sha256:' + the ARP subject digest, so it is the same digest in two encodings and not a
+        second measurement. Diverging from base: registered_optional_field_memo,
+        registered_optional_field_memo_empty_string, typed_digest_reference_added,
+        optional_member_inside_the_typed_reference. 2 of those carry no typed reference at all,
+        which is why the cause is ARP's whole-object digest and not CPB's ignore rule.
+    precond     6/6 hold
+    prediction  held
+
+====================================================================================================
+  5 vectors: 1 conformance baseline, 1 contributor side defect, 1 revision uplift gap, 1 specification question, 1 suite coverage gap
+  4/4 predictions held (1 not applicable)
+  one gap is the contributor's own (typed-ref-cpb01-05); it is counted here, not set aside
+
+  TYPED-REF RUN: PASS -- every vector behaved as its class predicts, or declared that its class makes no prediction
+====================================================================================================
+  machine-readable result written to runs/typed_ref_cpb01_run.json

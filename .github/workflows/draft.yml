@@ -1,0 +1,81 @@
+name: draft
+
+# The source in this repo must always build. draft-hillier-scitt-arp-01 was
+# filed from an uncommitted working copy and lost; this job at least guarantees
+# that whatever IS here compiles, and publishes the rendered text as an
+# artifact so a filed revision can always be diffed against the source.
+
+on:
+  push:
+    branches: [main, "**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install toolchain
+        run: |
+          gem install kramdown-rfc2629 --no-document
+          pip install xml2rfc
+
+      - name: Show docname
+        run: grep -E '^docname:|^date:' draft-hillier-scitt-arp.md
+
+      - name: Build
+        run: make
+
+      - name: Upload rendered draft
+        uses: actions/upload-artifact@v4
+        with:
+          name: draft-hillier-scitt-arp
+          path: |
+            draft-hillier-scitt-arp.xml
+            draft-hillier-scitt-arp.txt
+
+  # Fails when the repo's docname is BEHIND the datatracker -- the exact
+  # condition that hid the -01 gap for four days.
+  #
+  # This check was one-sided and wrong. It compared for INEQUALITY, so it also
+  # failed on a revision branch whose source is legitimately AHEAD of the
+  # filed revision -- which is the normal, healthy state of every revision
+  # branch this repo will ever have. A gate that refuses the condition it was
+  # built to encourage is not a gate. Same defect class as a conformance suite
+  # with negative vectors only: it can detect too-loose and cannot detect
+  # too-strict.
+  #
+  # Corrected: BEHIND is an error, AHEAD is a notice, EQUAL is a pass.
+  revision-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare repo docname against the datatracker
+        run: |
+          set -euo pipefail
+          REPO_REV=$(grep -E '^docname:' draft-hillier-scitt-arp.md | sed 's/.*-\([0-9][0-9]\)$/\1/')
+          LIVE_REV=$(curl -sS "https://datatracker.ietf.org/api/v1/doc/document/draft-hillier-scitt-arp/?format=json" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin)['rev'])")
+          echo "repo docname revision : -$REPO_REV"
+          echo "datatracker revision  : -$LIVE_REV"
+          if [ "$((10#$REPO_REV))" -lt "$((10#$LIVE_REV))" ]; then
+            echo "::error::Repo source is at -$REPO_REV but -$LIVE_REV is filed. The source has"\
+                 "drifted BEHIND the filed revision and would overwrite published text."\
+                 "See RECOVERY.md."
+            exit 1
+          elif [ "$((10#$REPO_REV))" -gt "$((10#$LIVE_REV))" ]; then
+            echo "::notice::Revision in preparation: source is at -$REPO_REV, -$LIVE_REV is filed."\
+                 "This is the expected state of a revision branch and is not an error."
+          else
+            echo "Source and datatracker agree at -$LIVE_REV."
+          fi

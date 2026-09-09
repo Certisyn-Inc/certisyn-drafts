@@ -1,0 +1,47 @@
+
+==============================================================================================================
+ARP against EMILIA ep-arp-reconciliation-join/0.1
+==============================================================================================================
+ARP construction identifiers used (unchanged from the list post):
+  arp-canonical-claim/1      id=7d90aa1cbee90ef9
+  arp-subject-digest/1       id=f23ecefd99c54182
+  ep-canonicalization/1      id=dc7df29214870f78
+
+Verdict join. ARP reports APPROVE / INDETERMINATE / REFUSE; the
+adapter reports MATCH / NO_MATCH / INDETERMINATE / DIVERGENCE.
+NO_MATCH and DIVERGENCE are BOTH a REFUSE in ARP. Only the axis
+separates them, so the axis must cross the join with the verdict.
+
+--------------------------------------------------------------------------------------------------------------
+fixture                                     ARP             -> adapter      axes
+--------------------------------------------------------------------------------------------------------------
+shared-action-preimage                      APPROVE         MATCH           canonical-bytes:match  subject-digest:match  caid-binding:match
+    . App.D subject_digest  = sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43
+    . S2  Canonical Claim   = sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43
+    . S2 and App.D COINCIDE on this input. They are still different constructions; this action simply carries no member name outside the BMP and no string whose normalization form differs. The divergence is input-dependent, which is why it must be declared rather than observed.
+    . CAID recomputed       = caid:1:payment.release.1:jcs-sha256:RJLCOOL5IkrZ_C1Ee4Luz7WMXHApKTsA7mnicGY4m0M
+
+missing-preimage                            INDETERMINATE   INDETERMINATE   construction-id:indeterminate[canonicalization-unverified]  caid-binding:indeterminate[caid-binding-unverified]
+    . ARP holds rather than refuses. The admission decision is still REFUSED, and that is the correct division of labour: an unverifiable digest is not a reconciliation failure, but it is not admissible evidence either.
+
+material-action-mutation                    REFUSE          NO_MATCH        subject-digest:no-match[digest-mismatch]
+    . pre-mutation  sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43
+    . post-mutation sha256:6ac102a4f07f1ba93b68cf26c0590636e1a17d0290a1d9b1e5e356739fa207d1
+    . Recomputed here from the mutated action, not read from the fixture's expectation.
+
+same-party-evidence-not-independent         REFUSE          DIVERGENCE      independence:no-match[agent-impersonation-suspected]
+    . Maps to the filed ARP-01 axis agent-impersonation-suspected (S2, S4, A.3). The same construction fires on EP-BOUNDARY's same_party_evidence_presented_as_independent in the frozen-v1 run.
+
+controller-outcome-is-not-physical-completioINDETERMINATE   INDETERMINATE   outcome:indeterminate[outcome-reported-only]  completion:indeterminate[physical-completion-unproven]
+    . Both axes are SOFT: they HOLD at indeterminate and never refuse. Admission is therefore UNCHANGED, and post-effect reconciliation is REQUIRED, exactly as the fixture expects.
+    . outcome-reported-only clears on an ex post attestation from a party OTHER than the actor. A named human APPROVER does not clear it: approval is ex ante and says the act was permitted, not that it occurred.
+    . physical-completion-unproven fires ADDITIONALLY, not instead, where the act is irreversible with no rollback handle.
+
+==============================================================================================================
+  5/5 fixtures join to the verdict the vector expects.
+  ARP admits nothing on its own: every fixture above is evidence
+  input to an admission decision made elsewhere. That is the rule
+  the join construction states, and this run does not violate it.
+==============================================================================================================
+  wrote arp_adapter_run.json and arp-outcome-vectors-v0.1-superseded.json
+

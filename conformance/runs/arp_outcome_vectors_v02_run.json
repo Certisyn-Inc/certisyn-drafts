@@ -1,0 +1,223 @@
+{
+  "vectors_file": "arp-outcome-vectors-v0.2.json",
+  "vectors_file_sha256": "8726e9f178ea94bb2b255af808bd0761e3f2f46473fcd403413fce5ab1db1b35",
+  "harness": "arp_reconcile.py v2.1",
+  "harness_sha256": "00b10162e7bba48b9fc300cf07be124e9b454d86a8b9453aa716ce4a2b6e03bf",
+  "passed": 5,
+  "failed": 0,
+  "rows": [
+    {
+      "id": "accept_outcome_reported_only",
+      "caid_issuance": "ISSUED",
+      "caid_refusals": [],
+      "caid": "caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM",
+      "arp_subject_digest": "sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963",
+      "disposition": "INDETERMINATE",
+      "axes": [
+        "outcome-reported-only"
+      ],
+      "expected_disposition": "INDETERMINATE",
+      "expected_axes": [
+        "outcome-reported-only"
+      ],
+      "checks": [
+        {
+          "name": "issuer emitted a caid",
+          "ok": true
+        },
+        {
+          "name": "ARP recomputation agrees",
+          "ok": true
+        },
+        {
+          "name": "verify_caid valid",
+          "ok": true
+        },
+        {
+          "name": "pinned caid matches",
+          "ok": true
+        },
+        {
+          "name": "disposition",
+          "ok": true
+        },
+        {
+          "name": "axes",
+          "ok": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "accept_physical_completion_unproven",
+      "caid_issuance": "ISSUED",
+      "caid_refusals": [],
+      "caid": "caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM",
+      "arp_subject_digest": "sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963",
+      "disposition": "INDETERMINATE",
+      "axes": [
+        "outcome-reported-only",
+        "physical-completion-unproven"
+      ],
+      "expected_disposition": "INDETERMINATE",
+      "expected_axes": [
+        "outcome-reported-only",
+        "physical-completion-unproven"
+      ],
+      "checks": [
+        {
+          "name": "issuer emitted a caid",
+          "ok": true
+        },
+        {
+          "name": "ARP recomputation agrees",
+          "ok": true
+        },
+        {
+          "name": "verify_caid valid",
+          "ok": true
+        },
+        {
+          "name": "pinned caid matches",
+          "ok": true
+        },
+        {
+          "name": "disposition",
+          "ok": true
+        },
+        {
+          "name": "axes",
+          "ok": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "reject_approver_treated_as_outcome_corroboration",
+      "caid_issuance": "ISSUED",
+      "caid_refusals": [],
+      "caid": "caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM",
+      "arp_subject_digest": "sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963",
+      "disposition": "INDETERMINATE",
+      "axes": [
+        "outcome-reported-only",
+        "physical-completion-unproven"
+      ],
+      "expected_disposition": "INDETERMINATE",
+      "expected_axes": [
+        "outcome-reported-only",
+        "physical-completion-unproven"
+      ],
+      "checks": [
+        {
+          "name": "issuer emitted a caid",
+          "ok": true
+        },
+        {
+          "name": "ARP recomputation agrees",
+          "ok": true
+        },
+        {
+          "name": "verify_caid valid",
+          "ok": true
+        },
+        {
+          "name": "pinned caid matches",
+          "ok": true
+        },
+        {
+          "name": "disposition",
+          "ok": true
+        },
+        {
+          "name": "axes",
+          "ok": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "accept_outcome_corroborated_clears_both",
+      "caid_issuance": "ISSUED",
+      "caid_refusals": [],
+      "caid": "caid:1:payment.release.1:jcs-sha256:Rl5lMK5SXrKOt6PYphB45jEb0hwtUC4QjZTRB4yX6WM",
+      "arp_subject_digest": "sha256:465e6530ae525eb28eb7a3d8a61078e6311bd21c2d502e108d94d1078c97e963",
+      "disposition": "APPROVE",
+      "axes": [],
+      "expected_disposition": "APPROVE",
+      "expected_axes": [],
+      "checks": [
+        {
+          "name": "issuer emitted a caid",
+          "ok": true
+        },
+        {
+          "name": "ARP recomputation agrees",
+          "ok": true
+        },
+        {
+          "name": "verify_caid valid",
+          "ok": true
+        },
+        {
+          "name": "pinned caid matches",
+          "ok": true
+        },
+        {
+          "name": "disposition",
+          "ok": true
+        },
+        {
+          "name": "axes",
+          "ok": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "reject_underspecified_action_object",
+      "caid_issuance": "REFUSED",
+      "caid_refusals": [
+        "missing_material_field:beneficiary_account",
+        "missing_material_field:payment_instruction_id"
+      ],
+      "caid": null,
+      "arp_subject_digest": "sha256:4492c238e2f9224ad9fc2d447b82eecfb58c5c7029293b00ee69e27066389b43",
+      "disposition": "INDETERMINATE",
+      "axes": [
+        "caid-binding-unverified"
+      ],
+      "expected_disposition": "INDETERMINATE",
+      "expected_axes": [
+        "caid-binding-unverified"
+      ],
+      "checks": [
+        {
+          "name": "issuer refused",
+          "ok": true
+        },
+        {
+          "name": "no caid emitted",
+          "ok": true
+        },
+        {
+          "name": "disposition",
+          "ok": true
+        },
+        {
+          "name": "axes",
+          "ok": true
+        },
+        {
+          "name": "caid_issuance",
+          "ok": true
+        },
+        {
+          "name": "caid_refusals",
+          "ok": true
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

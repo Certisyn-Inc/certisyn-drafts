@@ -1,0 +1,103 @@
+
+====================================================================================================
+ARP against the AAC Class-1 frozen vector suite
+====================================================================================================
+  cases                : 32
+  AAC exclusion set    : ['capsule_id', 'chain']  (read from their module)
+
+  Three constructions in this run:
+    arp-subject-digest/1  id=f23ecefd99c54182   SHA-256(JCS(v)), no exclusion, no normalization
+    aac capsule_id        SHA-256(JCS(normalize(v minus {capsule_id, chain})))
+    cpb jcs-n derived id  SHA-256(JCS(normalize(v minus <declared exclusion set>)))
+
+----------------------------------------------------------------------------------------------------
+1. Per-vector
+----------------------------------------------------------------------------------------------------
+  vector                                     kind  aac      cpb=aac   arp=aac   cause
+  honesty-dishonest-human-disposed           honesty repro    agree     diverge   exclusion-set-applied
+  neg-approver-invalid                       negative repro    agree     diverge   exclusion-set-applied
+  neg-attestation-missing-when-required      negative repro    agree     diverge   exclusion-set-applied
+  neg-attestation-present-when-not-applicable negative repro    agree     diverge   exclusion-set-applied
+  neg-capsule-id-mismatch                    negative repro    agree     diverge   exclusion-set-applied
+  neg-chain-missing-parent                   store findings -         -         semantic, not canonicalization
+  neg-confirmed-without-response             negative repro    agree     diverge   exclusion-set-applied
+  neg-float-in-digest-field                  negative FloatInDigestError FloatInDigestError non-integer-real digest-value-guard
+  neg-format-version-unknown                 negative repro    agree     diverge   exclusion-set-applied
+  neg-never-dispatch-confirmed-no-response   negative repro    agree     diverge   exclusion-set-applied
+  neg-never-dispatch-conflict                negative repro    agree     diverge   exclusion-set-applied
+  neg-never-dispatch-with-dispatched-effect  negative repro    agree     diverge   exclusion-set-applied
+  neg-unsafe-integer-in-digest-field         negative UnsafeIntegerError UnsafeIntegerError integer-outside-safe-range digest-value-guard
+  pos-blocked                                positive repro    agree     diverge   exclusion-set-applied
+  pos-concurrent-supersedes                  store findings -         -         semantic, not canonicalization
+  pos-confirmed-runtime-claimed              positive repro    agree     diverge   exclusion-set-applied
+  pos-deferred                               positive repro    agree     diverge   exclusion-set-applied
+  pos-denied                                 positive repro    agree     diverge   exclusion-set-applied
+  pos-dispatched-unconfirmed-required        positive repro    agree     diverge   exclusion-set-applied
+  pos-errored                                positive repro    agree     diverge   exclusion-set-applied
+  pos-executed-confirmed                     positive repro    agree     diverge   exclusion-set-applied
+  pos-failed-required                        positive repro    agree     diverge   exclusion-set-applied
+  pos-hitl-dispatched                        positive repro    agree     diverge   exclusion-set-applied
+  pos-not-applicable-absent                  positive repro    agree     diverge   exclusion-set-applied
+  pos-planned-carve                          positive repro    agree     diverge   exclusion-set-applied
+  pos-reverted-required                      positive repro    agree     diverge   exclusion-set-applied
+  pos-supersedes-chain                       store findings -         -         semantic, not canonicalization
+  pos-timeout-post-dispatch                  positive repro    agree     diverge   exclusion-set-applied
+  pos-timeout-pre-dispatch                   positive repro    agree     diverge   exclusion-set-applied
+  pos-unknown-effect-attestation             positive repro    agree     diverge   exclusion-set-applied
+  pos-unknown-effect-type                    positive repro    agree     diverge   exclusion-set-applied
+  pos-unknown-verdict-class                  positive repro    agree     diverge   exclusion-set-applied
+
+----------------------------------------------------------------------------------------------------
+3. Differential test on discriminating inputs
+----------------------------------------------------------------------------------------------------
+   These reach the paths the frozen suite never touches. AAC-python and
+   CPB-python are the SAME canonicalizer, so their agreement proves
+   nothing here either; the column that carries evidence is AAC-go.
+
+   case                               aac-py     cpb-py     aac-go     verdict
+   null-member-removed                9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   empty-object-removed               9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   empty-array-removed                9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   object-emptied-by-normalization    9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   nested-two-deep-emptied            9afeb0f2   9afeb0f2   9afeb0f2   py=py  go agrees
+   array-of-objects-normalized        933b2a17   933b2a17   933b2a17   py=py  go agrees
+   array-preserved-not-sorted         b86994ba   b86994ba   b86994ba   py=py  go agrees
+   nested-member-named-capsule_id     66635620   66635620   66635620   py=py  go agrees
+   nested-member-named-chain          e145579b   e145579b   e145579b   py=py  go agrees
+   key-sort-utf16-vs-codepoint        f343d8ac   f343d8ac   f343d8ac   py=py  go agrees
+   key-nfc-vs-nfd                     1d8b0a40   1d8b0a40   1d8b0a40   py=py  go agrees
+   string-escapes                     22074b1b   22074b1b   22074b1b   py=py  go agrees
+   control-char-below-0x20            dcc7e188   dcc7e188   dcc7e188   py=py  go agrees
+   non-bmp-value                      8da70d6d   8da70d6d   8da70d6d   py=py  go agrees
+   solidus-not-escaped                6af97e06   6af97e06   6af97e06   py=py  go agrees
+   integer-zero                       45b619e9   45b619e9   45b619e9   py=py  go agrees
+   integer-negative                   7e5830b4   7e5830b4   7e5830b4   py=py  go agrees
+   integer-at-safe-max                a9af4cfc   a9af4cfc   a9af4cfc   py=py  go agrees
+   integer-above-safe-max             UnsafeIntegerError UnsafeIntegerError REFUSED    py=py  go agrees
+   integer-at-safe-min                2bbb858a   2bbb858a   2bbb858a   py=py  go agrees
+   float-in-value                     FloatInDigestError FloatInDigestError REFUSED    py=py  go agrees
+   float-integral-valued              FloatInDigestError FloatInDigestError REFUSED    py=py  go agrees
+   bool-and-deep-nesting              0d09c110   0d09c110   0d09c110   py=py  go agrees
+   all-members-removed                44136fa3   44136fa3   44136fa3   py=py  go agrees
+
+   AAC-python vs CPB-python : 24/24 (expected 100%; they are the same source)
+   AAC-go vs AAC-python     : 24/24  <-- the column that carries evidence
+====================================================================================================
+SELF-CHECK
+====================================================================================================
+  Suite taxonomy (their `kind` field): honesty 1, negative 11, positive 17, store 3
+  Identifier-bearing vectors: 27 (honesty 1, negative 9, positive 17)
+  Carrying findings only, no recomputed identifier: 5
+  AAC-python reproduces its own pinned capsule_id on 27/27.
+  CPB-python, given AAC's exclusion set ['capsule_id', 'chain'] as its own
+    parameter, agrees on 27/27. This is NOT independent
+    corroboration: see the disclosure at the top of this file. The two
+    Python canonicalizers are the same source.
+  arp-subject-digest/1 agrees with capsule_id on 0/27;
+    every divergence is attributed to a declared step ARP does not implement.
+
+
+  No unattributed agreement or divergence.
+  SELF-CHECK: PASS
+
+  machine-readable result written to runs/aac_run.json

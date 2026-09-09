@@ -1,0 +1,264 @@
+draft-hillier-scitt-arp-04, head linkage under the quorum rule
+what the linkage arrays pin, and what they do not
+
+environment
+  python        3.11.15
+  cbor2         6.1.4
+  cryptography  46.0.7
+
+construction, from the section text and nothing else
+  Prior-Entry Hash   the Signing Input Digest of the preceding entry's
+                     Entry Signature; thirty-two zero octets in entry 1
+  Self-Entry Hash    the digest over the entry array with the Self-Entry
+                     Hash and Entry Signature positions encoded as CBOR
+                     null, under RFC 8949 Section 4.2.1
+  Entry Signature    over the array with the Entry Signature position
+                     alone null, so it covers the Self-Entry Hash
+  protected header   the algorithm identifier (label 1) and the key
+                     identifier (label 4), which the draft requires
+                     there and forbids in an unprotected header. No
+                     digest identifier is carried in either header here,
+                     or anywhere in the draft, whose upgrade path
+                     declares three primitive classes and no digest one.
+  fields=linkage     Entry Sequence Number, Prior-Entry Hash, Self-Entry
+                     Hash, Signing Input Digest. The three hashes cannot
+                     be recomputed by a holder of the array: it carries
+                     neither the payload nor the protected header.
+
+scenario
+  witness Statement  covers entry 4, obtained from the witness's own
+                     origin, as the draft requires and as every row
+                     below observes
+  response names     the service's head at entry 2
+  reader holds       linkage arrays for entries 2 to 4, read from the
+                     service, which is where the draft has them read
+  keys               one sealing key and one witness key throughout
+
+1. THE CONDITION AS THE DRAFT STATES IT
+
+   Three parts, verified together. That the Self-Entry Hash of the array
+   at the Statement's sequence number equals item 3 of that Statement.
+   That the Self-Entry Hash of the array at the named head equals the one
+   the response names. That the array at each sequence number carries, as
+   its Prior-Entry Hash, the Signing Input Digest the array below it
+   reports. The draft forbids testing a Self-Entry Hash against a
+   Prior-Entry Hash, which are digests over different preimages, and no
+   such test is made.
+
+   case                                    quorum
+   --------------------------------------------------------
+   A   served honestly                     accept
+   B   digest moved whole                  accept
+   B'  digest moved, witness before        refuse
+   C   rewritten, served plainly           refuse
+   D   rewritten, witness value spliced    accept
+   D2  the same, top fourth value too      accept
+   D3  the same, whole top array           accept
+   E   response names another head         refuse
+
+   reasons given on refusal
+     B'  digest moved, witness before
+       Self-Entry Hash at entry 4 does not equal item 3 of the Statement
+     C   rewritten, served plainly
+       Self-Entry Hash at entry 4 does not equal item 3 of the Statement
+     E   response names another head
+       Self-Entry Hash at entry 2 is not the one the response names
+
+   E is the control for the second part, which every other row satisfies.
+
+2. THE RESULT
+
+   An entry's Signing Input Digest is bound to that entry's Self-Entry
+   Hash. The Entry Signature nulls its own position alone, so its payload
+   carries the Self-Entry Hash, and the Signing Input Digest is taken
+   over the Sig_structure around that payload. The binding is real and it
+   is in the entry.
+
+   A holder of a linkage array cannot check it. Verifying it needs the
+   payload and the protected header, and the projection carries neither.
+   The three hashes arrive in one array, bound to one another, and are
+   checked apart.
+
+   The condition anchors two values to something outside the service: the
+   Self-Entry Hash at the top of the span, which a witness signed, and
+   the Self-Entry Hash at the bottom, which the response names. The chain
+   it then walks runs on the Prior-Entry Hash and the Signing Input
+   Digest. Those are different positions. Neither anchored value is in a
+   position the chain reads, and no value the chain reads is anchored.
+
+   Row D is what follows. The service holds a rewritten history, serves
+   the Self-Entry Hash the witness published at the top of the span, and
+   serves its own values everywhere else. Every part of the condition
+   holds. The Statement is untouched and is obtained from the witness's
+   own origin, as the draft requires; the service supplies only the
+   arrays and the response, which is what the draft has it supply.
+
+   Entry 4 as the projection delivers it, honestly in A, rewritten in C,
+   and as the service serves it in D:
+
+     Entry Sequence Number  A  4
+                            C  4
+                            D  4
+     Prior-Entry Hash       A  1577e56f3c402fbbc44a39e38142fce85ad31828a5ae92ca792f901203d6182f
+                            C  93483b43fb5fd635a23c858aa0efa3d5e0fc6ae87a21d26aafb2274fadde13af
+                            D  93483b43fb5fd635a23c858aa0efa3d5e0fc6ae87a21d26aafb2274fadde13af
+     Self-Entry Hash        A  2aa01e3ebd5cce0e052244bc7bee13681dbd2235af5ea42f81d5003f067af58d
+                            C  7b1b6110c2a5da50da8d961d614e08d407faa06f42b4529f443fd0ee8da0ee2f
+                            D  2aa01e3ebd5cce0e052244bc7bee13681dbd2235af5ea42f81d5003f067af58d
+     Signing Input Digest   A  346c579bcf59440d96021f0adffc679549d9a528d014fe378333251376126654
+                            C  3c38597b60c4ba503bb27b7adc141645b12ccd1011dc80a5ff12e678ac483ed0
+                            D  3c38597b60c4ba503bb27b7adc141645b12ccd1011dc80a5ff12e678ac483ed0
+
+   D takes its third value from A and the rest from C. The witness
+   signature is satisfied and pins one octet string that nothing the
+   reader walks connects to. The chain the reader walks ends at the top
+   array's Prior-Entry Hash, which the service chose, and the head the
+   response names is an entry of C.
+
+   D2 and D3 are the same construction with more of A copied in, and they
+   are here because they are what the obvious repairs run into. Section 4
+   takes them.
+
+3. WHICH POSITIONS THE CONDITION BINDS
+
+   Each of the nine hash positions in the span, replaced in turn with a
+   value the service chose, against the honest ledger and the honest
+   Statement and response of row A.
+
+   entry         position                verdict
+   --------------------------------------------------------
+   2             Prior-Entry Hash        accept
+   2             Self-Entry Hash         refuse
+   2             Signing Input Digest    refuse
+   3             Prior-Entry Hash        refuse
+   3             Self-Entry Hash         accept
+   3             Signing Input Digest    refuse
+   4             Prior-Entry Hash        refuse
+   4             Self-Entry Hash         refuse
+   4             Signing Input Digest    accept
+
+   Three positions are free:
+     entry 2 Prior-Entry Hash
+     entry 3 Self-Entry Hash
+     entry 4 Signing Input Digest
+
+   Two of the three are ends: the bottom array's Prior-Entry Hash reaches
+   below the span and the top array's Signing Input Digest reaches above
+   it, and the condition spans neither. The third is not an end. Every
+   interior Self-Entry Hash is free, and a relying party that goes on to
+   use one, to check a receipt against a particular entry, is using a
+   value this condition never constrained. The text does not say so.
+
+   The reader also recomputes no digest over ledger content. Arbitrary
+   octets, digests of nothing in any ledger, chain as readily as an
+   honest span:
+
+     arbitrary octets, a witness signing the top of them
+       accept | 2 links chained
+
+   Row B follows from that and is not a separate finding. A deployment
+   that moved its digest whole satisfies the condition because the
+   condition compares octets and never asks what produced them. The
+   draft fixes SHA-256, so such a deployment is non-conformant rather
+   than adversarial, and a reader holding whole entries refuses it. That
+   reader, run over each ledger under SHA-256:
+
+     A    accept  4 entries recompute and verify under sha256
+     B    refuse  entry 1 Self-Entry Hash does not recompute under sha256
+     C    accept  4 entries recompute and verify under sha256
+
+   It accepts C, which is the rewritten history, because a rewrite the
+   operator re-sealed is internally perfect. Nothing a reader recomputes
+   from the entries alone separates it. What row B measures is the
+   projection's expressiveness: no
+   value in it names the digest, so nothing carried in a protected
+   header, where a digest identifier would naturally go, reaches this
+   reader at all.
+
+4. WHAT CLOSES IT
+
+   pinned    the Statement carries a sixth item, the Signing Input Digest
+             of the entry it covers, and the reader checks the top
+             array's fourth value against it.
+   ends      the Statement carries a seventh item, the Prior-Entry Hash
+             of that entry, and the response names the Signing Input
+             Digest at the head it names, so that both ends of the span
+             are anchored in positions the chain does read.
+   attested  the witness publishes the linkage arrays for the span it
+             observed, signed and served from its own origin, and the
+             reader requires the served arrays to be those arrays.
+
+   case                                  rule     pinned   ends    attested
+   ------------------------------------------------------------------------
+   A   served honestly                   accept   accept   accept  accept
+   B   digest moved whole                accept   accept   accept  accept
+   B'  digest moved, witness before      refuse   refuse   refuse  refuse
+   C   rewritten, served plainly         refuse   refuse   refuse  refuse
+   D   rewritten, witness value spliced  accept   refuse   refuse  refuse
+   D2  the same, top fourth value too    accept   accept   refuse  refuse
+   D3  the same, whole top array         accept   accept   accept  refuse
+   E   response names another head       refuse   refuse   refuse  refuse
+
+   Pinning closes D and D2 defeats it, at the cost to the service of one
+   further octet string the witness already published. Anchoring both
+   ends closes D2 and D3 defeats it, because the array between the two
+   ends is the service's and it can be made to join an anchored top to an
+   unanchored bottom. Lengthening the span makes that easier and never
+   harder: every interior array is two more values the condition
+   constrains only against each other.
+
+   That is the shape of the thing. Anchoring endpoints cannot work, at
+   any span, because the chain is a sequence of equalities among values
+   the reader cannot recompute, and an equality between two values the
+   same party supplies is not evidence. Soundness has to come from a copy
+   of the chain the service did not write.
+
+   The witness holds the entries it observed, so it can publish the
+   arrays. It already publishes a signed artefact at its own origin and
+   the draft already forbids taking that artefact from the responding
+   service, so the channel, the origin rule and the trust boundary all
+   exist. What is added is the arrays themselves. That is the attested
+   column, and it refuses every row where the service departed from what
+   a witness saw.
+
+   The alternative that needs nothing new is the first branch of the same
+   condition, where a Statement covers the head the response names
+   exactly. It carries no span, so it has no interior, and the draft
+   already says of it that there is nothing to link.
+
+   One editorial point, from reading the condition closely. The quorum
+   rule calls the object a linkage triple in four places; the read
+   operation defines a four-element array. The two are the same object
+   and the third part of the condition sources its fourth value from it,
+   so the arithmetic is right and the noun is one revision behind.
+
+5. AN ENCODING NOTE, MEASURED IN PASSING
+
+   The Self-Entry Hash is taken over an encoding the draft requires to
+   satisfy Section 4.2.1 of RFC 8949. An implementer of that requirement
+   who reaches for cbor2's canonical=True gets Section 4.2.3 map key
+   ordering instead: length-first, ties broken bytewise.
+
+     map                        {100000: 1, 'z': 2}
+     cbor2 canonical=True       a2617a021a000186a001
+     RFC 8949 Section 4.2.1     a21a000186a001617a02
+     SHA-256 of the first       aa5fd77249529a52834ddfc60b8b21517012acb8b761b05e934d85f93c5f072a
+     SHA-256 of the second      461464febd51d665994a663c20fe7b4e6579448c02586508e2200435a43a1921
+
+   The call is right in every other respect, and one of those respects
+   matters more than the ordering. Preferred serialization requires the
+   shortest floating-point form that preserves the value, and
+   canonical=True gives it: 1.5 encodes as f93e00. This harness
+   delegates every leaf to that call for exactly that reason and takes
+   back the map ordering alone. An implementer who replaces the call
+   outright rather than wrapping it trades one departure for another.
+
+   Two maps sit on the digest path here: each protected header, inside
+   every Signing Input Digest. Their keys are COSE labels 1 and 4, both
+   one byte, so the two orderings agree and nothing above turns on the
+   difference. A protected header mixing integer and text-string labels
+   would not agree, and neither would a type-specific field that is a map
+   with keys of differing encoded length. Where that holds, two
+   implementations compute two Self-Entry Hashes over one entry, and the
+   head comparison treats it as a fork. A sentence naming the section and
+   naming the ordering it is not would close it.

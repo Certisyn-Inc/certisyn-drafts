@@ -1,0 +1,39 @@
+{
+  "absent_ids": [
+    "R_absent"
+  ],
+  "fixture_id": "arp-eo-v0.1",
+  "head": {
+    "self_entry_hash": "bb17cbd60ed9ab21cbaad6ee9dda73c5af50cedae0e2c64f383ad5790e6c474f",
+    "sequence_number": 4211
+  },
+  "note": "Seeds are fixed and non-secret. This is a conformance fixture; these keys MUST NOT be used for anything else.",
+  "principals": [
+    {
+      "keyid": "p-entitled",
+      "name": "P_entitled",
+      "public_key": "7422b9887598068e32c4448a949adb290d0f4e35b9e01b0ee5f1a1e600fe2674",
+      "seed": "0000000000000000000000000000000000000000000000000000000000000002"
+    },
+    {
+      "keyid": "p-other",
+      "name": "P_other",
+      "public_key": "f381626e41e7027ea431bfe3009e94bdd25a746beec468948d6c3c7c5dc9a54b",
+      "seed": "0000000000000000000000000000000000000000000000000000000000000003"
+    }
+  ],
+  "rate_limit_per_window": 8,
+  "rate_limit_window_seconds": 60,
+  "resources": [
+    {
+      "audience_set": [
+        "p-entitled"
+      ],
+      "id": "R_present"
+    }
+  ],
+  "sealing_key_seed": "0000000000000000000000000000000000000000000000000000000000000001",
+  "sealing_kid": "arp-ref-seal-1",
+  "sealing_public_key": "4cb5abf6ad79fbf5abbccafcc269d85cd2651ed4b885b5869f241aedf0a5ba29",
+  "spec": "draft-hillier-scitt-arp-03 Section 6.4"
+}

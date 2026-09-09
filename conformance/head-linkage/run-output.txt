@@ -1,5 +1,6 @@
-draft-hillier-scitt-arp-04, head linkage under the quorum rule
+draft-hillier-scitt-arp-03, head linkage under the quorum rule
 what the linkage arrays pin, and what they do not
+the repair measured as holding is the one -04 specifies, at 5.23.2.3
 
 environment
   python        3.11.15
@@ -226,11 +227,13 @@ scenario
    exactly. It carries no span, so it has no interior, and the draft
    already says of it that there is nothing to link.
 
-   One editorial point, from reading the condition closely. The quorum
-   rule calls the object a linkage triple in four places; the read
-   operation defines a four-element array. The two are the same object
-   and the third part of the condition sources its fourth value from it,
-   so the arithmetic is right and the noun is one revision behind.
+   On the relationship to deployed practice. An independent party that
+   signs and serves a bounded, floored, addressable interval of a log's
+   contents from its own origin is the mirror role, specified at C2SP
+   tlog-mirror and deployed. Nothing here claims it. A mirror assumes a
+   Merkle log and carries subtree consistency proofs, and neither is
+   available over a plain hash chain with no skip links and no history
+   tree, which is the case measured above.
 
 5. AN ENCODING NOTE, MEASURED IN PASSING
 

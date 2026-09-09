@@ -118,8 +118,8 @@ sequence. Runs in under a second.
     python 3.11.15 · cbor2 6.1.4 · cryptography 46.0.7
 
     arpledger.py     2e0e86e21b36d189acdb5ae37365d6541db3e406f81f860c6da458a2fac6b2eb
-    run.py           d6b9788334239461bae484525e4b301d9aebeb7beca86ccec62b0cc735d0c6da
-    run-output.txt   67b5af1bc0187ed1ede729c45d69a36210f8788a1a07a97e39d08b1becfa01b2
+    run.py           a6a1078843ea55f4cfe3f9c002d4008b735131fcd52595005b42a6e980e341ed
+    run-output.txt   a803a79972692bd542290100d0824566ccd2de74cc75a4cc055e06526c13b552
 
 Section 4 of the output is the escalation matrix. Three readers are measured
 against successively cheaper forms of one substitution: the two that anchor

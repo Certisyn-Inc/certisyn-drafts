@@ -397,3 +397,13 @@ Third-party code this tree calls but does not vendor:
 
 both read from YOUR checkout of emilia-protocol at the pinned commit, never
 from mine, and the CPB reference library from the CPB pin above.
+
+## Section 7.6 Verifiable Credentials profile
+
+    pip install cryptography pycose jcs cbor2
+    python3 runners/build_vc_vectors.py      # rewrites vectors/arp-vc-profile-v0.1.json
+    python3 runners/run_vc_vectors.py        # 30 of 30 credited, 6 of 6 controls, writes runs/arp_vc_profile_run.json
+
+`cbor2` 6.x yields tuples for arrays and an immutable map for the unprotected
+header, which `pycose` refuses; `run_vc_vectors.py` converts both before handing
+the message to `pycose`. Output of the builder is byte-identical across runs.

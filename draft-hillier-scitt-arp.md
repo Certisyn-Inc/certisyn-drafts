@@ -49,6 +49,7 @@ normative:
   RFC9334:        # RATS Architecture
   RFC9421:        # HTTP Message Signatures
   RFC8785:        # JSON Canonicalization Scheme (JCS)
+  RFC4648:        # base64url, for the VC form
   RFC9943:        # SCITT Architecture (was I-D.ietf-scitt-architecture)
   RFC9942:        # COSE Receipts (was I-D.ietf-cose-merkle-tree-proofs)
   I-D.ietf-scitt-scrapi:   # normative: {{scrapi-binding}} imposes MUSTs on its endpoints; see the Note to the RFC Editor
@@ -60,6 +61,7 @@ normative:
     date: 2025
 
 informative:
+  RFC8792:        # line folding of long lines in the VC example
   I-D.hillier-coverage-attestation:   # coverage accounting with a declared denominator
   RFC6973:        # Privacy Considerations for Internet Protocols
   RFC6350:        # vCard 4.0
@@ -126,6 +128,10 @@ informative:
     title: Verifiable Credentials Data Model 2.0
     target: https://www.w3.org/TR/vc-data-model-2.0/
     date: 2025
+  W3C-VC-JOSE-COSE:
+    title: Securing Verifiable Credentials using JOSE and COSE
+    target: https://www.w3.org/TR/vc-jose-cose/
+    date: 2026
 
 --- abstract
 
@@ -5283,24 +5289,144 @@ Policy-Version Hash exists.
 
 ## Verifiable Credentials Interop {#vc-interop}
 
-A Reconciliation Output MAY be additionally serialised as a JSON-LD document
-conforming to the W3C Verifiable Credentials Data Model {{W3C-VC-DM-2.0}}, under
-the media type `application/arp-reconciliation-output+json` registered in
-{{iana}} -- `+json` rather than `+ld+json`, there being no such registered
-structured syntax suffix -- with the Reconciliation Hash, Addressed-Registers
-Identifier Set, Bilateral-Register-Agreement Hash Set,
-Requester-Binding-Class, Policy-Version Hash, Claim Hash, Combined Verdict,
-Audience Set and Reliance Horizon
-included as credential subject fields. The COSE_Sign1 envelope is the normative
-form; the Verifiable Credential serialisation is an interop convenience for
-relying parties operating in W3C VC ecosystems.
+A Reconciliation Output MAY be additionally serialised as a Verifiable
+Credential conforming to {{W3C-VC-DM-2.0}} and secured as `application/vc+cose`
+under {{W3C-VC-JOSE-COSE}}. The COSE_Sign1 of {{reconciliation-output}} is the
+normative form. The credential is a projection of it for relying parties that
+operate in W3C VC ecosystems, and it states what the Output establishes about a
+claim in the vocabulary those ecosystems evaluate. This section is the complete
+profile; a conforming credential satisfies every requirement below, and a
+verifier applies every verification step below.
 
-The Audience Set and the Reliance Horizon are not optional in this
-serialisation. A credential is the form of an Output most likely to reach a party
-outside its Audience Set, and one carrying neither the membership list against
-which such a party could determine that it is not entitled, nor the marker of its
-own staleness, would be the bearer artefact {{entitlement}} exists to retire,
-reintroduced through the interop form.
+### Credential Form {#vc-form}
+
+The credential is a JSON object with these members.
+
+| Member | Value |
+|---|---|
+| `@context` | the array of exactly two elements: `https://www.w3.org/ns/credentials/v2`, then an object whose only member is `@vocab`, set to `https://datatracker.ietf.org/doc/draft-hillier-scitt-arp/vocab#` |
+| `type` | the array `VerifiableCredential`, `ArpReconciliationOutput` and no other element |
+| `id` | `urn:arp:reconciliation:` followed by the Reconciliation Hash |
+| `issuer` | the Authority Origin of the Sealing-Key Identifier, as a text string |
+| `validFrom` | the Reconciliation Timestamp |
+| `validUntil` | the Reliance Horizon |
+| `credentialSubject` | an object with the members below |
+
+Every byte string rendered into the credential is rendered as base64url without
+padding (Section 5 of {{RFC4648}}), the single rendering {{representation-invariance}}
+requires. Every timestamp is in the form `YYYY-MM-DDTHH:MM:SSZ` fixed by
+{{reconciliation-output}}.
+
+| Subject member | Value |
+|---|---|
+| `reconciliationHash`, `claimHash`, `policyVersionHash` | the 32-octet values of the same names |
+| `combinedVerdict` | the Combined Verdict, one of `match`, `no-match`, `partial-match`, `indeterminate` |
+| `requesterBindingClass` | the Requester-Binding Class |
+| `addressedRegisters` | the Addressed-Registers Identifier Set, in the order of {{reconciliation-output}} |
+| `bilateralRegisterAgreementHashes` | the Bilateral-Register-Agreement Hash Set, in the order of {{reconciliation-output}} |
+| `reconciliationTimestamp`, `relianceHorizon` | the Reconciliation Timestamp and the Reliance Horizon |
+| `audienceSet` | an array with one object per Audience Member, in the order of {{audience}}, carrying `id` (the Audience Member Identifier) and `verificationMethod` (the Verification Method Reference) |
+| `sealedOutput` | an object carrying `digestAlgorithm` (`sha-256`), `digest` (the SHA-256 digest of the serialised COSE_Sign1 of the sealed Reconciliation Output) and `mediaType` (`application/arp-sealed-reconciliation-output+cose`) |
+
+The credential carries no Subject Identifier, no Attested Value, no
+Per-Register Result Set and no register record. The members above are the
+whole of it. A credential with a member outside them, at the top level or in
+`credentialSubject`, is refused: an added member is the route by which register
+content or a redefined term enters a signed document, and the second element of
+`@context` is fixed for the same reason, because a context that redefines
+`combinedVerdict` changes what a JSON-LD processor reads under a valid
+signature.
+
+`validUntil` is the Reliance Horizon and `validFrom` is the Reconciliation
+Timestamp. A W3C verifier that treats `validUntil` as expiry therefore stops
+treating the Combined Verdict as current at the instant {{reliance-horizon}}
+requires, with no ARP-specific code. The Horizon bounds reliance and does not
+invalidate the Output, and the credential carries the same meaning: after
+`validUntil` the Sealing Signature still verifies and the verdict remains true
+of the moment it was sealed.
+
+### Securing {#vc-securing}
+
+The credential is secured as a COSE_Sign1 under Section 3.3.1 of
+{{W3C-VC-JOSE-COSE}}.
+
+- The payload is the credential serialised under {{RFC8785}} and encoded as
+  UTF-8. A verifier compares the payload to the {{RFC8785}} serialisation of
+  its own parse of it, because a signature over a second serialisation of one
+  credential is a second signing act over one statement.
+- The protected header carries `alg` (1), `kid` (4), `typ` (16) and the content
+  type (3). A verifier reads all four from the protected header only; a value
+  in the unprotected header is not evidence of anything. `typ` is `application/vc+cose`. The content type is
+  `application/arp-reconciliation-output+json`, the more specific type that
+  Section 3.3.1 of {{W3C-VC-JOSE-COSE}} permits in place of `application/vc`.
+  The `kid` is the UTF-8 encoding of the JWK thumbprint of the Sealing key, as
+  {{sealing-key-discovery}} states for every `kid` in this document.
+- The signing key is the Sealing key. The pair of `issuer` and `kid` is the
+  Sealing-Key Identifier of the Output the credential projects, and it resolves
+  through {{sealing-key-discovery}}.
+- The `iat` and `exp` CWT claims, where present in a header, describe the
+  signature. A verifier MUST NOT read either as the Reconciliation Timestamp or
+  the Reliance Horizon.
+
+### Verification {#vc-verification}
+
+A relying party that receives the credential MUST perform every step. A failure
+at any step is a refusal to rely, and the step that failed is the reason
+recorded.
+
+1. Resolve the key for the Sealing-Key Identifier formed from `issuer` and `kid`
+   through {{sealing-key-discovery}} and verify the COSE_Sign1 under it.
+2. Check `typ`, the content type and `alg` against {{vc-securing}}.
+3. Check that the payload is the {{RFC8785}} serialisation of its own parse. A
+   payload with a duplicated member name, a string spelled with an escape that
+   {{RFC8785}} does not produce, or members in any other order fails here.
+4. Check that `@context` and `type` are exactly the values of {{vc-form}}, that
+   `issuer` equals the Authority Origin of the key resolved in step 1, that
+   every member of {{vc-form}} is present, that no other member is, and that
+   `id` is `urn:arp:reconciliation:` followed by `reconciliationHash`.
+5. Check that `validFrom` equals `reconciliationTimestamp`, that `validUntil`
+   equals `relianceHorizon`, that `validFrom` is earlier than `validUntil`, and
+   that every timestamp has the required form.
+6. Check that `audienceSet` is present and non-empty, and that its members are
+   distinct and in the order of {{audience}}. An Audience Set is never empty
+   ({{audience}}), and a credential without one is the bearer artefact
+   {{entitlement}} exists to retire.
+7. Check that `combinedVerdict` is one of the four defined values, and that
+   every byte string is rendered in the single form of {{vc-form}}: unpadded
+   base64url that decodes to the length the field has and re-encodes to the
+   same text. The Bilateral-Register-Agreement Hash Set is sorted and
+   deduplicated.
+8. Where the sealed Reconciliation Output is held, check that `sealedOutput.digest`
+   equals its SHA-256 digest and that `reconciliationHash` equals the
+   Reconciliation Hash recomputed from it. Where it is not held, the verdict is a
+   snapshot of unknown provenance until the Ledger entry for `reconciliationHash`
+   has been read under {{ledger-read}}.
+9. Compare the evaluation time to `validUntil`. After it, the Combined Verdict
+   MUST NOT be treated as current under {{reliance-horizon}}.
+
+Steps 1 to 8 determine whether the credential is genuine. Step 9 determines
+whether it is current. A genuine credential evaluated after its Horizon yields a
+stale outcome, which differs from a refusal: the verdict is authentic and its
+reliance window has closed.
+
+A relying party that is not an Audience Member holds a credential that carries
+the Audience Set it is not on. {{entitlement}} applies to it exactly as it applies to the COSE_Sign1 form.
+
+### Conformance Class {#vc-conformance}
+
+A conformance class for this profile is published with the draft's conformance
+material: 30 vectors, each declaring the outcome it must produce and the one
+check designed to produce it, decided by two independent COSE_Sign1 and
+{{RFC8785}} implementations that must agree on every row. Twelve of the vectors
+are signed by the genuine Sealing key and fail only on profile content: a
+redefined context term, an added subject or top-level member, an `id` naming
+another reconciliation, a `validFrom` after `validUntil`, a padded or
+standard-alphabet byte string, unsorted agreement hashes, a duplicated Audience
+Member, a duplicated JSON member name, an escape-spelled string, header
+parameters carried unprotected, and an additional credential type. One vector is
+a genuine credential evaluated after its Horizon, whose outcome is stale. For
+each check a mutant verifier with that check removed must admit at least one
+vector the full verifier refuses.
 
 ## Representation Invariance {#representation-invariance}
 
@@ -6563,6 +6689,87 @@ requester-binding class `agent-verified` -- the agent's asserted principal havin
 been corroborated as in the preceding example -- and no register or capsule
 content disclosed.
 
+## Example: Verifiable Credentials Form of an Output
+
+This example is the first vector of the conformance class of {{vc-conformance}}.
+The payload below is shown with indentation for reading and folded under {{RFC8792}}. The signed payload is
+its {{RFC8785}} serialisation, 1,247 octets with no whitespace and members in
+code-unit order. The hash and key values are those of the published test seed.
+
+The COSE_Sign1 protected header, in extended diagnostic notation:
+
+~~~
+{
+  1: -8,
+  4: 'VDux_CmeAgi2AvrAFW0bInmtCjMDD9kHOfzia5l81w0',
+  16: "application/vc+cose",
+  3: "application/arp-reconciliation-output+json"
+}
+~~~
+
+The payload:
+
+~~~ json
+========== NOTE: '\' line wrapping per RFC 8792 ==========
+
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    {
+      "@vocab": "https://datatracker.ietf.org/doc/draft-hillier-\
+  \scitt-arp/vocab#"
+    }
+  ],
+  "credentialSubject": {
+    "addressedRegisters": [
+      "https://ofac.example.gov",
+      "https://sanctions.example.eu"
+    ],
+    "audienceSet": [
+      {
+        "id": "https://acme.example.com/operators/jdoe",
+        "verificationMethod": "ui8q-Oh_44_8fBC8GAy1L9256mAf5rFhk\
+  \au8_M3YL7k"
+      }
+    ],
+    "bilateralRegisterAgreementHashes": [
+      "bGZZqJQYgwPMmKK8JhsCgjO_qLBBDx2vJWVHo_rY03k",
+      "f9SeSX9aYohdR8ZQESBPAKLgx0DiRCGI9RKhdL6h4m4"
+    ],
+    "claimHash": "DXnYYMYKBOTXl8wyyilXrljSu_xfAHgO8uGsTuLKu_s",
+    "combinedVerdict": "no-match",
+    "policyVersionHash": "AFF2RolekqOQRbkVNzh5WM493yXRFD4PtgFtFA\
+  \7FcIo",
+    "reconciliationHash": "LLJqwmuxKzSvgqXO2zWYJyB4tEY6tt6NIojRV\
+  \jPDyfM",
+    "reconciliationTimestamp": "2026-10-14T18:00:00Z",
+    "relianceHorizon": "2026-10-15T18:00:00Z",
+    "requesterBindingClass": "agent-verified",
+    "sealedOutput": {
+      "digest": "wV7R-2vxEC9c7XAWIaMKYht97UvgOjF7vQhXmw9kJTo",
+      "digestAlgorithm": "sha-256",
+      "mediaType": "application/arp-sealed-reconciliation-output\
+  \+cose"
+    }
+  },
+  "id": "urn:arp:reconciliation:LLJqwmuxKzSvgqXO2zWYJyB4tEY6tt6N\
+  \IojRVjPDyfM",
+  "issuer": "https://arp.example.org",
+  "type": [
+    "VerifiableCredential",
+    "ArpReconciliationOutput"
+  ],
+  "validFrom": "2026-10-14T18:00:00Z",
+  "validUntil": "2026-10-15T18:00:00Z"
+}
+~~~
+
+A verifier holding the sealed Output computes the SHA-256 digest of its
+COSE_Sign1 and compares it to `sealedOutput.digest`. A verifier that holds only
+this credential reads the Ledger entry for `reconciliationHash` before treating
+the verdict as more than a snapshot, and stops treating it as current at
+`validUntil`.
+
 # Composition with the SCITT Architecture {#composition-scitt}
 
 The SCITT Architecture {{RFC9943}} provides notarisation of supply-chain
@@ -6865,6 +7072,15 @@ failure is a correlation that silently does not occur.
 # Document History
 
 RFC Editor: please remove this section before publication.
+
+## Since draft-hillier-scitt-arp-04
+
+### The Verifiable Credentials form is a complete profile
+
+{{vc-interop}} specifies the credential form of a Reconciliation Output in full:
+its members, its securing as `application/vc+cose` under {{W3C-VC-JOSE-COSE}},
+the verification steps, and the mapping of the Reliance Horizon onto
+`validUntil`. A worked example and a 30-vector conformance class accompany it.
 
 ## Since draft-hillier-scitt-arp-03
 

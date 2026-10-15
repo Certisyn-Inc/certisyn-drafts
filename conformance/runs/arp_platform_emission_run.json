@@ -1,0 +1,200 @@
+{
+ "emission_sha256": "6f85d624423a0f7cb1820a852f39ef003f403561f945861354a7b969d8e1f9ab",
+ "rows": [
+  {
+   "id": "P01 platform emission accepted",
+   "expect": [
+    "accept",
+    null
+   ],
+   "got": [
+    "accept",
+    null
+   ],
+   "credited": true
+  },
+  {
+   "id": "P02 after the Reliance Horizon",
+   "expect": [
+    "stale",
+    null
+   ],
+   "got": [
+    "stale",
+    null
+   ],
+   "credited": true
+  },
+  {
+   "id": "P03 sealed Output byte altered",
+   "expect": [
+    "reject",
+    null
+   ],
+   "got": [
+    "reject",
+    "binding"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P04 different sealed Output offered",
+   "expect": [
+    "reject",
+    null
+   ],
+   "got": [
+    "reject",
+    "binding"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P05 verdict changed, genuine re-sign",
+   "expect": [
+    "reject",
+    "tie:combinedVerdict"
+   ],
+   "got": [
+    "reject",
+    "tie:combinedVerdict"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P06 horizon extended, genuine re-sign",
+   "expect": [
+    "reject",
+    "tie:relianceHorizon"
+   ],
+   "got": [
+    "reject",
+    "tie:relianceHorizon"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P07 audience swapped, genuine re-sign",
+   "expect": [
+    "reject",
+    "tie:audienceSet"
+   ],
+   "got": [
+    "reject",
+    "tie:audienceSet"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P08 binding class raised, re-sign",
+   "expect": [
+    "reject",
+    "tie:requesterBindingClass"
+   ],
+   "got": [
+    "reject",
+    "tie:requesterBindingClass"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P09 Output verdict altered, resealed",
+   "expect": [
+    "reject",
+    "binding"
+   ],
+   "got": [
+    "reject",
+    "binding"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P10 digest rebound, hash not recomputed",
+   "expect": [
+    "reject",
+    "tie:reconciliationHash"
+   ],
+   "got": [
+    "reject",
+    "tie:reconciliationHash"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P11 Merkle root forged, resealed",
+   "expect": [
+    "reject",
+    "merkle"
+   ],
+   "got": [
+    "reject",
+    "merkle"
+   ],
+   "credited": true
+  },
+  {
+   "id": "P12 Audience Set emptied, resealed",
+   "expect": [
+    "reject",
+    "audience"
+   ],
+   "got": [
+    "reject",
+    "audience"
+   ],
+   "credited": true
+  },
+  {
+   "id": "control:combinedVerdict",
+   "expect": [
+    "mutant admits"
+   ],
+   "got": [
+    true
+   ],
+   "credited": true
+  },
+  {
+   "id": "control:relianceHorizon",
+   "expect": [
+    "mutant admits"
+   ],
+   "got": [
+    true
+   ],
+   "credited": true
+  },
+  {
+   "id": "control:audienceSet",
+   "expect": [
+    "mutant admits"
+   ],
+   "got": [
+    true
+   ],
+   "credited": true
+  },
+  {
+   "id": "control:requesterBindingClass",
+   "expect": [
+    "mutant admits"
+   ],
+   "got": [
+    true
+   ],
+   "credited": true
+  },
+  {
+   "id": "control:merkle",
+   "expect": [
+    "mutant admits"
+   ],
+   "got": [
+    true
+   ],
+   "credited": true
+  }
+ ],
+ "credited": 17
+}

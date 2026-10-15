@@ -1,0 +1,451 @@
+{
+ "controls": {
+  "context-exact": [
+   "V18"
+  ],
+  "members": [
+   "V19",
+   "V20"
+  ],
+  "horizon-order": [
+   "V22"
+  ],
+  "encoding": [
+   "V23",
+   "V24"
+  ],
+  "order": [
+   "V25",
+   "V26"
+  ],
+  "id-binding": [
+   "V21"
+  ]
+ },
+ "vector_file_sha256": "a70003d9008c55b330882fb251d9231a96c3e4a6746bf4f7278ae2c687ce537a",
+ "verifier_b_present": true,
+ "vectors": 30,
+ "credited": 30,
+ "rows": [
+  {
+   "id": "V01",
+   "title": "conforming credential",
+   "expect": "accept",
+   "A": [
+    "accept",
+    null
+   ],
+   "B": [
+    "accept",
+    null
+   ],
+   "credited": true
+  },
+  {
+   "id": "V02",
+   "title": "payload byte altered after signing",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "signature"
+   ],
+   "B": [
+    "reject",
+    "signature"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V03",
+   "title": "sealedOutput digest does not match the sealed envelope",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "binding"
+   ],
+   "B": [
+    "reject",
+    "binding"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V04",
+   "title": "audienceSet absent",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "audience"
+   ],
+   "B": [
+    "reject",
+    "audience"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V05",
+   "title": "audienceSet empty without the empty-set marker",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "audience"
+   ],
+   "B": [
+    "reject",
+    "audience"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V06",
+   "title": "validUntil absent",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "horizon"
+   ],
+   "B": [
+    "reject",
+    "horizon"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V07",
+   "title": "validUntil differs from relianceHorizon",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "horizon"
+   ],
+   "B": [
+    "reject",
+    "horizon"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V08",
+   "title": "issuer origin differs from the sealing origin",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "issuer"
+   ],
+   "B": [
+    "reject",
+    "issuer"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V09",
+   "title": "kid is not the sealing key thumbprint",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "key"
+   ],
+   "B": [
+    "reject",
+    "key"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V10",
+   "title": "payload is not RFC 8785 canonical",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "canonical"
+   ],
+   "B": [
+    "reject",
+    "canonical"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V11",
+   "title": "typ header is not application/vc+cose",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "typ"
+   ],
+   "B": [
+    "reject",
+    "typ"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V12",
+   "title": "content type header is application/vc, not the ARP subtype",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "cty"
+   ],
+   "B": [
+    "reject",
+    "cty"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V13",
+   "title": "VCDM 2.0 base context absent",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "context"
+   ],
+   "B": [
+    "reject",
+    "context"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V14",
+   "title": "timestamp with numeric offset instead of Z",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "timestamp"
+   ],
+   "B": [
+    "reject",
+    "timestamp"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V15",
+   "title": "verdict outside the four defined values",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "verdict"
+   ],
+   "B": [
+    "reject",
+    "verdict"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V16",
+   "title": "signed by a key other than the sealing key",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "signature"
+   ],
+   "B": [
+    "reject",
+    "signature"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V17",
+   "title": "genuine credential evaluated after its Reliance Horizon",
+   "expect": "stale",
+   "A": [
+    "stale",
+    null
+   ],
+   "B": [
+    "stale",
+    null
+   ],
+   "credited": true
+  },
+  {
+   "id": "V18",
+   "title": "second context element redefines a term",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "context-exact"
+   ],
+   "B": [
+    "reject",
+    "context-exact"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V19",
+   "title": "subject carries a member outside the profile",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "members"
+   ],
+   "B": [
+    "reject",
+    "members"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V20",
+   "title": "credential carries a top-level member outside the profile",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "members"
+   ],
+   "B": [
+    "reject",
+    "members"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V21",
+   "title": "id names a different reconciliation than reconciliationHash",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "id-binding"
+   ],
+   "B": [
+    "reject",
+    "id-binding"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V22",
+   "title": "validFrom after validUntil",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "horizon-order"
+   ],
+   "B": [
+    "reject",
+    "horizon-order"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V23",
+   "title": "padded base64url byte string",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "encoding"
+   ],
+   "B": [
+    "reject",
+    "encoding"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V24",
+   "title": "standard base64 alphabet in a byte string",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "encoding"
+   ],
+   "B": [
+    "reject",
+    "encoding"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V25",
+   "title": "agreement hashes out of sorted order",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "order"
+   ],
+   "B": [
+    "reject",
+    "order"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V26",
+   "title": "duplicate Audience Member",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "order"
+   ],
+   "B": [
+    "reject",
+    "order"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V27",
+   "title": "duplicate JSON member in the signed payload",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "canonical"
+   ],
+   "B": [
+    "reject",
+    "canonical"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V28",
+   "title": "string spelled with a unicode escape",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "canonical"
+   ],
+   "B": [
+    "reject",
+    "canonical"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V29",
+   "title": "typ and content type carried unprotected",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "typ"
+   ],
+   "B": [
+    "reject",
+    "typ"
+   ],
+   "credited": true
+  },
+  {
+   "id": "V30",
+   "title": "additional credential type",
+   "expect": "reject",
+   "A": [
+    "reject",
+    "type"
+   ],
+   "B": [
+    "reject",
+    "type"
+   ],
+   "credited": true
+  }
+ ]
+}

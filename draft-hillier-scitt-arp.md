@@ -1,8 +1,8 @@
 ---
 title: Attestation Reconciliation Protocol
 abbrev: ARP
-docname: draft-hillier-scitt-arp-04
-date: 2026-09-08
+docname: draft-hillier-scitt-arp-05
+date: 2026-10-15
 category: std
 submissiontype: IETF
 v: 3

@@ -140,6 +140,10 @@ informative:
     title: SD-JWT-based Verifiable Credentials (SD-JWT VC)
     target: https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/
     date: 2025
+  ISO18013-5:
+    title: "ISO/IEC 18013-5:2021 Personal identification - ISO-compliant driving licence - Part 5: Mobile driving licence (mDL) application"
+    target: https://www.iso.org/standard/69084.html
+    date: 2021
 
 --- abstract
 
@@ -5422,7 +5426,7 @@ the Audience Set it is not on. {{entitlement}} applies to it exactly as it appli
 
 ### JOSE Securing Forms {#vc-jose}
 
-The credential of {{vc-form}} has two further securing forms. All three carry
+The credential of {{vc-form}} has three further securing forms. All four carry
 the same credential, verify under the same Sealing key, and resolve that key
 through {{sealing-key-discovery}}. A relying party applies the verification
 steps of {{vc-verification}} to the credential it recovers from any form.
@@ -5457,10 +5461,41 @@ Disclosure states less than the credential does; it does not state anything
 different.
 
 Where the issuer binds the credential to a wallet key, `cnf` carries that key
-as a `jwk`. The Audience Set of {{audience}} is carried in every form
+as a `jwk`, and a presentation of that credential carries a key-binding JWT
+after the final tilde, per {{SD-JWT}}. The key-binding JWT has `alg` `EdDSA` and
+`typ` `kb+jwt`; its payload carries `iat`, `aud`, `nonce` and `sd_hash`, the
+base64url SHA-256 of the presentation up to and including its final tilde. A
+verifier MUST refuse a presentation of a bound credential that carries no
+key-binding JWT, one whose signature does not verify under `cnf.jwk`, and one
+whose `aud`, `nonce`, freshness or `sd_hash` does not match what the verifier
+issued and received. The Audience Set of {{audience}} is carried in every form
 and is not made optional by selective disclosure: a holder that withholds the
 `audienceSet` Disclosure presents a credential the relying party cannot place
 itself on, and {{entitlement}} applies to that presentation.
+
+**mdoc.** The credential is secured as an `IssuerSigned` structure of
+{{ISO18013-5}}. Each credential subject member is one data element in the
+namespace and `docType` `com.certisyn.arp.reconciliation.1`, carried as an
+`IssuerSignedItemBytes` (tag 24) of `digestID`, `random`, `elementIdentifier`
+and `elementValue`. The `issuerAuth` is a COSE_Sign1 ({{RFC9052}}) whose
+protected header carries `alg` `-8` and `kid` (the thumbprint of the Sealing
+key) and whose payload is a Mobile Security Object (tag 24) holding `version`
+`1.0`, `digestAlgorithm` `SHA-256`, the SHA-256 digest of every
+`IssuerSignedItemBytes` under `valueDigests`, the holder's `deviceKey` as a
+COSE_Key, the `docType`, and `validityInfo` (`signed`, `validFrom`,
+`validUntil`) equal to the credential's window. Encoding is the core
+deterministic encoding of {{RFC8949}}. A verifier MUST refuse an `issuerAuth`
+that does not verify under the Sealing key, an item whose digest is not in
+`valueDigests`, a digest with no item, a repeated `digestID`, a `docType` other
+than the one it requested, a validity window that excludes the evaluation time,
+and a `deviceKey` other than the holder key the relying party expects. The
+elements recovered from the items are the credential subject of {{vc-form}}.
+
+**Issuer metadata.** The issuer publishes the metadata document of
+{{SD-JWT-VC}}: `issuer` (the credential's `issuer`) and `jwks`, a JWK Set that
+holds the Sealing key with `kid` equal to its thumbprint. A relying party
+resolves the Sealing key from this document or through {{sealing-key-discovery}}
+and pins it before it accepts a credential in any form.
 
 ### Conformance Class {#vc-conformance}
 
@@ -5479,10 +5514,11 @@ each check a mutant verifier with that check removed must admit at least one
 vector the full verifier refuses.
 
 The JOSE securing forms are checked against the platform's own emission by a
-third implementation, hand-written over {{RFC8785}} and Ed25519, that applies 11
-rows: the three forms must state one credential, and mutants of each form that
-the genuine Sealing key signed, or that a holder or intermediary altered, must be
-refused at their designed check.
+third implementation, hand-written over {{RFC8785}}, {{RFC8949}} and Ed25519,
+that applies 30 rows: the four forms must state one credential and one holder
+key, a holder presentation with its key-binding JWT must verify, and mutants of
+each form that the genuine Sealing key signed, or that a holder or intermediary
+altered, must be refused at their designed check.
 
 ## Representation Invariance {#representation-invariance}
 

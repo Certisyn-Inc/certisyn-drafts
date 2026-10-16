@@ -132,6 +132,14 @@ informative:
     title: Securing Verifiable Credentials using JOSE and COSE
     target: https://www.w3.org/TR/vc-jose-cose/
     date: 2026
+  SD-JWT:
+    title: Selective Disclosure for JWTs (SD-JWT)
+    target: https://datatracker.ietf.org/doc/draft-ietf-oauth-selective-disclosure-jwt/
+    date: 2025
+  SD-JWT-VC:
+    title: SD-JWT-based Verifiable Credentials (SD-JWT VC)
+    target: https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/
+    date: 2025
 
 --- abstract
 
@@ -5412,6 +5420,48 @@ reliance window has closed.
 A relying party that is not an Audience Member holds a credential that carries
 the Audience Set it is not on. {{entitlement}} applies to it exactly as it applies to the COSE_Sign1 form.
 
+### JOSE Securing Forms {#vc-jose}
+
+The credential of {{vc-form}} has two further securing forms. All three carry
+the same credential, verify under the same Sealing key, and resolve that key
+through {{sealing-key-discovery}}. A relying party applies the verification
+steps of {{vc-verification}} to the credential it recovers from any form.
+
+**vc+jwt.** The credential is secured as a compact JWS under Section 3.1.1 of
+{{W3C-VC-JOSE-COSE}}. The payload is the {{RFC8785}} serialisation of the
+credential. The protected header carries `alg` `EdDSA`, `kid` (the JWK
+thumbprint of the Sealing key, {{RFC7638}}), `typ` `vc+jwt` and `cty` `vc`, and
+no other member. The media type is `application/vc+jwt`.
+
+**SD-JWT VC.** The credential is secured as an SD-JWT VC under {{SD-JWT-VC}}
+and {{SD-JWT}}. The protected header carries `alg` `EdDSA`, `kid` and `typ`
+`dc+sd-jwt`. The payload carries `iss` (the credential's `issuer`), `jti` (its
+`id`), `iat` and `nbf` (`validFrom`), `exp` (`validUntil`), `vct`
+(`https://datatracker.ietf.org/doc/draft-hillier-scitt-arp/vct#reconciliation-output`),
+`_sd_alg` `sha-256` and `_sd`, a sorted array of digests. Four credential
+subject members are always in the clear: `reconciliationHash`,
+`combinedVerdict`, `reconciliationTimestamp` and `relianceHorizon`. Seven are
+selectively disclosable, each with its own Disclosure: `claimHash`,
+`policyVersionHash`, `requesterBindingClass`, `addressedRegisters`,
+`bilateralRegisterAgreementHashes`, `audienceSet` and `sealedOutput`. The
+issuer serialisation carries every Disclosure and no key-binding JWT. A holder
+presents a subset of the Disclosures. The media type is `application/dc+sd-jwt`.
+
+A verifier of the SD-JWT VC form MUST refuse a Disclosure whose digest is not in
+`_sd`, a Disclosure presented twice, a Disclosure that names a member that is
+in the clear or is not one of the seven, and an `_sd` that is not sorted. The
+members recovered from the Disclosures and the clear members together are the
+credential subject of {{vc-form}}, and steps 4 to 7 of {{vc-verification}}
+apply to the credential rebuilt from them. A presentation that omits a
+Disclosure states less than the credential does; it does not state anything
+different.
+
+Where the issuer binds the credential to a wallet key, `cnf` carries that key
+as a `jwk`. The Audience Set of {{audience}} is carried in every form
+and is not made optional by selective disclosure: a holder that withholds the
+`audienceSet` Disclosure presents a credential the relying party cannot place
+itself on, and {{entitlement}} applies to that presentation.
+
 ### Conformance Class {#vc-conformance}
 
 A conformance class for this profile is published with the draft's conformance
@@ -5427,6 +5477,12 @@ parameters carried unprotected, and an additional credential type. One vector is
 a genuine credential evaluated after its Horizon, whose outcome is stale. For
 each check a mutant verifier with that check removed must admit at least one
 vector the full verifier refuses.
+
+The JOSE securing forms are checked against the platform's own emission by a
+third implementation, hand-written over {{RFC8785}} and Ed25519, that applies 11
+rows: the three forms must state one credential, and mutants of each form that
+the genuine Sealing key signed, or that a holder or intermediary altered, must be
+refused at their designed check.
 
 ## Representation Invariance {#representation-invariance}
 

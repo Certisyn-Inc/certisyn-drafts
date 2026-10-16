@@ -1,0 +1,105 @@
+{
+ "rows": [
+  [
+   "three forms, one credential",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ],
+  [
+   "vc+jwt payload altered",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "vc+jwt typ vc+cose",
+   "typ",
+   [
+    "refuse",
+    "typ"
+   ],
+   true
+  ],
+  [
+   "vc+jwt alg none",
+   "alg",
+   [
+    "refuse",
+    "alg"
+   ],
+   true
+  ],
+  [
+   "vc+jwt wrong key",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "sd-jwt disclosure altered",
+   "disclosure-digest",
+   [
+    "refuse",
+    "disclosure-digest"
+   ],
+   true
+  ],
+  [
+   "sd-jwt disclosure repeated",
+   "disclosure-digest",
+   [
+    "refuse",
+    "disclosure-digest"
+   ],
+   true
+  ],
+  [
+   "sd-jwt disclosure not in _sd",
+   "disclosure-digest",
+   [
+    "refuse",
+    "disclosure-digest"
+   ],
+   true
+  ],
+  [
+   "sd-jwt payload altered",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "sd-jwt key-binding suffix",
+   "sd-shape",
+   [
+    "refuse",
+    "sd-shape"
+   ],
+   true
+  ],
+  [
+   "sd-jwt subset presentation",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ]
+ ],
+ "credited": 11,
+ "total": 11
+}

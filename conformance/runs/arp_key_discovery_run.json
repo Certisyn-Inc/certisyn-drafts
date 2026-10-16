@@ -1,0 +1,213 @@
+{
+ "rows": [
+  [
+   "sealing set, credential, JWKS, single, operator",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ],
+  [
+   "key set payload altered",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "key set signed by another key",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "key set names another signer",
+   "signer-kid",
+   [
+    "refuse",
+    "signer-kid"
+   ],
+   true
+  ],
+  [
+   "key set content type wrong",
+   "cty",
+   [
+    "refuse",
+    "cty"
+   ],
+   true
+  ],
+  [
+   "entry without arp-key-status",
+   "status",
+   [
+    "refuse",
+    "status"
+   ],
+   true
+  ],
+  [
+   "entry without arp-key-validity",
+   "validity",
+   [
+    "refuse",
+    "validity"
+   ],
+   true
+  ],
+  [
+   "revoked entry without revocation time",
+   "revocation-time",
+   [
+    "refuse",
+    "revocation-time"
+   ],
+   true
+  ],
+  [
+   "revocation time on a live entry",
+   "revocation-time",
+   [
+    "refuse",
+    "revocation-time"
+   ],
+   true
+  ],
+  [
+   "kid is not the thumbprint of x",
+   "kid-thumbprint",
+   [
+    "refuse",
+    "kid-thumbprint"
+   ],
+   true
+  ],
+  [
+   "entries out of order",
+   "order",
+   [
+    "refuse",
+    "order"
+   ],
+   true
+  ],
+  [
+   "duplicate entry",
+   "duplicate",
+   [
+    "refuse",
+    "duplicate"
+   ],
+   true
+  ],
+  [
+   "key-set signer absent from the set",
+   "signer-not-in-set",
+   [
+    "refuse",
+    "signer-not-in-set"
+   ],
+   true
+  ],
+  [
+   "credential key removed from the set",
+   "kid-unresolved",
+   [
+    "refuse",
+    "kid-unresolved"
+   ],
+   true
+  ],
+  [
+   "key revoked before the Output was sealed",
+   "key-not-admitted",
+   [
+    "refuse",
+    "key-not-admitted"
+   ],
+   true
+  ],
+  [
+   "key revoked after the Output was sealed",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ],
+  [
+   "retired key, Output outside its interval",
+   "key-not-admitted",
+   [
+    "refuse",
+    "key-not-admitted"
+   ],
+   true
+  ],
+  [
+   "Output evaluated before the key's interval",
+   "key-not-admitted",
+   [
+    "refuse",
+    "key-not-admitted"
+   ],
+   true
+  ],
+  [
+   "entry carries a different public key",
+   "kid-thumbprint",
+   [
+    "refuse",
+    "kid-thumbprint"
+   ],
+   true
+  ],
+  [
+   "credential altered after sealing",
+   "credential-signature",
+   [
+    "refuse",
+    "credential-signature"
+   ],
+   true
+  ],
+  [
+   "JWKS without the thumbprint kid",
+   "jwks-alias",
+   [
+    "refuse",
+    "jwks-alias"
+   ],
+   true
+  ],
+  [
+   "single-key document differs from the set",
+   "single-differs",
+   [
+    "refuse",
+    "single-differs"
+   ],
+   true
+  ],
+  [
+   "operator set not distinct",
+   "operator-not-distinct",
+   [
+    "refuse",
+    "operator-not-distinct"
+   ],
+   true
+  ]
+ ],
+ "credited": 23,
+ "total": 23
+}

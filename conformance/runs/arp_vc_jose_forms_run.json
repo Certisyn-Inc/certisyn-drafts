@@ -1,0 +1,276 @@
+{
+ "rows": [
+  [
+   "three forms, one credential",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ],
+  [
+   "vc+jwt payload altered",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "vc+jwt typ vc+cose",
+   "typ",
+   [
+    "refuse",
+    "typ"
+   ],
+   true
+  ],
+  [
+   "vc+jwt alg none",
+   "alg",
+   [
+    "refuse",
+    "alg"
+   ],
+   true
+  ],
+  [
+   "vc+jwt wrong key",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "sd-jwt disclosure altered",
+   "disclosure-digest",
+   [
+    "refuse",
+    "disclosure-digest"
+   ],
+   true
+  ],
+  [
+   "sd-jwt disclosure repeated",
+   "disclosure-digest",
+   [
+    "refuse",
+    "disclosure-digest"
+   ],
+   true
+  ],
+  [
+   "sd-jwt disclosure not in _sd",
+   "disclosure-digest",
+   [
+    "refuse",
+    "disclosure-digest"
+   ],
+   true
+  ],
+  [
+   "sd-jwt payload altered",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "sd-jwt key-binding suffix",
+   "sd-shape",
+   [
+    "refuse",
+    "sd-shape"
+   ],
+   true
+  ],
+  [
+   "sd-jwt subset presentation",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ],
+  [
+   "key binding presentation",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ],
+  [
+   "key binding wrong audience",
+   "kb-aud",
+   [
+    "refuse",
+    "kb-aud"
+   ],
+   true
+  ],
+  [
+   "key binding wrong nonce",
+   "kb-nonce",
+   [
+    "refuse",
+    "kb-nonce"
+   ],
+   true
+  ],
+  [
+   "key binding stale",
+   "kb-stale",
+   [
+    "refuse",
+    "kb-stale"
+   ],
+   true
+  ],
+  [
+   "key binding missing",
+   "key-binding-missing",
+   [
+    "refuse",
+    "key-binding-missing"
+   ],
+   true
+  ],
+  [
+   "key binding other holder key",
+   "kb-signature",
+   [
+    "refuse",
+    "kb-signature"
+   ],
+   true
+  ],
+  [
+   "key binding presentation widened",
+   "kb-sd-hash",
+   [
+    "refuse",
+    "kb-sd-hash"
+   ],
+   true
+  ],
+  [
+   "key binding issuer payload altered",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "key binding expired credential",
+   "expired",
+   [
+    "refuse",
+    "expired"
+   ],
+   true
+  ],
+  [
+   "mdoc, four forms one credential",
+   "accept",
+   [
+    "accept",
+    null
+   ],
+   true
+  ],
+  [
+   "mdoc MSO altered",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "mdoc element altered",
+   "digest",
+   [
+    "refuse",
+    "digest"
+   ],
+   true
+  ],
+  [
+   "mdoc digest removed",
+   "digest",
+   [
+    "refuse",
+    "digest"
+   ],
+   true
+  ],
+  [
+   "mdoc digest without item",
+   "digest-unmatched",
+   [
+    "refuse",
+    "digest-unmatched"
+   ],
+   true
+  ],
+  [
+   "mdoc docType swapped",
+   "doctype",
+   [
+    "refuse",
+    "doctype"
+   ],
+   true
+  ],
+  [
+   "mdoc validity elapsed",
+   "validity",
+   [
+    "refuse",
+    "validity"
+   ],
+   true
+  ],
+  [
+   "mdoc device key swapped",
+   "device-key",
+   [
+    "refuse",
+    "device-key"
+   ],
+   true
+  ],
+  [
+   "mdoc wrong Sealing key",
+   "signature",
+   [
+    "refuse",
+    "signature"
+   ],
+   true
+  ],
+  [
+   "mdoc kid swapped",
+   "kid",
+   [
+    "refuse",
+    "kid"
+   ],
+   true
+  ]
+ ],
+ "credited": 30,
+ "total": 30
+}

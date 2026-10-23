@@ -2,7 +2,7 @@
 title: Attestation Reconciliation Protocol
 abbrev: ARP
 docname: draft-hillier-scitt-arp-05
-date: 2026-10-21
+date: 2026-10-23
 category: std
 submissiontype: IETF
 v: 3
@@ -5172,9 +5172,8 @@ A reconciliation server MUST publish its sealing keys as a COSE Key Set at
 `/.well-known/arp-sealing-keys` on the reconciliation server's authority origin,
 and
 a single key by identifier at `/.well-known/arp-sealing-keys/{kid_value}`. The
-Sealing-Key Identifier is the pair of that origin and the `kid`; where this
-document requires a `kid` to equal the Sealing-Key Identifier, a key identifier in this document is in every case the JWK thumbprint of
-{{RFC7638}}, base64url-encoded without padding. It is carried as a CBOR text
+Sealing-Key Identifier is the pair of that origin and the `kid`. A key identifier
+in this document is in every case the JWK thumbprint of {{RFC7638}}, base64url-encoded without padding. It is carried as a CBOR text
 string in every payload field and in every `keyid` signature parameter, as the
 UTF-8 encoding of that same text string in a COSE `kid` (label 4), which
 {{RFC9052}} makes a byte string, and as that text string unaltered in a
@@ -5199,8 +5198,10 @@ member of the Addressed-Registers Identifier Set and is known to the relying
 party from the Output.
 
 An Authorised-Origin Document is a COSE_Sign1 whose payload comprises, for each
-reconciliation server the register operator has authorised, that server's
-the three-element arrays {{sealing-key-discovery}} pins above. It MUST be signed under a key served in a COSE Key Set at
+reconciliation server the register operator has authorised, that server's three-element array of
+{{sealing-key-discovery}}: its authority origin, the identifier of the key
+signing its sealing key set, and the identifier of the key signing its operator
+key set. It MUST be signed under a key served in a COSE Key Set at
 `/.well-known/arp-register-keys` on the same register origin -- a key set carrying the same `arp-key-status` and `arp-key-validity` parameters as
 a sealing key set, so
 that a compromised register key has an in-band revocation path, and the same key
@@ -5366,7 +5367,7 @@ The credential is secured as a COSE_Sign1 under Section 3.3.1 of
   UTF-8. A verifier compares the payload to the {{RFC8785}} serialisation of
   its own parse of it, because a signature over a second serialisation of one
   credential is a second signing act over one statement.
-- The protected header carries `alg` (1), `kid` (4), `typ` (16) and the content
+- The protected header carries `alg` (1, the value `-8`, EdDSA), `kid` (4), `typ` (16) and the content
   type (3). A verifier reads all four from the protected header only; a value
   in the unprotected header is not evidence of anything. `typ` is `application/vc+cose`. The content type is
   `application/arp-reconciliation-output+json`, the more specific type that
@@ -5376,9 +5377,10 @@ The credential is secured as a COSE_Sign1 under Section 3.3.1 of
 - The signing key is the Sealing key. The pair of `issuer` and `kid` is the
   Sealing-Key Identifier of the Output the credential projects, and it resolves
   through {{sealing-key-discovery}}.
-- The `iat` and `exp` CWT claims, where present in a header, describe the
+- The `iat` and `exp` CWT claims, where present in a COSE header, describe the
   signature. A verifier MUST NOT read either as the Reconciliation Timestamp or
-  the Reliance Horizon.
+  the Reliance Horizon. In the SD-JWT VC form `exp` is a payload claim and
+  carries `validUntil`.
 
 ### Verification {#vc-verification}
 
@@ -5456,9 +5458,14 @@ A verifier of the SD-JWT VC form MUST refuse a Disclosure whose digest is not in
 in the clear or is not one of the seven, and an `_sd` that is not sorted. The
 members recovered from the Disclosures and the clear members together are the
 credential subject of {{vc-form}}, and steps 4 to 7 of {{vc-verification}}
-apply to the credential rebuilt from them. A presentation that omits a
-Disclosure states less than the credential does; it does not state anything
-different.
+apply to the credential as the issuer serialised it, with every Disclosure
+present. The clear members map to that credential as `iss` to `issuer`, `jti` to
+`id`, `nbf` to `validFrom`, `exp` to `validUntil` and `vct` to the credential
+type, the subject members are top-level claims, and the credential's `@context`
+is the constant {{vc-form}} fixes. A presentation that omits a Disclosure states
+less than the credential does and states nothing different: a verifier applies
+the Disclosure rules above, the clear members and the key binding to what it
+received, and treats each member it did not receive as not stated.
 
 Where the issuer binds the credential to a wallet key, `cnf` carries that key
 as a `jwk`, and a presentation of that credential carries a key-binding JWT
@@ -5474,7 +5481,8 @@ and is not made optional by selective disclosure: a holder that withholds the
 itself on, and {{entitlement}} applies to that presentation.
 
 **mdoc.** The credential is secured as an `IssuerSigned` structure of
-{{ISO18013-5}}. Each credential subject member is one data element in the
+{{ISO18013-5}}, profiled so that the issuer key resolves by thumbprint through
+{{sealing-key-discovery}} where {{ISO18013-5}} carries an X.509 chain. Each credential subject member is one data element in the
 namespace and `docType` `com.certisyn.arp.reconciliation.1`, carried as an
 `IssuerSignedItemBytes` (tag 24) of `digestID`, `random`, `elementIdentifier`
 and `elementValue`. The `issuerAuth` is a COSE_Sign1 ({{RFC9052}}) whose
@@ -5482,7 +5490,7 @@ protected header carries `alg` `-8` and `kid` (the thumbprint of the Sealing
 key) and whose payload is a Mobile Security Object (tag 24) holding `version`
 `1.0`, `digestAlgorithm` `SHA-256`, the SHA-256 digest of every
 `IssuerSignedItemBytes` under `valueDigests`, the holder's `deviceKey` as a
-COSE_Key, the `docType`, and `validityInfo` (`signed`, `validFrom`,
+COSE_Key under `deviceKeyInfo`, the `docType`, and `validityInfo` (`signed`, `validFrom`,
 `validUntil`) equal to the credential's window. Encoding is the core
 deterministic encoding of {{RFC8949}}. A verifier MUST refuse an `issuerAuth`
 that does not verify under the Sealing key, an item whose digest is not in
@@ -5502,7 +5510,7 @@ and pins it before it accepts a credential in any form.
 A conformance class for this profile is published with the draft's conformance
 material: 30 vectors, each declaring the outcome it must produce and the one
 check designed to produce it, decided by two independent COSE_Sign1 and
-{{RFC8785}} implementations that must agree on every row. Twelve of the vectors
+{{RFC8785}} implementations that must agree on every row. Thirteen of the vectors
 are signed by the genuine Sealing key and fail only on profile content: a
 redefined context term, an added subject or top-level member, an `id` naming
 another reconciliation, a `validFrom` after `validUntil`, a padded or
@@ -6468,7 +6476,7 @@ forms.
 | `arp-sealed-reconciliation-output+cose` | a Reconciliation Output under its Sealing Signature, whether delivered directly or nested in a SCITT Signed Statement | {{reconciliation-output}} |
 | `arp-policy-parameters+cose` | a Policy Parameters Document | {{read-signing}} |
 | `arp-post-seal-evaluation-record+cbor` | a Post-Seal Evaluation Record | {{post-seal}} |
-| `arp-reconciliation-output+json` | the Verifiable Credentials JSON-LD form | {{vc-interop}} |
+| `arp-reconciliation-output+json` | the RFC 8785 payload of the Verifiable Credentials form | {{vc-interop}} |
 | `arp-ledger-head+cose` | a Ledger Head Statement | {{settlement-ledger}} |
 | `arp-read-response+cose` | a signed read response | {{read-responses}} |
 | `arp-evaluation-sweep+cose` | an Evaluation Sweep Statement | {{sweep-statements}} |
@@ -7179,7 +7187,7 @@ the verification steps, and the mapping of the Reliance Horizon onto
 The credential is also specified in `application/vc+jwt`, in SD-JWT VC
 (`application/dc+sd-jwt`) with selective disclosure of the subject members and
 an optional key-binding JWT, and as an ISO/IEC 18013-5 mdoc `IssuerSigned`
-structure. Issuer metadata is published for each form. All four carry the same
+structure. The issuer's JWK Set resolves the Sealing key for every form. All four carry the same
 RFC 8785 payload under the same Sealing key, and a 30-row conformance class
 checks them independently.
 

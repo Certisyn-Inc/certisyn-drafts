@@ -321,7 +321,7 @@ def main():
     def other_dk(mso): mso["deviceKeyInfo"]["deviceKey"][-2] = bytes(32)
     case("mdoc device key swapped", "device-key", lambda: mdoc_check(mdoc_resign(mdoc, em, edit_mso=other_dk), em, cred, now, hx))
     case("mdoc wrong Sealing key", "signature", lambda: mdoc_check(mdoc, {**em, "x": b64u(bytes(32))}, cred, now, hx))
-    case("mdoc kid swapped", "kid", lambda: mdoc_check(mdoc, {**em, "kid": "x" + em["kid"][1:]}, cred, now, hx))
+    case("mdoc kid swapped", "kid", lambda: mdoc_check(mdoc, {**em, "kid": ("y" if em["kid"][0] == "x" else "x") + em["kid"][1:]}, cred, now, hx))
     print("\n%d of %d credited" % (len(rows) - fails, len(rows)))
     json.dump({"rows": rows, "credited": len(rows) - fails, "total": len(rows)}, open("runs/arp_vc_jose_forms_run.json", "w"), indent=1)
     sys.exit(1 if fails else 0)

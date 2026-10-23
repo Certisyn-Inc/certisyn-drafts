@@ -168,7 +168,7 @@ def main():
     case("key set payload altered", "signature", lambda: kset(em, flip()))
     other = Ed25519PrivateKey.generate()
     case("key set signed by another key", "signature", lambda: kset(em, sign1(cbor2.dumps(keys), other, ks_kid, "application/cose-key-set")))
-    case("key set names another signer", "signer-kid", lambda: kset(em, sign1(cbor2.dumps(keys), ksk, "x" + ks_kid[1:], "application/cose-key-set")))
+    case("key set names another signer", "signer-kid", lambda: kset(em, sign1(cbor2.dumps(keys), ksk, ("y" if ks_kid[0] == "x" else "x") + ks_kid[1:], "application/cose-key-set")))
     case("key set content type wrong", "cty", lambda: kset(em, sign1(cbor2.dumps(keys), ksk, ks_kid, "application/cose-key")))
     def drop_status(ks): ks[0].pop(STATUS); return ks
     case("entry without arp-key-status", "status", lambda: kset(em, resign(drop_status)))

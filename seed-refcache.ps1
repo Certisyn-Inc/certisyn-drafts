@@ -99,8 +99,7 @@ $IDS = @(
   "mih-sokolov-scitt-payload-binding",
   "ietf-scitt-scrapi",
   "schrock-canonical-action-identifier",
-  "meunier-webbotauth-httpsig-protocol",
-  "meunier-webbotauth-httpsig-directory",
+  "ietf-webbotauth-httpsig-protocol",
   "meunier-webbotauth-registry"
 )
 

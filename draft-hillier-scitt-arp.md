@@ -1,8 +1,8 @@
 ---
 title: Attestation Reconciliation Protocol
 abbrev: ARP
-docname: draft-hillier-scitt-arp-04
-date: 2026-09-08
+docname: draft-hillier-scitt-arp-05
+date: 2026-10-21
 category: std
 submissiontype: IETF
 v: 3
@@ -7173,6 +7173,23 @@ RFC Editor: please remove this section before publication.
 its members, its securing as `application/vc+cose` under {{W3C-VC-JOSE-COSE}},
 the verification steps, and the mapping of the Reliance Horizon onto
 `validUntil`. A worked example and a 30-vector conformance class accompany it.
+
+### Four securing forms for one credential
+
+The credential is also specified in `application/vc+jwt`, in SD-JWT VC
+(`application/dc+sd-jwt`) with selective disclosure of the subject members and
+an optional key-binding JWT, and as an ISO/IEC 18013-5 mdoc `IssuerSigned`
+structure. Issuer metadata is published for each form. All four carry the same
+RFC 8785 payload under the same Sealing key, and a 30-row conformance class
+checks them independently.
+
+### Sealing-key discovery is exercised end to end
+
+A reconciliation server publishes its signed COSE Key Set, a single key by
+identifier, and a distinct operator key set. Each entry carries `arp-key-status`
+and `arp-key-validity`, retirement is by status, and the issuer JWKS names the
+same key under the same thumbprint `kid`. A 23-row conformance class decides
+resolution, status and validity, and the refusal of each malformed set.
 
 ## Since draft-hillier-scitt-arp-03
 

@@ -1,7 +1,7 @@
 ---
 title: Attestation Reconciliation Protocol
 abbrev: ARP
-docname: draft-hillier-scitt-arp-05
+docname: draft-hillier-scitt-arp-06
 date: 2026-10-23
 category: std
 submissiontype: IETF
@@ -67,7 +67,6 @@ informative:
   RFC6350:        # vCard 4.0
   RFC8032:        # EdDSA; S8.4 is why EdDSA is outside {{signature-malleability}}
   RFC9162:        # Certificate Transparency 2.0; {{merkle-construction}} states its relationship to Section 2.1.1
-  RFC6962:        # Certificate Transparency, obsoleted by RFC 9162 and cited deliberately: it is what deployed CT logs implement
   I-D.schrock-canonical-action-identifier:
   BODS:
     title: Beneficial Ownership Data Standard
@@ -108,8 +107,7 @@ informative:
   RFC8067:        # Updating When Standards Track Documents May Refer Normatively to Documents at a Lower Level
   I-D.mih-sato-agent-accountability-composition:
   I-D.mih-sokolov-scitt-payload-binding:
-  I-D.meunier-webbotauth-httpsig-protocol:
-  I-D.meunier-webbotauth-httpsig-directory:
+  I-D.ietf-webbotauth-httpsig-protocol:
   I-D.meunier-webbotauth-registry:
   I-D.connolly-cfrg-ml-dsa-security-considerations:
   FIPS203:
@@ -301,7 +299,7 @@ correspondence between a Reconciliation Output and an Attestation Result, and
 the Reconciliation Agreement occupies the position of an Appraisal Policy. This
 document does not define a second appraisal model.
 
-Logging and inclusion proofs are {{RFC6962}} and {{RFC9162}}. {{aggregation}}
+Logging and inclusion proofs are {{RFC9162}}. {{aggregation}}
 uses the {{RFC9162}} leaf and proof structure without modification. The Merkle
 constructions here are that construction; the only thing this document adds is
 what goes into the leaf.
@@ -311,7 +309,7 @@ signatures are {{RFC9052}} and {{RFC9053}}. {{encoding}} adds determinism
 requirements over those and defines no new encoding.
 
 Requester authentication over HTTP is {{RFC9421}}, and the agentic binding of
-{{agentic}} composes with {{I-D.meunier-webbotauth-httpsig-protocol}} rather
+{{agentic}} composes with {{I-D.ietf-webbotauth-httpsig-protocol}} rather
 than defining a parallel scheme.
 
 ## What this document does not replace
@@ -436,7 +434,7 @@ Requesting Agent:
 : An autonomous software agent that initiates a reconciliation. A Requesting
   Agent is FRIENDLY when it carries a verifiable identity -- a request signed
   under HTTP Message Signatures {{RFC9421}} per Web Bot Auth
-  {{I-D.meunier-webbotauth-httpsig-protocol}}, a genuinely verified declared bot,
+  {{I-D.ietf-webbotauth-httpsig-protocol}}, a genuinely verified declared bot,
   or a Verified Principal Credential -- and ENEMY when its principal binding is
   absent or unverifiable. Anything unverifiable is treated as ENEMY.
 
@@ -947,9 +945,8 @@ at least one verifiable identity is present and cryptographically valid: a
 request signed under HTTP Message Signatures {{RFC9421}} with a key resolvable
 through a Web Bot Auth signature-agent card
 {{I-D.meunier-webbotauth-registry}}, advertised via the Signature-Agent header
-{{I-D.meunier-webbotauth-httpsig-protocol}} and resolved through the HTTP
-Message Signatures directory it names
-{{I-D.meunier-webbotauth-httpsig-directory}}, a genuinely verified declared
+{{I-D.ietf-webbotauth-httpsig-protocol}}, which also defines the key
+directory it names, a genuinely verified declared
 bot, or a Verified Principal Credential. An agent presenting no such identity,
 or an identity that fails verification, MUST be classified ENEMY.
 
@@ -1613,13 +1610,10 @@ over one leaf has that leaf's leaf-node hash as its root; a tree over no leaves
 has thirty-two zero octets as its root.
 
 For every non-empty tree this is the Merkle Tree Hash of Section 2.1.1 of
-{{RFC9162}} instantiated with SHA-256. The recursion of that section is the
-recursion of Section 2.1 of {{RFC6962}}; the two differ only in that
-{{RFC9162}} carries the hash algorithm as a log parameter where {{RFC6962}}
-fixes SHA-256, and this document fixes SHA-256. Both are named here:
-{{RFC9162}} because it is the current specification, and {{RFC6962}} because it
-is what most deployed Certificate Transparency logs implement and so is what an
-implementer is most likely to arrive from.
+{{RFC9162}} instantiated with SHA-256. {{RFC9162}} carries the hash algorithm as a log parameter and this document
+fixes SHA-256, which is the hash that Certificate Transparency logs built on the
+earlier specification also use, so an implementer arriving from either computes
+the same tree.
 
 The odd-node rule stated above and that recursive split at the largest power of
 two below the leaf count are two descriptions of one tree: at every leaf count
@@ -2972,8 +2966,8 @@ A Ledger Head Statement is encoded as a COSE_Sign1 over the deterministically
 encoded CBOR array of the first five items above, in that order, under the media
 type registered in {{iana}}, with the fifth item encoded as CBOR null until the
 first notarisation completes.
-The server MUST notarise the Ledger Head Statement current at each interval into
-a SCITT Transparency Service. The interval is the shortest declared by any
+The server MUST submit the Ledger Head Statement current at each interval for
+notarisation by a SCITT Transparency Service. The interval is the shortest declared by any
 Bilateral Register Agreement, per the direction rule of {{delivery}}. The
 Transparency Service MUST be one every Bilateral Register Agreement the
 deployment holds declares,
@@ -3076,7 +3070,8 @@ contiguous sequence number and the digest of the preceding record, computed as
 {{settlement-ledger}} computes a Prior-Entry Hash, and the reconciliation server
 MUST publish a signed head of that trail -- its current last sequence number and
 digest, under its sealing key -- once per ledger-head notarisation interval, and
-MUST notarise that head into the Transparency Service of {{settlement-ledger}}.
+MUST submit that head for notarisation by the Transparency Service of
+{{settlement-ledger}}.
 
 Earlier revisions called the trail subpoena-grade and specified none of that.
 The trail is held by the party whose reads it records, and the accountability of
@@ -4529,9 +4524,8 @@ Where a reconciliation is requested over HTTP by an autonomous agent, the
 request MUST be signed under HTTP Message Signatures {{RFC9421}}, with the
 signature-agent key resolvable through a Web Bot Auth signature-agent card
 {{I-D.meunier-webbotauth-registry}}, advertised via the Signature-Agent header
-{{I-D.meunier-webbotauth-httpsig-protocol}} and resolved through the HTTP
-Message Signatures directory it names
-{{I-D.meunier-webbotauth-httpsig-directory}}. The reconciliation server
+{{I-D.ietf-webbotauth-httpsig-protocol}}, which also defines the key
+directory it names. The reconciliation server
 derives the Agent Friend-or-Foe Determination from
 verification of that signature and,
 where required by the Agent-IFF policy, a Verified Principal Credential
@@ -4643,8 +4637,8 @@ agreement provides, or, for an
   for the Head Consistency Statement of {{head-consistency}}, and the same
   reasoning was not carried here.
 
-  The reconciliation server MUST notarise each published Policy Parameters
-  Document into the Transparency Service of {{settlement-ledger}}, under its own
+  The reconciliation server MUST submit each published Policy Parameters
+  Document for notarisation by the Transparency Service of {{settlement-ledger}}, under its own
   media type, within the ledger-head notarisation interval of that section
   measured from its Publication Timestamp, and MUST republish it on that
   interval whether or not its contents changed. A Document that changed without
@@ -6491,7 +6485,7 @@ This document benefits from the SCITT Architecture {{RFC9943}}, the SCITT
 Reference APIs {{I-D.ietf-scitt-scrapi}}, COSE Receipts
 {{RFC9942}}, the RATS Architecture {{RFC9334}},
 HTTP Message Signatures {{RFC9421}}, and the Web Bot Auth HTTP message
-signature protocol {{I-D.meunier-webbotauth-httpsig-protocol}}.
+signature protocol {{I-D.ietf-webbotauth-httpsig-protocol}}.
 
 Named findings, because a specification improved by review should say by whom.
 
@@ -7173,6 +7167,24 @@ failure is a correlation that silently does not occur.
 
 RFC Editor: please remove this section before publication.
 
+## Since draft-hillier-scitt-arp-05
+
+### Mechanical
+
+- The document is validated by both idnits and idnits3 with no error or warning
+  other than those that follow from the Standards Track status itself: the
+  downward references enumerated in the Note to the RFC Editor, and the
+  normative reference to {{I-D.ietf-scitt-scrapi}}.
+- Requirement-level keywords are marked with the `bcp14` element, and the three
+  sentences in which the verb "notarise" followed a keyword are reworded so that
+  the keyword and the verb are not read as a single negated keyword.
+- The obsolete Certificate Transparency reference RFC 6962 is no longer
+  cited. {{RFC9162}} is the reference, and {{merkle-construction}} states that
+  the tree it defines is the tree earlier logs compute.
+- The Web Bot Auth references are updated to {{I-D.ietf-webbotauth-httpsig-protocol}},
+  which defines the Signature-Agent header and the key directory it names. The
+  separate directory reference is removed.
+
 ## Since draft-hillier-scitt-arp-04
 
 ### The Verifiable Credentials form is a complete profile
@@ -7819,13 +7831,9 @@ this document had already chosen twice in the other one.
 Anchors were added to sections that had none -- {{crypto-upgrade}},
 {{cbor-cose}}, {{agreement-drift}} and {{post-quantum}} -- so that {{bra}} can
 cite them. No heading text changed. Item 2 of {{bra-items}} cites
-{{post-quantum}} for the post-quantum primitives a deployment has selected. {{RFC9162}} and {{RFC6962}} are added as
-informative references: RFC 9162 obsoletes RFC 6962 and is the current
-specification, and RFC 6962 is cited deliberately alongside it because it is the
-version deployed Certificate Transparency logs implement, so naming only the
-replacement would leave the reader who is actually at risk without the reference
-they hold. Neither is normative -- the construction is fully specified here --
-so no downref is introduced.
+{{post-quantum}} for the post-quantum primitives a deployment has selected. {{RFC9162}} is added as an
+informative reference: it is the current Certificate Transparency specification. It is not normative, because
+the construction is fully specified here, so no downref is introduced.
 
 Four counts are corrected. {{bra-items}} described two of five items as already
 relied on elsewhere in this document where three of seven are, and said the
@@ -8299,11 +8307,11 @@ Reference and source corrections in this revision:
   have since been published as RFCs.
 - The Web Bot Auth architecture reference is replaced. -01 cited
   draft-meunier-web-bot-auth-architecture, which has been replaced by
-  {{I-D.meunier-webbotauth-httpsig-protocol}}.
+  {{I-D.ietf-webbotauth-httpsig-protocol}}.
   {{I-D.meunier-webbotauth-registry}}, which defines the signature-agent card,
-  is retained. {{I-D.meunier-webbotauth-httpsig-directory}} is
-  added, because the card is resolved through the directory the
-  Signature-Agent header names and -01 cited no document for that step.
+  is retained. The directory the Signature-Agent header names is defined in
+  {{I-D.ietf-webbotauth-httpsig-protocol}}, so no separate directory reference
+  is carried.
 - The document date, RFCXML version and submission type are declared in the
   source, and `keyword` is a single YAML sequence.
 - A note to the RFC Editor records the {{RFC8785}} downref explicitly, so that

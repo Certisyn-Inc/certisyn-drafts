@@ -63,7 +63,7 @@ def wrap(el):
 
 
 def main(src, dst):
-    parser = etree.XMLParser(remove_blank_text=False, resolve_entities=False)
+    parser = etree.XMLParser(remove_blank_text=False, resolve_entities=True)
     tree = etree.parse(src, parser)
     root = tree.getroot()
     for node in list(root.iter()):
@@ -89,13 +89,12 @@ def main(src, dst):
     wrap(root.find("middle"))
     wrap(root.find("back"))
     wrap(root.find("front"))
-    out = etree.tostring(tree, xml_declaration=True, encoding="UTF-8")
-    out = out.decode("utf-8")
-    bad = [c for c in out if ord(c) > 127]
-    if bad:
-        sys.exit("non-ASCII remains: %r" % sorted(set(bad)))
+    body = etree.tostring(root, encoding="unicode")
+    # Characters outside ASCII that must survive (the word joiner, for one) are
+    # written as numeric character references, so the file is pure ASCII.
+    out = '<?xml version="1.0" encoding="UTF-8"?>\n' + body + "\n"
+    out = out.encode("ascii", "xmlcharrefreplace").decode("ascii")
     open(dst, "w", encoding="ascii", newline="\n").write(out)
-
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])

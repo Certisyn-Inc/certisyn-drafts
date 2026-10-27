@@ -43,6 +43,12 @@
     {
       "id": "N10",
       "what": "duplicate member name with a different value, first occurrence sealed (schema repeated)"
+    },
+    {
+      "id": "N11",
+      "what": "record and seal of P01 presented with the input file of P02: input_digest recomputed from the supplied input differs",
+      "record": "P01",
+      "input": "P02"
     }
   ]
 }

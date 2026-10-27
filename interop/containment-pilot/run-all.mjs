@@ -7,7 +7,7 @@ let bad = 0;
 const run = (id, want, over = {}) => {
   const rec = over.record ?? id;
   const inId = over.input ?? id;
-  const inp = ['P01', 'P02'].includes(inId) ? readFileSync(`inputs/${inId}.input.json`, 'utf8') : undefined;
+  const inp = over.input_file ? readFileSync(over.input_file, 'utf8') : ['P01', 'P02'].includes(inId) ? readFileSync(`inputs/${inId}.input.json`, 'utf8') : undefined;
   const r = verifyPair(readFileSync(`vectors/${rec}.record.json`, 'utf8'), readFileSync(`vectors/${rec}.seal.json`, 'utf8'), pub, inp);
   const got = r.ok ? 'ACCEPT' : 'REFUSE';
   if (got !== want) bad++;

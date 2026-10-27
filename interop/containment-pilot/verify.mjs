@@ -35,7 +35,7 @@ export function parseStrict(text) {
         if (seen.has(k)) fail(`duplicate member name "${k}"`);
         seen.add(k); ws();
         if (text[i] !== ':') fail('expected colon'); i++;
-        o[k] = val(); ws();
+        Object.defineProperty(o, k, { value: val(), enumerable: true, writable: true, configurable: true }); ws();
         if (text[i] === ',') { i++; continue; }
         if (text[i] === '}') { i++; return o; }
         fail('expected comma or close brace');
@@ -74,8 +74,8 @@ export function verifyPair(recordText, sealText, pinnedPubB64, inputText) {
   const { result_digest, ...body } = rec;
   if (sha256(canonical(body)) !== result_digest) reasons.push('result_digest does not recompute from the record body');
   if (inputText !== undefined) {
-    let inp; try { inp = parseStrict(inputText); } catch (e) { reasons.push(`input: ${e.message}`); }
-    if (inp && sha256(canonical(inp)) !== rec.input_digest) reasons.push('input_digest does not recompute from the input file');
+    let inp, parsed = false; try { inp = parseStrict(inputText); parsed = true; } catch (e) { reasons.push(`input: ${e.message}`); }
+    if (parsed && sha256(canonical(inp)) !== rec.input_digest) reasons.push('input_digest does not recompute from the input file');
   }
   if (seal.domain !== DOMAIN || seal.algorithm !== 'ed25519') reasons.push('seal domain or algorithm is not the containment seal');
   const msg = `${DOMAIN}\n${SCHEMA}\n${result_digest}`;

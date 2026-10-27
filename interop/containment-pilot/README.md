@@ -8,7 +8,7 @@ Prepared for the SCITT interoperability pilot with b7n0de. Synthetic data. Apach
 - `FORMAT.md`: record and seal format, canonical form, verification procedure, limits
 - `verify.mjs`: offline verifier, Node 20 or later, no dependencies
 - `run-all.mjs`: runs every vector against `expected.json`
-- `vectors/`: 2 sealed records that must be accepted (P01, P02) and 11 that must be refused (N01 to N11)
+- `vectors/`: 2 sealed records that must be accepted (P01, P02) and 16 that must be refused (N01 to N16)
 - `inputs/`: the synthetic input series behind P01 and P02
 - `canonical/`: the canonical bytes of each input and each record body, for implementers in other languages
 - `expected.json`: the expected outcome of every vector
@@ -24,6 +24,8 @@ Prepared for the SCITT interoperability pilot with b7n0de. Synthetic data. Apach
 - N04 and N05: wrong signer, damaged signature
 - N06 and N07: wrong domain, another record's seal
 - N11: a correct record and seal presented with the input file of another record, refused at the input check (step 4 of the procedure)
+- N12: a member named `__proto__` is an ordinary member name and counts toward result_digest
+- N13 to N16: an input file that parses to null, false, 0 or an empty string is still compared against input_digest
 - N08 to N10: duplicate member names (identical value, escaped spelling, conflicting value), the same family as probes S11 to S15 in PR #11
 
 ## Key

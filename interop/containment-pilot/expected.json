@@ -49,6 +49,34 @@
       "what": "record and seal of P01 presented with the input file of P02: input_digest recomputed from the supplied input differs",
       "record": "P01",
       "input": "P02"
+    },
+    {
+      "id": "N12",
+      "what": "record carries a member named __proto__ with the digest and seal of P01 unchanged: the member counts toward result_digest"
+    },
+    {
+      "id": "N13",
+      "what": "input file holding null presented with the record and seal of P01: input_digest is recomputed whatever the input parses to",
+      "record": "P01",
+      "input_file": "inputs/N13.input.json"
+    },
+    {
+      "id": "N14",
+      "what": "input file holding false presented with the record and seal of P01: input_digest is recomputed whatever the input parses to",
+      "record": "P01",
+      "input_file": "inputs/N14.input.json"
+    },
+    {
+      "id": "N15",
+      "what": "input file holding 0 presented with the record and seal of P01: input_digest is recomputed whatever the input parses to",
+      "record": "P01",
+      "input_file": "inputs/N15.input.json"
+    },
+    {
+      "id": "N16",
+      "what": "input file holding an empty string presented with the record and seal of P01: input_digest is recomputed whatever the input parses to",
+      "record": "P01",
+      "input_file": "inputs/N16.input.json"
     }
   ]
 }

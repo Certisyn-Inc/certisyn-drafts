@@ -50,10 +50,10 @@ LF is the single byte 0x0A. The domain prefix keeps a containment seal from veri
 
 ## 6. Verification procedure
 
-1. Parse the record and the seal with a parser that refuses a repeated member name. Names are compared after unescaping, so `verdict` and `verdict` are the same name.
+1. Parse the record and the seal with a parser that refuses a repeated member name. Names are compared after unescaping, so `verdict` and `verdict` are the same name. A member named `__proto__` is an ordinary member name and stays in the record body.
 2. Check `schema`.
 3. Recompute `result_digest` from the record body. They must be equal.
-4. If the input file is supplied, recompute `input_digest`.
+4. If the input file is supplied, recompute `input_digest`, whatever the input parses to, including null, false, 0 and the empty string.
 5. Check the seal domain and algorithm.
 6. Rebuild signed_message from the record digest. It must equal the seal's signed_message, and its SHA-256 must equal signed_message_sha256.
 7. Verify the signature under the pinned public key from `KEY.json`. The key printed inside a seal is never used.

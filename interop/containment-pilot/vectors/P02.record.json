@@ -8,7 +8,7 @@
     "n": 1024,
     "interval_ms": 10,
     "statement": "Channels carrying more than 0.220 bits per second between these domains over this window would have been detected at this sample size. Channels below that rate are outside what this run could see: at the floor, 793 bits per hour could cross undetected, enough to move a 256-bit key in 0.32 hours. A negative result covers this pair, this window and this telemetry only.",
-    "detection_floor_bits_per_second": 0.2159347983833075,
+    "detection_floor_bits_per_second": 0.22019362439610854,
     "leakage_lower_bound_bits_per_second": 0,
     "undetected_budget": {
       "bits_per_hour_at_floor": 792.6970478259907,
@@ -20,5 +20,5 @@
     "internal_result_sha256": "328f60042aa3c27915f09829f3c0fd0385a1a93e2aa4a2ed0e3bbf7a1b517d0c",
     "disclosure": "method internals withheld, committed by digest"
   },
-  "result_digest": "bc1b1b5e383ee27e67dd459e70dc49a4edc3424e9432dce99b253b51e18097d2"
+  "result_digest": "845719a74c56e9dac39f17c72c5c2c269a9695a6cd7f42240a34fe4ffb2b51e1"
 }

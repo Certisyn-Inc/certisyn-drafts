@@ -52,7 +52,7 @@ $count = if (Test-Path $Cache) { (Get-ChildItem $Cache -Filter *.xml -EA Silentl
 # Raise this whenever a reference
 # is added, or a build will silently run against an incomplete cache and hang on
 # bib.ietf.org for the missing one.
-if ($Reseed -or $count -lt 29) {
+if ($Reseed -or $count -lt 28) {
     if (Test-Path $seed) {
         Say "  seeding ($count entries present) ..." Yellow
         & powershell -NoProfile -ExecutionPolicy Bypass -File $seed -RepoPath $RepoPath | Out-Null
@@ -101,8 +101,22 @@ if (-not $ok) {
     exit 1
 }
 Copy-Item $o $Xml -Force
-Say ("  wrote $Xml ({0:N0} bytes)" -f (Get-Item $Xml).Length) Green
 if ($err.Trim()) { Say "  warnings:" Yellow; Write-Host $err }
+
+# ---------------------------------------------------------------- v2 -> v3, clean
+# kramdown-rfc emits RFCXML v2 constructs. Convert to v3, then strip what the
+# datatracker validators flag (see postprocess_xml.py). The result is the XML
+# that is filed.
+Head "xml2rfc --v2v3 and postprocess_xml.py"
+$v3 = "$env:TEMP\arp-v3.xml"
+$prev = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+& $x2r --v2v3 $Xml -o $v3 2>&1 | ForEach-Object { Say "  $_" DarkGray }
+$ErrorActionPreference = $prev
+if (-not (Test-Path $v3)) { Say "  v2v3 FAILED" Red; exit 1 }
+& python (Join-Path $RepoPath "postprocess_xml.py") $v3 $Xml
+if ($LASTEXITCODE -ne 0) { Say "  postprocess FAILED" Red; exit 1 }
+Say ("  wrote $Xml ({0:N0} bytes)" -f (Get-Item $Xml).Length) Green
 
 # ---------------------------------------------------------------- xml -> txt
 Head "xml2rfc: $Xml -> $Txt"

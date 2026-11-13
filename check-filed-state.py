@@ -36,13 +36,23 @@ WHAT IT CHECKS
                  a filing proposes to move the record backwards, which is how
                  an obsolete pull request sat open proposing -05 and a filing
                  date that never happened
-  F6 VENUE       opt-in, needs the network: the datatracker's own API - the
+  F6 VENUE       opt-in, needs the network, and DELIBERATELY NARROW: it asks
+                 only whether the datatracker holds a revision this repository
+                 does not. It does NOT compare bytes. _shared/verify-filings.py
+                 owns that question - it reads the submission API and diffs
+                 every .FILED.txt against the IETF archive, written after two
+                 reference copies were found truncated and a reconstruction was
+                 diffed against the corrupt copy. One question, one script: do
+                 not reimplement archive comparison here.
+                 the datatracker's own API - the
                  one BUILD-AND-SUBMIT section 3 names as authoritative,
                  because the HTML status page can serve a cached revision -
                  does not hold a revision newer than this repository does.
                  Unreachable is UNKNOWN and exits 3. It is never a pass.
 
-  python3 check-filed-state.py              F1-F5, no network
+  python3 check-filed-state.py              F1-F7, no network
+  python3 check-filed-state.py --dir X      scope to subdirectory X, for a
+                                            repository holding several drafts
   python3 check-filed-state.py --venue      adds F6
   python3 check-filed-state.py --self-test  drives every refusal, changes nothing
 
@@ -79,14 +89,35 @@ def front_matter(repo, ref, path):
 
 
 def draft_name(repo):
-    """The draft this repository is for, derived rather than hardcoded, so the
-    same gate serves the other drafts the runbook section 6 names."""
+    """The draft this repository is for, and how its revisions are laid out.
+
+    TWO LAYOUTS ARE REAL, and an earlier version of this gate only knew one.
+      single        one live source, draft-NAME.md, revisions carried by tags.
+                    draft-hillier-scitt-arp.
+      per-revision  one file per revision, draft-NAME-NN.md. The other three
+                    drafts the runbook section 6 names are all like this, and
+                    the gate refused to run on them at all rather than saying
+                    anything useful about them.
+    Returns (name, layout, files)."""
+    # Paths at the ROOT OF THE SCOPE only. git ls-files run with cwd set to a
+    # subdirectory already returns paths relative to it, so no rewriting is
+    # needed - and rewriting was wrong: basenaming pulled
+    # archive/prior-revisions/draft-...-01.md into the candidate set and made a
+    # single-source repository read as a per-revision one.
     out, _ = git("ls-files", cwd=repo)
-    cands = [f for f in out.splitlines()
-             if re.match(r"^draft-[a-z0-9-]+\.md$", f)]
-    if len(cands) != 1:
-        return None, cands
-    return cands[0][:-3], cands
+    out = "\n".join(f for f in out.splitlines() if "/" not in f)
+    md = [f for f in out.splitlines() if re.match(r"^draft-[a-z0-9-]+(-\d{2})?(-[A-Z]+)?\.md$", f)]
+    plain = [f for f in md if re.match(r"^draft-[a-z0-9-]+\.md$", f)
+             and not re.search(r"-\d{2}\.md$", f)]
+    numbered = [f for f in md if re.search(r"-\d{2}(-[A-Z]+)?\.md$", f)]
+    if len(plain) == 1 and not numbered:
+        return plain[0][:-3], "single", plain
+    if numbered:
+        stems = {re.sub(r"-\d{2}(-[A-Z]+)?\.md$", "", f) for f in numbered}
+        if len(stems) == 1:
+            return stems.pop(), "per-revision", sorted(numbered)
+        return None, None, sorted(numbered)
+    return None, None, md
 
 
 def rev_of(docname):
@@ -113,12 +144,40 @@ def collect(repo, name, md, out):
             out.refuse("F1", "tag %s does not resolve to a commit" % t)
             continue
         revs[t] = {"tag": t, "commit": h, "subject_rev": None, "subject_date": None}
-        if h not in filed_subjects:
-            subj, _ = git("log", "-1", "--format=%s", h, cwd=repo, ok=True)
-            out.refuse("F1", "tag %s points at %s, whose subject is not "
-                             "'%s as filed YYYY-MM-DD': %s" % (t, h[:8], t, subj))
-        else:
+        if h in filed_subjects:
             revs[t]["subject_rev"], revs[t]["subject_date"] = filed_subjects[h]
+        else:
+            # THE TAG'S OWN ANNOTATION IS ALSO A FILING RECORD, and
+            # BUILD-AND-SUBMIT section 4 is where that comes from: it says
+            # `git tag -a NAME-NN -m "Filed YYYY-MM-DD"`. A repository whose
+            # history is imported after the fact has one import commit carrying
+            # several drafts, so no single commit subject can name a filing and
+            # the tag is the only place the date can live. Requiring the commit
+            # subject would have made this gate unusable on exactly the
+            # repositories that most needed it.
+            # TWO DATES, AND THEY ARE NOT THE SAME DATE. The datatracker
+            # records a submission_date and a document_date, and they differ by
+            # a day on every late-evening filing from Utah: -02 of both
+            # certisyn drafts was submitted 2026-08-11 and is dated 2026-08-12.
+            # The front matter carries the DOCUMENT date, so that is what F3
+            # may compare against; the submission date is the venue's record of
+            # when it was filed and is kept beside it, not instead of it.
+            # Conflating the two is how an obsolete pull request came to assert
+            # a filing date that never happened.
+            ann, _ = git("for-each-ref", "--format=%(contents)",
+                         "refs/tags/" + t, cwd=repo, ok=True)
+            m = (re.search(r"Document date (\d{4}-\d{2}-\d{2})", ann or "")
+                 or re.search(r"Filed (\d{4}-\d{2}-\d{2})", ann or ""))
+            if m:
+                revs[t]["subject_rev"], revs[t]["subject_date"] = t, m.group(1)
+            else:
+                subj, _ = git("log", "-1", "--format=%s", h, cwd=repo, ok=True)
+                out.refuse("F1", "tag %s records no filing date. Its commit "
+                                 "subject is %r, which is not '%s as filed "
+                                 "YYYY-MM-DD', and its own annotation records "
+                                 "neither 'Document date YYYY-MM-DD' nor "
+                                 "'Filed YYYY-MM-DD'."
+                           % (t, subj, t))
 
     for h, (srev, sdate) in filed_subjects.items():
         if not any(r["commit"] == h for r in revs.values()):
@@ -131,14 +190,48 @@ def collect(repo, name, md, out):
 def main(argv):
     out = Report()
     repo, _ = git("rev-parse", "--show-toplevel")
-    name, cands = draft_name(repo)
+    sub = ""
+    if "--dir" in argv:
+        sub = argv[argv.index("--dir") + 1].strip("/")
+        repo = os.path.join(repo, sub)
+        if not os.path.isdir(repo):
+            out.refuse("F0", "no such directory: %s" % sub)
+            return out.finish()
+        out.say("directory        %s" % sub)
+    name, layout, cands = draft_name(repo)
     if not name:
-        out.refuse("F0", "expected exactly one draft-*.md at the repository "
-                         "root, found %d: %s" % (len(cands), ", ".join(cands) or "none"))
+        out.refuse("F0", "cannot tell which draft this repository is for. Found "
+                         "%d candidate source file(s): %s" % (len(cands), ", ".join(cands) or "none"))
         return out.finish()
     md = name + ".md"
     xml = name + ".xml"
     out.say("draft            %s" % name)
+    out.say("layout           %s" % layout)
+
+    # A docname may be claimed by exactly one source file. Two files asserting
+    # the same revision means the one that was filed cannot be identified from
+    # the tree, which is the whole question this gate exists to answer.
+    claims = {}
+    for f in cands:
+        d, _ = front_matter(repo, "HEAD", f)
+        if d:
+            claims.setdefault(d, []).append(f)
+    for d, fs in sorted(claims.items()):
+        if len(fs) > 1:
+            out.refuse("F7", "docname %s is claimed by %d files: %s. Which of "
+                             "them was filed cannot be read off the tree."
+                       % (d, len(fs), ", ".join(fs)))
+
+    def source_for(rev_tag):
+        """Where revision NN's source lives, which is the only thing the two
+        layouts disagree about."""
+        if layout == "single":
+            return md
+        nn = rev_tag[-2:]
+        for f in cands:
+            if re.search(r"-%s(-[A-Z]+)?\.md$" % nn, f):
+                return f
+        return "%s-%s.md" % (name, nn)
 
     trunk = TRUNK
     if git("rev-parse", "--verify", "--quiet", "origin/" + TRUNK, ok=True)[1] == 0:
@@ -155,15 +248,15 @@ def main(argv):
 
     for t, r in sorted(revs.items()):
         h = r["commit"]
-        have_md = git("ls-tree", t, "--name-only", "--", md, cwd=repo, ok=True)[0]
-        have_xml = git("ls-tree", t, "--name-only", "--", xml, cwd=repo, ok=True)[0]
+        src = source_for(t)
+        rxml = (xml if layout == "single" else "%s.xml" % t)
+        have_md = git("ls-tree", t, "--name-only", "--", src, cwd=repo, ok=True)[0]
+        have_xml = git("ls-tree", t, "--name-only", "--", rxml, cwd=repo, ok=True)[0]
         if not have_md:
-            out.refuse("F2", "%s carries no %s" % (t, md))
-        if not have_xml:
-            out.refuse("F2", "%s carries no %s. The .xml is the structured "
-                             "source uploaded to the datatracker and the only "
-                             "proof of which bytes were filed." % (t, xml))
-        fdoc, fdate = front_matter(repo, t, md)
+            out.refuse("F2", "%s carries no %s" % (t, src))
+        r["have_xml"] = bool(have_xml)
+        r["xml_name"] = rxml
+        fdoc, fdate = front_matter(repo, t, src)
         if fdoc and fdoc != t:
             out.refuse("F3", "%s front matter says docname %s" % (t, fdoc))
         if fdate and r["subject_date"] and fdate != r["subject_date"]:
@@ -180,6 +273,19 @@ def main(argv):
         out.refuse("F4", "%s is filed and is NOT reachable from %s. It is on: %s. "
                          "The trunk does not hold what the IETF is serving."
                    % (newest["tag"], trunk, holders))
+    if not newest.get("have_xml"):
+        out.refuse("F2", "%s carries no %s. The .xml is the structured source "
+                         "uploaded to the datatracker and the only proof of "
+                         "which bytes were filed. Retrieve it from "
+                         "https://www.ietf.org/archive/id/%s and commit it."
+                   % (newest["tag"], newest.get("xml_name"), newest.get("xml_name")))
+    for t, r in sorted(revs.items()):
+        if r is not newest and not r.get("have_xml"):
+            out.note("F2", "%s carries no %s. Filed before the .xml discipline, "
+                           "so a notice rather than a refusal - it may not exist "
+                           "in the archive either. verify-filings.py compares the "
+                           "text against the archive for this one."
+                     % (t, r.get("xml_name")))
     for t, r in sorted(revs.items()):
         if r is not newest and not r["on_trunk"]:
             holders = git("branch", "-a", "--contains", r["commit"], cwd=repo, ok=True)[0]
@@ -188,8 +294,26 @@ def main(argv):
                            "notice; its tag is the only thing keeping it."
                      % (t, trunk, holders))
 
-    head_doc, _ = front_matter(repo, "HEAD", md)
-    trunk_doc, _ = front_matter(repo, trunk, md)
+    newest_src = source_for(newest["tag"])
+    head_doc, _ = front_matter(repo, "HEAD", newest_src if layout == "per-revision" else md)
+    trunk_doc, _ = front_matter(repo, trunk, newest_src if layout == "per-revision" else md)
+    if layout == "per-revision":
+        # On this layout a newer revision is a new FILE, so "is the tree ahead
+        # of the trunk" is asked of the highest-numbered source present, and
+        # the trunk is read the same way rather than reported as None.
+        hi = max((int(re.search(r"-(\d{2})(-[A-Z]+)?\.md$", f).group(1)) for f in cands), default=None)
+        if hi is not None:
+            head_doc = "%s-%02d" % (name, hi)
+        # ROOT OF THE SCOPE, not recursive. This read -r and so counted
+        # working/draft-...-03.md as a revision the trunk carries, while the
+        # HEAD side counted only the scope root - two scans of one question
+        # disagreeing, which is the defect this gate exists to refuse. Pinned
+        # by the self-test case below.
+        tout, _ = git("ls-tree", "--name-only", "%s:%s" % (trunk, sub), cwd=repo, ok=True)
+        tnum = [f for f in (tout or "").splitlines()
+                if re.search(r"-\d{2}(-[A-Z]+)?\.md$", f) and f.startswith(name + "-")]
+        thi = max((int(re.search(r"-(\d{2})(-[A-Z]+)?\.md$", f).group(1)) for f in tnum), default=None)
+        trunk_doc = "%s-%02d" % (name, thi) if thi is not None else None
     hr, tr = rev_of(head_doc)[1], rev_of(trunk_doc)[1]
     out.say("docname          HEAD %s, %s %s" % (head_doc, trunk, trunk_doc))
     if hr is not None and tr is not None and hr < tr:
@@ -349,6 +473,81 @@ def self_test():
         sh(d, "git", "branch", "-f", "main", "HEAD")
         rc, o = run(d)
         cases.append(("an untagged filing REFUSES", rc == 1 and "F1" in o, o))
+
+        # 7. the per-revision layout, honest path
+        d = os.path.join(base, "perrev"); os.makedirs(d)
+        sh(d, "git", "init", "-q", "-b", "main", ".")
+        for n in (0, 1, 2):
+            open(os.path.join(d, "draft-x-y-%02d.md" % n), "w").write(
+                "---\ndocname: draft-x-y-%02d\ndate: 2026-0%d-01\n---\nb\n" % (n, n + 5))
+            open(os.path.join(d, "draft-x-y-%02d.xml" % n), "w").write("<rfc/>\n")
+            sh(d, "git", "add", "-A")
+            sh(d, "git", "commit", "-q", "-m", "draft-x-y-%02d as filed 2026-0%d-01" % (n, n + 5))
+            sh(d, "git", "tag", "-a", "draft-x-y-%02d" % n, "-m", "Filed")
+        rc, o = run(d)
+        cases.append(("a per-revision layout passes on the honest path",
+                      rc == 0 and "per-revision" in o, o))
+
+        # 8. F7 - two source files claiming one docname
+        d = os.path.join(base, "twoclaims"); os.makedirs(d)
+        sh(d, "git", "init", "-q", "-b", "main", ".")
+        for nm in ("draft-x-y-00.md", "draft-x-y-00-SUBMIT.md"):
+            open(os.path.join(d, nm), "w").write(
+                "---\ndocname: draft-x-y-00\ndate: 2026-09-27\n---\nb\n")
+        open(os.path.join(d, "draft-x-y-00.xml"), "w").write("<rfc/>\n")
+        sh(d, "git", "add", "-A")
+        sh(d, "git", "commit", "-q", "-m", "draft-x-y-00 as filed 2026-09-27")
+        sh(d, "git", "tag", "-a", "draft-x-y-00", "-m", "Filed")
+        rc, o = run(d)
+        cases.append(("two source files claiming one docname REFUSES",
+                      rc == 1 and "F7" in o, o))
+
+        # 9. an imported history: one commit, tags carrying the filing dates
+        d = os.path.join(base, "imported"); os.makedirs(d)
+        sh(d, "git", "init", "-q", "-b", "main", ".")
+        for n in (0, 1, 2):
+            open(os.path.join(d, "draft-x-y-%02d.md" % n), "w").write(
+                "---\ndocname: draft-x-y-%02d\ndate: 2026-0%d-01\n---\nb\n" % (n, n + 5))
+            open(os.path.join(d, "draft-x-y-%02d.xml" % n), "w").write("<rfc/>\n")
+        sh(d, "git", "add", "-A")
+        sh(d, "git", "commit", "-q", "-m", "Import the filed sources")
+        for n in (0, 1, 2):
+            sh(d, "git", "tag", "-a", "draft-x-y-%02d" % n, "-m",
+               "Filed 2026-0%d-01" % (n + 5))
+        rc, o = run(d)
+        cases.append(("an imported history with annotated tags passes",
+                      rc == 0, o))
+
+        # 10. F1 - a tag that records no filing date anywhere
+        d = os.path.join(base, "nodate"); os.makedirs(d)
+        sh(d, "git", "init", "-q", "-b", "main", ".")
+        open(os.path.join(d, "draft-x-y-00.md"), "w").write(
+            "---\ndocname: draft-x-y-00\ndate: 2026-05-01\n---\nb\n")
+        open(os.path.join(d, "draft-x-y-00.xml"), "w").write("<rfc/>\n")
+        sh(d, "git", "add", "-A")
+        sh(d, "git", "commit", "-q", "-m", "Import")
+        sh(d, "git", "tag", "-a", "draft-x-y-00", "-m", "no date here")
+        rc, o = run(d)
+        cases.append(("a tag recording no filing date REFUSES",
+                      rc == 1 and "F1" in o, o))
+
+        # 11. a working/ subdirectory of unfiled iterations is not the trunk's
+        #     revision set. This refused chorale-protocol wrongly.
+        d = os.path.join(base, "workingdir"); os.makedirs(d)
+        sh(d, "git", "init", "-q", "-b", "main", ".")
+        os.makedirs(os.path.join(d, "working"))
+        open(os.path.join(d, "draft-x-y-00-SUBMIT.md"), "w").write(
+            "---\ndocname: draft-x-y-00\ndate: 2026-09-27\n---\nb\n")
+        open(os.path.join(d, "draft-x-y-00.xml"), "w").write("<rfc/>\n")
+        for n in (1, 2, 3):
+            open(os.path.join(d, "working", "draft-x-y-%02d.md" % n), "w").write(
+                "---\ndocname: draft-x-y-%02d\n---\nb\n" % n)
+        sh(d, "git", "add", "-A")
+        sh(d, "git", "commit", "-q", "-m", "Import")
+        sh(d, "git", "tag", "-a", "draft-x-y-00", "-m", "Document date 2026-09-27, submitted 2026-09-27")
+        rc, o = run(d)
+        cases.append(("unfiled iterations under working/ are not the trunk's "
+                      "revision set", rc == 0, o))
 
         # 6. F5 - a branch proposing a docname behind the trunk
         d = os.path.join(base, "backwards"); os.makedirs(d)

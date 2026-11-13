@@ -83,6 +83,9 @@ xml2rfc --html  draft-hillier-scitt-arp.xml
       `-00` sat in this repo with `docname: draft-hillier-scitt-arp-00` while
       `-01` was live on the datatracker.
 - [ ] `date:` is the intended filing date, not a stale one.
+- [ ] `python3 check-filed-state.py` is clean. It reads the tags, not this
+      checklist, so it also catches a branch cut before the last filing that
+      would move `docname` backwards.
 - [ ] Every `{{reference}}` resolves — an unresolved reference silently renders
       as literal text.
 - [ ] `make lint` is clean, or every remaining nit is understood and accepted.
@@ -133,6 +136,43 @@ git push origin main --tags
 
 Then, and only then, announce to `scitt@ietf.org` from `contact@certisyn.com`,
 so the links in the announcement resolve.
+
+### The gate behind this section
+
+This section has said "non-negotiable, in this order" since July, and section 0
+has said every filed revision must be reachable on a commit here and that
+commit must be tagged, "No exceptions". Measured 13 November 2026, with all of
+that written down and nothing reading it:
+
+- `-06` was filed on 23 October and its commit sat on `fix/06-clean`, so `main`
+  carried `-05` while the datatracker served `-06`.
+- `-04` was tagged and reachable from **no branch at all**. One deleted tag from
+  being the `-01` incident again.
+- An obsolete pull request stood open proposing `docname: -05` with a filing
+  date of 2026-10-15, which is not a date anything was filed on.
+
+A rule with no gate is a note. `check-filed-state.py` is the gate. It refuses
+an untagged filing, a filing whose tree has no `.xml`, a filing whose front
+matter contradicts the date its own commit subject asserts, the newest filing
+not being reachable from the trunk, and a branch proposing a `docname` behind
+the trunk. `--venue` adds the datatracker API from section 3 above, and an
+unreadable venue exits 3 rather than passing.
+
+Install it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+CI runs it on every push and pull request, and **on a daily schedule**. The
+schedule is the part that matters: a push gate cannot see a revision filed from
+a working copy that is never pushed, which is precisely how `-01` was lost.
+
+Prove the gate itself still refuses:
+
+```bash
+python3 check-filed-state.py --self-test
+```
 
 ---
 

@@ -1,0 +1,46 @@
+# The trunk holds what was filed.
+#
+# This repository had no CI at all. The only workflow it ever had lives on
+# wip/revision-03, which was abandoned in August, so nothing has ever checked
+# anything here. BUILD-AND-SUBMIT.md states the rule this enforces, in capitals,
+# with the history of why - and the rule was broken twice more after it was
+# written. See check-filed-state.py for the measurement.
+#
+# The SCHEDULE is the part that matters. A push gate cannot see a revision filed
+# from a working copy that is never pushed, which is exactly how -01 was lost.
+# A daily read of the datatracker can.
+name: filed-state
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  schedule: [{ cron: '41 7 * * *' }]
+  workflow_dispatch: {}
+
+permissions: { contents: read }
+
+jobs:
+  filed-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Pinned to the commit, and to the same SHA the certisyn-app workflows
+      # already use. fetch-depth 0 and the tags are both required: the gate
+      # reads every tag and asks whether each filing is an ancestor of main.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Gate self-test
+        run: python3 check-filed-state.py --self-test
+
+      - name: Filed state, repository only
+        run: python3 check-filed-state.py
+
+      # The datatracker API, which BUILD-AND-SUBMIT section 3 names as
+      # authoritative because the HTML status page can serve a cached revision.
+      # An unreadable venue exits 3 and fails the job. It is never a pass.
+      - name: Filed state against the datatracker
+        run: python3 check-filed-state.py --venue

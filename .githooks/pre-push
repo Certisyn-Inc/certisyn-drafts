@@ -1,0 +1,21 @@
+#!/bin/sh
+# Certisyn drafts pre-push gate. Pure ASCII (Windows git-bash).
+#
+# BUILD-AND-SUBMIT.md section 0 has said since July that every filed revision
+# must be reachable on a commit in this repository and that commit must be
+# tagged, "No exceptions". Section 4 calls the four commands non-negotiable.
+# Both were written after -01 was filed from an uncommitted working copy and
+# survived only in the IETF archive. Measured 2026-11-13, with all of that
+# written down: -06 was filed on 23 October and sat on a branch while main
+# served -05, and -04 was reachable from no branch at all. A rule with no gate
+# is a note.
+#
+# No network. The venue check runs in CI and on a schedule, where a filing made
+# from somewhere other than this repository is what it is looking for.
+set -e
+ROOT="$(git rev-parse --show-toplevel)"
+PY=python3
+command -v python3 >/dev/null 2>&1 || PY=python
+echo "[pre-push] filed state ..."
+"$PY" "$ROOT/check-filed-state.py"
+echo "[pre-push] OK"

@@ -175,14 +175,14 @@ def main(argv):
     out.say("filed revisions  %d, newest %s" % (len(revs), newest["tag"]))
 
     if not newest["on_trunk"]:
-        holders = git("branch", "-r", "--contains", newest["commit"], cwd=repo, ok=True)[0]
+        holders = git("branch", "-a", "--contains", newest["commit"], cwd=repo, ok=True)[0]
         holders = ", ".join(b.strip() for b in holders.splitlines()) or "no branch at all"
         out.refuse("F4", "%s is filed and is NOT reachable from %s. It is on: %s. "
                          "The trunk does not hold what the IETF is serving."
                    % (newest["tag"], trunk, holders))
     for t, r in sorted(revs.items()):
         if r is not newest and not r["on_trunk"]:
-            holders = git("branch", "-r", "--contains", r["commit"], cwd=repo, ok=True)[0]
+            holders = git("branch", "-a", "--contains", r["commit"], cwd=repo, ok=True)[0]
             holders = ", ".join(b.strip() for b in holders.splitlines()) or "NO BRANCH"
             out.note("F4", "%s is off %s, held by: %s. Superseded, so this is a "
                            "notice; its tag is the only thing keeping it."

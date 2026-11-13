@@ -190,6 +190,7 @@ def collect(repo, name, md, out):
 def main(argv):
     out = Report()
     repo, _ = git("rev-parse", "--show-toplevel")
+    root = repo
     sub = ""
     if "--dir" in argv:
         sub = argv[argv.index("--dir") + 1].strip("/")
@@ -309,7 +310,12 @@ def main(argv):
         # HEAD side counted only the scope root - two scans of one question
         # disagreeing, which is the defect this gate exists to refuse. Pinned
         # by the self-test case below.
-        tout, _ = git("ls-tree", "--name-only", "%s:%s" % (trunk, sub), cwd=repo, ok=True)
+        # FROM THE REPOSITORY ROOT. Run with cwd inside the scoped directory,
+        # git applies that prefix to the <rev>:<path> argument as well and the
+        # listing comes back EMPTY - so this returned nothing, thi was None,
+        # and F5's trunk side silently passed everything in the one mode it was
+        # added for. A check that fails open is worse than no check.
+        tout, _ = git("ls-tree", "--name-only", "%s:%s" % (trunk, sub), cwd=root, ok=True)
         tnum = [f for f in (tout or "").splitlines()
                 if re.search(r"-\d{2}(-[A-Z]+)?\.md$", f) and f.startswith(name + "-")]
         thi = max((int(re.search(r"-(\d{2})(-[A-Z]+)?\.md$", f).group(1)) for f in tnum), default=None)
